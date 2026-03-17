@@ -9,6 +9,9 @@ import (
 
 // Factory provides lazy access to shared dependencies for commands.
 type Factory struct {
+	// Version is the CLI version used for downstream integrations such as the API user agent.
+	Version string
+
 	// Config returns the loaded configuration.
 	Config func() (*config.Config, error)
 
@@ -28,23 +31,26 @@ type Factory struct {
 
 // GlobalFlags holds the values of global flags set on the root command.
 type GlobalFlags struct {
-	Account  string
-	Token    string
-	Sandbox  bool
-	JSON     bool
-	Format   string
-	NoColor  bool
-	Debug    bool
-	Quiet    bool
+	Account string
+	Token   string
+	Sandbox bool
+	JSON    bool
+	Format  string
+	NoColor bool
+	Debug   bool
+	Quiet   bool
 }
 
 // NewFactory creates a new Factory with lazy initialization.
-func NewFactory() *Factory {
+func NewFactory(version string) *Factory {
 	flags := &GlobalFlags{}
 	var cachedConfig *config.Config
 	var cachedClient *dnsimple.Client
 
-	f := &Factory{Flags: flags}
+	f := &Factory{
+		Version: version,
+		Flags:   flags,
+	}
 
 	f.Config = func() (*config.Config, error) {
 		if cachedConfig != nil {
@@ -74,7 +80,7 @@ func NewFactory() *Factory {
 		if err != nil {
 			return nil, err
 		}
-		c := client.NewClient(cfg, token)
+		c := client.NewClient(cfg, token, f.Version)
 		if flags.Debug {
 			c.Debug = true
 		}

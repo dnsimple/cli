@@ -7,7 +7,7 @@ import (
 
 // Execute runs the CLI with the given version and arguments.
 func Execute(version string, args []string) int {
-	f := cmdutil.NewFactory()
+	f := cmdutil.NewFactory(version)
 
 	rootCmd := &cobra.Command{
 		Use:           "dnsimple",
