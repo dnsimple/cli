@@ -5,6 +5,7 @@ import (
 	"github.com/dnsimple/dnsimple-cli/internal/config"
 	"github.com/dnsimple/dnsimple-cli/internal/output"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/spf13/cobra"
 )
 
 // Factory provides lazy access to shared dependencies for commands.
@@ -20,7 +21,7 @@ type Factory struct {
 	Client func() (*dnsimple.Client, error)
 
 	// Printer returns the output printer configured with the current format settings.
-	Printer func() *output.Printer
+	Printer func(cmd *cobra.Command) *output.Printer
 
 	// AccountID resolves the account ID from flags, env, config, or credentials.
 	AccountID func() (string, error)
@@ -88,14 +89,14 @@ func NewFactory(version string) *Factory {
 		return c, nil
 	}
 
-	f.Printer = func() *output.Printer {
+	f.Printer = func(cmd *cobra.Command) *output.Printer {
 		format := output.FormatTable
 		if flags.JSON {
 			format = output.FormatJSON
 		} else if flags.Format != "" {
 			format = output.FormatTemplate
 		}
-		return output.NewPrinter(format, flags.Format, flags.NoColor)
+		return output.NewPrinter(cmd.OutOrStdout(), cmd.ErrOrStderr(), format, flags.Format, flags.NoColor)
 	}
 
 	f.AccountID = func() (string, error) {

@@ -124,7 +124,7 @@ func newTldsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&tldList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&tldList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 
@@ -151,7 +151,7 @@ func newTldsGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&tldItemOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&tldItemOutput{Data: resp.Data})
 		},
 	}
 }
@@ -172,7 +172,7 @@ func newTldsExtendedAttributesCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&tldExtendedAttributesList{Data: resp.Data})
+			return f.Printer(cmd).Print(&tldExtendedAttributesList{Data: resp.Data})
 		},
 	}
 }

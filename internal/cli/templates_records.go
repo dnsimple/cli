@@ -94,7 +94,7 @@ func newTemplateRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&templateRecordList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&templateRecordList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 }
@@ -124,7 +124,7 @@ func newTemplateRecordsGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&templateRecordItemOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&templateRecordItemOutput{Data: resp.Data})
 		},
 	}
 }
@@ -151,7 +151,7 @@ func newTemplateRecordsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&templateRecordItemOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&templateRecordItemOutput{Data: resp.Data})
 		},
 	}
 

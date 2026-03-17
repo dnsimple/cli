@@ -71,7 +71,7 @@ func newBillingChargesCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&chargeList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&chargeList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 

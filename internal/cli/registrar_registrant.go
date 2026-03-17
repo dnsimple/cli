@@ -103,7 +103,7 @@ func newRegistrantChangeListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&registrantChangeList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&registrantChangeList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 
@@ -139,7 +139,7 @@ func newRegistrantChangeGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&registrantChangeOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&registrantChangeOutput{Data: resp.Data})
 		},
 	}
 }
@@ -170,7 +170,7 @@ func newRegistrantChangeCreateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&registrantChangeOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&registrantChangeOutput{Data: resp.Data})
 		},
 	}
 

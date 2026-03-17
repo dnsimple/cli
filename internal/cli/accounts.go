@@ -58,7 +58,7 @@ func newAccountsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&accountList{Data: resp.Data})
+			return f.Printer(cmd).Print(&accountList{Data: resp.Data})
 		},
 	}
 }

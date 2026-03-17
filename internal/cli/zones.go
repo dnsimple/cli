@@ -122,7 +122,7 @@ func newZonesListCmd(f *cmdutil.Factory) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return f.Printer().Print(&zoneList{Data: items})
+				return f.Printer(cmd).Print(&zoneList{Data: items})
 			}
 
 			if page > 0 {
@@ -137,7 +137,7 @@ func newZonesListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&zoneList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&zoneList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 
@@ -171,7 +171,7 @@ func newZonesGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&zoneItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&zoneItem{Data: resp.Data})
 		},
 	}
 }

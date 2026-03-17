@@ -161,7 +161,7 @@ func newRegistrarCheckCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&domainCheckOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&domainCheckOutput{Data: resp.Data})
 		},
 	}
 }
@@ -187,7 +187,7 @@ func newRegistrarPricesCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&domainPriceOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&domainPriceOutput{Data: resp.Data})
 		},
 	}
 }
@@ -224,7 +224,7 @@ func newRegistrarRegisterCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&domainRegistrationOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&domainRegistrationOutput{Data: resp.Data})
 		},
 	}
 
@@ -271,7 +271,7 @@ func newRegistrarTransferCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&domainTransferOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&domainTransferOutput{Data: resp.Data})
 		},
 	}
 
@@ -314,7 +314,7 @@ func newRegistrarRenewCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&domainRenewalOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&domainRenewalOutput{Data: resp.Data})
 		},
 	}
 
@@ -351,7 +351,7 @@ func newRegistrarRestoreCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&domainRenewalOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&domainRenewalOutput{Data: resp.Data})
 		},
 	}
 

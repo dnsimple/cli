@@ -59,7 +59,7 @@ func newDnssecStatusCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&dnssecOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&dnssecOutput{Data: resp.Data})
 		},
 	}
 }

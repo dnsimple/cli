@@ -188,7 +188,7 @@ func newCertsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&certList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&certList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 
@@ -225,7 +225,7 @@ func newCertsGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&certItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&certItem{Data: resp.Data})
 		},
 	}
 }
@@ -256,7 +256,7 @@ func newCertsDownloadCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&certBundleOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&certBundleOutput{Data: resp.Data})
 		},
 	}
 }
@@ -292,7 +292,7 @@ func newCertsPrivateKeyCmd(f *cmdutil.Factory) *cobra.Command {
 				fmt.Fprint(cmd.OutOrStdout(), resp.Data.PrivateKey)
 				return nil
 			}
-			return f.Printer().Print(&certBundleOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&certBundleOutput{Data: resp.Data})
 		},
 	}
 }
@@ -344,7 +344,7 @@ func newLetsencryptPurchaseCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&certPurchaseOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&certPurchaseOutput{Data: resp.Data})
 		},
 	}
 
@@ -382,7 +382,7 @@ func newLetsencryptIssueCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&certItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&certItem{Data: resp.Data})
 		},
 	}
 }
@@ -421,7 +421,7 @@ func newLetsencryptRenewCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&certRenewalOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&certRenewalOutput{Data: resp.Data})
 		},
 	}
 
@@ -462,7 +462,7 @@ func newLetsencryptIssueRenewalCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&certItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&certItem{Data: resp.Data})
 		},
 	}
 }

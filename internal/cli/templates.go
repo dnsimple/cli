@@ -93,7 +93,7 @@ func newTemplatesListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&templateList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&templateList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 }
@@ -118,7 +118,7 @@ func newTemplatesGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&templateItemOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&templateItemOutput{Data: resp.Data})
 		},
 	}
 }
@@ -144,7 +144,7 @@ func newTemplatesCreateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&templateItemOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&templateItemOutput{Data: resp.Data})
 		},
 	}
 
@@ -179,7 +179,7 @@ func newTemplatesUpdateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&templateItemOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&templateItemOutput{Data: resp.Data})
 		},
 	}
 

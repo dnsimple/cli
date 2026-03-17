@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"text/template"
 )
 
@@ -34,10 +33,10 @@ type Printer struct {
 }
 
 // NewPrinter creates a new Printer with the given format settings.
-func NewPrinter(format Format, templateStr string, noColor bool) *Printer {
+func NewPrinter(writer io.Writer, errWriter io.Writer, format Format, templateStr string, noColor bool) *Printer {
 	return &Printer{
-		Writer:    os.Stdout,
-		ErrWriter: os.Stderr,
+		Writer:    writer,
+		ErrWriter: errWriter,
 		Format:    format,
 		Template:  templateStr,
 		NoColor:   noColor,

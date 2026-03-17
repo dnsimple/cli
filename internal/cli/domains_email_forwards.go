@@ -93,7 +93,7 @@ func newEmailForwardsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&emailForwardList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&emailForwardList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 }
@@ -124,7 +124,7 @@ func newEmailForwardsGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&emailForwardItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&emailForwardItem{Data: resp.Data})
 		},
 	}
 }
@@ -157,7 +157,7 @@ func newEmailForwardsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&emailForwardItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&emailForwardItem{Data: resp.Data})
 		},
 	}
 

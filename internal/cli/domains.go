@@ -13,8 +13,8 @@ import (
 
 // domainList adapts []Domain for output.
 type domainList struct {
-	Data       []dnsimple.Domain      `json:"data"`
-	Pagination *dnsimple.Pagination   `json:"pagination,omitempty"`
+	Data       []dnsimple.Domain    `json:"data"`
+	Pagination *dnsimple.Pagination `json:"pagination,omitempty"`
 }
 
 func (d *domainList) TableHeaders() []string {
@@ -125,7 +125,7 @@ func newDomainsListCmd(f *cmdutil.Factory) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return f.Printer().Print(&domainList{Data: items})
+				return f.Printer(cmd).Print(&domainList{Data: items})
 			}
 
 			if page > 0 {
@@ -140,7 +140,7 @@ func newDomainsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&domainList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&domainList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 
@@ -174,7 +174,7 @@ func newDomainsGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&domainItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&domainItem{Data: resp.Data})
 		},
 	}
 }
@@ -200,7 +200,7 @@ func newDomainsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&domainItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&domainItem{Data: resp.Data})
 		},
 	}
 }

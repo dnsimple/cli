@@ -2,18 +2,16 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-cli/internal/output"
 	"github.com/spf13/cobra"
 )
 
 type whoamiOutput struct {
-	UserID    int64  `json:"user_id,omitempty"`
-	UserEmail string `json:"user_email,omitempty"`
-	AccountID int64  `json:"account_id,omitempty"`
+	UserID       int64  `json:"user_id,omitempty"`
+	UserEmail    string `json:"user_email,omitempty"`
+	AccountID    int64  `json:"account_id,omitempty"`
 	AccountEmail string `json:"account_email,omitempty"`
 }
 
@@ -61,19 +59,7 @@ func newWhoamiCmd(f *cmdutil.Factory) *cobra.Command {
 				data.AccountEmail = resp.Data.Account.Email
 			}
 
-			printer := f.Printer()
-			if printer.Format == output.FormatJSON {
-				return printer.Print(data)
-			}
-
-			// For table output, use a friendlier display
-			if data.UserID != 0 {
-				fmt.Fprintf(cmd.OutOrStdout(), "Logged in as %s (user ID: %d)\n", data.UserEmail, data.UserID)
-			}
-			if data.AccountID != 0 {
-				fmt.Fprintf(cmd.OutOrStdout(), "Account: %s (ID: %d)\n", data.AccountEmail, data.AccountID)
-			}
-			return nil
+			return f.Printer(cmd).Print(data)
 		},
 	}
 }

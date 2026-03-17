@@ -90,7 +90,7 @@ func newAnalyticsQueryCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&analyticsOutput{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&analyticsOutput{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 

@@ -59,7 +59,7 @@ func newTransferLockStatusCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&transferLockOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&transferLockOutput{Data: resp.Data})
 		},
 	}
 }

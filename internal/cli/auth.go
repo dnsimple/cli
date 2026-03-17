@@ -16,6 +16,33 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type authStatusOutput struct {
+	Environment  string `json:"environment"`
+	UserID       int64  `json:"user_id,omitempty"`
+	UserEmail    string `json:"user_email,omitempty"`
+	AccountID    int64  `json:"account_id,omitempty"`
+	AccountEmail string `json:"account_email,omitempty"`
+}
+
+func (a *authStatusOutput) TableHeaders() []string {
+	return []string{"KEY", "VALUE"}
+}
+
+func (a *authStatusOutput) TableRows() [][]string {
+	rows := [][]string{{"Environment", a.Environment}}
+	if a.UserID != 0 {
+		rows = append(rows, []string{"User", fmt.Sprintf("%s (ID: %d)", a.UserEmail, a.UserID)})
+	}
+	if a.AccountID != 0 {
+		rows = append(rows, []string{"Account", fmt.Sprintf("%s (ID: %d)", a.AccountEmail, a.AccountID)})
+	}
+	return rows
+}
+
+func (a *authStatusOutput) JSONData() any {
+	return a
+}
+
 func newAuthCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "auth",
@@ -216,15 +243,17 @@ func newAuthStatusCmd(f *cmdutil.Factory) *cobra.Command {
 				env = "sandbox"
 			}
 
-			fmt.Fprintf(os.Stdout, "Environment: %s\n", env)
+			data := &authStatusOutput{Environment: env}
 			if whoami.Data.User != nil {
-				fmt.Fprintf(os.Stdout, "User:        %s (ID: %d)\n", whoami.Data.User.Email, whoami.Data.User.ID)
+				data.UserID = whoami.Data.User.ID
+				data.UserEmail = whoami.Data.User.Email
 			}
 			if whoami.Data.Account != nil {
-				fmt.Fprintf(os.Stdout, "Account:     %s (ID: %d)\n", whoami.Data.Account.Email, whoami.Data.Account.ID)
+				data.AccountID = whoami.Data.Account.ID
+				data.AccountEmail = whoami.Data.Account.Email
 			}
 
-			return nil
+			return f.Printer(cmd).Print(data)
 		},
 	}
 }

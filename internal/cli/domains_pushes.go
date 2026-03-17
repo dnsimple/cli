@@ -92,7 +92,7 @@ func newPushesListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&pushList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&pushList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 }
@@ -124,7 +124,7 @@ func newPushesInitiateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&pushItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&pushItem{Data: resp.Data})
 		},
 	}
 

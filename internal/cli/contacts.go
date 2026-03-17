@@ -126,7 +126,7 @@ func newContactsListCmd(f *cmdutil.Factory) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return f.Printer().Print(&contactList{Data: items})
+				return f.Printer(cmd).Print(&contactList{Data: items})
 			}
 
 			if page > 0 {
@@ -141,7 +141,7 @@ func newContactsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&contactList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&contactList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 
@@ -179,7 +179,7 @@ func newContactsGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&contactItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&contactItem{Data: resp.Data})
 		},
 	}
 }
@@ -206,7 +206,7 @@ func newContactsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&contactItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&contactItem{Data: resp.Data})
 		},
 	}
 
@@ -266,7 +266,7 @@ func newContactsUpdateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&contactItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&contactItem{Data: resp.Data})
 		},
 	}
 

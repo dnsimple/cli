@@ -144,7 +144,7 @@ func newRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return f.Printer().Print(&recordList{Data: items})
+				return f.Printer(cmd).Print(&recordList{Data: items})
 			}
 
 			if page > 0 {
@@ -159,7 +159,7 @@ func newRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&recordList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).Print(&recordList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 
@@ -200,7 +200,7 @@ func newRecordsGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&recordItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&recordItem{Data: resp.Data})
 		},
 	}
 }
@@ -245,7 +245,7 @@ func newRecordsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&recordItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&recordItem{Data: resp.Data})
 		},
 	}
 
@@ -310,7 +310,7 @@ func newRecordsUpdateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&recordItem{Data: resp.Data})
+			return f.Printer(cmd).Print(&recordItem{Data: resp.Data})
 		},
 	}
 

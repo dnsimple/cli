@@ -62,7 +62,7 @@ func newZonesFileCmd(f *cmdutil.Factory) *cobra.Command {
 			}
 
 			if f.Flags.JSON || f.Flags.Format != "" {
-				return f.Printer().Print(&zoneFileOutput{Data: resp.Data})
+				return f.Printer(cmd).Print(&zoneFileOutput{Data: resp.Data})
 			}
 
 			// In table mode, just print the raw zone file content
@@ -151,7 +151,7 @@ func newZonesCheckDistributionCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&distributionOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&distributionOutput{Data: resp.Data})
 		},
 	}
 }
@@ -182,7 +182,7 @@ func newRecordsCheckDistributionCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&distributionOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&distributionOutput{Data: resp.Data})
 		},
 	}
 }

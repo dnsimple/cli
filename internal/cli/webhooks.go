@@ -81,7 +81,7 @@ func newWebhooksListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&webhookList{Data: resp.Data})
+			return f.Printer(cmd).Print(&webhookList{Data: resp.Data})
 		},
 	}
 }
@@ -111,7 +111,7 @@ func newWebhooksGetCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&webhookItemOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&webhookItemOutput{Data: resp.Data})
 		},
 	}
 }
@@ -137,7 +137,7 @@ func newWebhooksCreateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer().Print(&webhookItemOutput{Data: resp.Data})
+			return f.Printer(cmd).Print(&webhookItemOutput{Data: resp.Data})
 		},
 	}
 
