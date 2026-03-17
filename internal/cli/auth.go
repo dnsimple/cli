@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/dnsimple/dnsimple-cli/internal/client"
 	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
 	"github.com/dnsimple/dnsimple-cli/internal/config"
+	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -98,22 +100,9 @@ Get your token from:
 				if len(accounts.Data) == 1 {
 					cred.AccountID = strconv.FormatInt(accounts.Data[0].ID, 10)
 				} else if len(accounts.Data) > 1 {
-					fmt.Fprintln(os.Stderr, "")
-					fmt.Fprintln(os.Stderr, "Multiple accounts available:")
-					fmt.Fprintln(os.Stderr, "")
-					for i, a := range accounts.Data {
-						fmt.Fprintf(os.Stderr, "  [%d] %s (ID: %d)\n", i+1, a.Email, a.ID)
-					}
-					fmt.Fprintln(os.Stderr, "")
-					fmt.Fprint(os.Stderr, "Select account number: ")
-
-					scanner := bufio.NewScanner(os.Stdin)
-					if scanner.Scan() {
-						choice, err := strconv.Atoi(strings.TrimSpace(scanner.Text()))
-						if err != nil || choice < 1 || choice > len(accounts.Data) {
-							return fmt.Errorf("invalid selection")
-						}
-						cred.AccountID = strconv.FormatInt(accounts.Data[choice-1].ID, 10)
+					cred.AccountID, err = promptForAccountSelection(os.Stdin, os.Stderr, accounts.Data)
+					if err != nil {
+						return err
 					}
 				}
 			}
@@ -174,6 +163,32 @@ func newAuthLogoutCmd(f *cmdutil.Factory) *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func promptForAccountSelection(in io.Reader, errOut io.Writer, accounts []dnsimple.Account) (string, error) {
+	fmt.Fprintln(errOut, "")
+	fmt.Fprintln(errOut, "Multiple accounts available:")
+	fmt.Fprintln(errOut, "")
+	for i, a := range accounts {
+		fmt.Fprintf(errOut, "  [%d] %s (ID: %d)\n", i+1, a.Email, a.ID)
+	}
+	fmt.Fprintln(errOut, "")
+	fmt.Fprint(errOut, "Select account number: ")
+
+	scanner := bufio.NewScanner(in)
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return "", fmt.Errorf("failed to read account selection: %w", err)
+		}
+		return "", fmt.Errorf("no account selected")
+	}
+
+	choice, err := strconv.Atoi(strings.TrimSpace(scanner.Text()))
+	if err != nil || choice < 1 || choice > len(accounts) {
+		return "", fmt.Errorf("invalid selection")
+	}
+
+	return strconv.FormatInt(accounts[choice-1].ID, 10), nil
 }
 
 func newAuthStatusCmd(f *cmdutil.Factory) *cobra.Command {
