@@ -92,17 +92,17 @@ func (c *Credentials) Delete(host string) {
 	delete(c.Hosts, host)
 }
 
-// Token resolves the API token from environment, flag override, or stored credentials.
+// Token resolves the API token from flag override, environment, or stored credentials.
 // The flagToken parameter is the value from --token flag (empty if not set).
 func Token(cfg *Config, flagToken string) (string, error) {
-	// 1. Environment variable
-	if token := os.Getenv("DNSIMPLE_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	// 2. Flag override
+	// 1. Flag override
 	if flagToken != "" {
 		return flagToken, nil
+	}
+
+	// 2. Environment variable
+	if token := os.Getenv("DNSIMPLE_TOKEN"); token != "" {
+		return token, nil
 	}
 
 	// 3. Stored credentials

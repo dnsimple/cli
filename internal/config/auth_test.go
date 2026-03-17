@@ -55,7 +55,8 @@ func TestTokenResolutionPrecedence(t *testing.T) {
 		want      string
 		wantErr   bool
 	}{
-		{name: "environment wins over flag and stored", envToken: "env-token", flagToken: "flag-token", stored: "stored-token", want: "env-token"},
+		{name: "flag wins over environment and stored", envToken: "env-token", flagToken: "flag-token", stored: "stored-token", want: "flag-token"},
+		{name: "environment wins over stored", envToken: "env-token", stored: "stored-token", want: "env-token"},
 		{name: "flag wins over stored", flagToken: "flag-token", stored: "stored-token", want: "flag-token"},
 		{name: "stored fallback", stored: "stored-token", want: "stored-token"},
 		{name: "missing token errors", wantErr: true},

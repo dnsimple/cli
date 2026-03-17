@@ -22,7 +22,7 @@ func Execute(version string, args []string) int {
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVarP(&f.Flags.Account, "account", "a", "", "Account ID to operate on")
-	rootCmd.PersistentFlags().StringVar(&f.Flags.Token, "token", "", "API token (prefer DNSIMPLE_TOKEN env var)")
+	rootCmd.PersistentFlags().StringVar(&f.Flags.Token, "token", "", "API token (overrides DNSIMPLE_TOKEN env var)")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.Sandbox, "sandbox", false, "Use sandbox environment")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.JSON, "json", false, "Output as JSON")
 	rootCmd.PersistentFlags().StringVar(&f.Flags.Format, "format", "", "Custom output format (Go template)")
