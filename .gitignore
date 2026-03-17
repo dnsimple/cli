@@ -1,2 +1,6 @@
+# Build
 bin/
 dist/
+
+# Developer environment
+.tool-versions
