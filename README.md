@@ -58,8 +58,7 @@ Example:
 
 ```shell
 # 1. Authenticate and verify the current identity
-export DNSIMPLE_TOKEN=your-token
-printf '%s\n' "$DNSIMPLE_TOKEN" | dnsimple auth login --with-token
+dnsimple auth login
 dnsimple auth status
 
 # 2. Add a domain to your account
