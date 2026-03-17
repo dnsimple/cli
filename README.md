@@ -45,6 +45,50 @@ Or pass it directly:
 dnsimple --token your-token [command]
 ```
 
+### Typical Flow
+
+A common workflow looks like this:
+
+1. Authenticate
+2. Add a domain to your account
+3. Activate DNS for the zone
+4. Create, update, and delete records
+
+Example:
+
+```shell
+# 1. Authenticate and verify the current identity
+export DNSIMPLE_TOKEN=your-token
+printf '%s\n' "$DNSIMPLE_TOKEN" | dnsimple auth login --with-token
+dnsimple auth status
+
+# 2. Add a domain to your account
+dnsimple domains create example.com
+
+# 3. Activate DNS for the zone
+dnsimple zones activate example.com
+
+# 4a. Create a record
+dnsimple records create example.com \
+  --type A \
+  --name www \
+  --content 192.0.2.10 \
+  --ttl 3600
+
+# 4b. List records so you can grab the record ID
+dnsimple records list example.com
+
+# 4c. Update the record
+dnsimple records update example.com 12345 \
+  --content 192.0.2.20 \
+  --ttl 600
+
+# 4d. Delete the record
+dnsimple records delete example.com 12345
+```
+
+`example.com` is both the domain name and the zone name. After creating the domain, use the same value with the `zones` and `records` commands.
+
 ### Sandbox Environment
 
 We highly recommend testing against our [sandbox environment](https://developer.dnsimple.com/sandbox/) before using our production environment. This will allow you to avoid real purchases, live charges on your credit card, and reduce the chance of your running up against rate limits.
