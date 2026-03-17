@@ -1,0 +1,60 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  markdown-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6.0.2
+      - name: Run markdownlint-cli
+        uses: nosborn/github-action-markdown-cli@v3.5.0
+        with:
+          files: .
+          config_file: ".markdownlint.yaml"
+
+  golang-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-go@v6.3.0
+        with:
+          go-version-file: "go.mod"
+          cache: true
+      - name: Go vet
+        run: go vet ./...
+
+  test:
+    runs-on: ubuntu-latest
+    name: Go ${{ matrix.go-version }}
+    needs:
+      - golang-lint
+      - markdown-lint
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version:
+          - "1.25"
+          - "1.26"
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Set up Go
+        uses: actions/setup-go@v6.3.0
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+      - name: Install dependencies
+        run: go mod download
+      - name: Test
+        run: go test -v ./...
