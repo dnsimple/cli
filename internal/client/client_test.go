@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/dnsimple/dnsimple-cli/internal/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewClientUsesConfigAndCLIUserAgent(t *testing.T) {
@@ -12,10 +13,6 @@ func TestNewClientUsesConfigAndCLIUserAgent(t *testing.T) {
 
 	client := NewClient(cfg, "token")
 
-	if client.BaseURL != cfg.BaseURL {
-		t.Fatalf("BaseURL = %q, want %q", client.BaseURL, cfg.BaseURL)
-	}
-	if !strings.HasPrefix(client.UserAgent, "dnsimple-cli/") {
-		t.Fatalf("UserAgent = %q, want dnsimple-cli/*", client.UserAgent)
-	}
+	assert.Equal(t, cfg.BaseURL, client.BaseURL)
+	assert.True(t, strings.HasPrefix(client.UserAgent, "dnsimple-cli/"), "UserAgent = %q, want dnsimple-cli/*", client.UserAgent)
 }

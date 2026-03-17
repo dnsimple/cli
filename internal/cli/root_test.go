@@ -4,18 +4,15 @@ import (
 	"testing"
 
 	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExecuteVersionReturnsSuccess(t *testing.T) {
 	code := Execute("1.2.3", []string{"--version"})
-	if code != cmdutil.ExitOK {
-		t.Fatalf("Execute() = %d, want %d", code, cmdutil.ExitOK)
-	}
+	assert.Equal(t, cmdutil.ExitOK, code)
 }
 
 func TestExecuteUnknownCommandReturnsError(t *testing.T) {
 	code := Execute("1.2.3", []string{"definitely-not-a-command"})
-	if code != cmdutil.ExitError {
-		t.Fatalf("Execute() = %d, want %d", code, cmdutil.ExitError)
-	}
+	assert.Equal(t, cmdutil.ExitError, code)
 }

@@ -1,21 +1,21 @@
 package config
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestLoadCredentialsMissingFile(t *testing.T) {
 	isolateConfigHome(t)
 
 	creds, err := LoadCredentials()
-	if err != nil {
-		t.Fatalf("LoadCredentials() error = %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 
-	if creds.Hosts == nil {
-		t.Fatalf("Hosts = nil, want initialized map")
-	}
-	if len(creds.Hosts) != 0 {
-		t.Fatalf("len(Hosts) = %d, want 0", len(creds.Hosts))
-	}
+	assert.NotNil(t, creds.Hosts)
+	assert.Len(t, creds.Hosts, 0)
 }
 
 func TestCredentialsSaveAndLoad(t *testing.T) {
@@ -29,21 +29,20 @@ func TestCredentialsSaveAndLoad(t *testing.T) {
 		},
 	}}
 
-	if err := creds.Save(); err != nil {
-		t.Fatalf("Save() error = %v", err)
+	if !assert.NoError(t, creds.Save()) {
+		return
 	}
 
 	loaded, err := LoadCredentials()
-	if err != nil {
-		t.Fatalf("LoadCredentials() error = %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 
 	got := loaded.Get("api.dnsimple.com")
-	if got == nil {
-		t.Fatalf("Get() = nil, want credential")
-	}
-	if got.Token != "token-1" || got.AccountID != "1010" || got.User != "user@example.com" {
-		t.Fatalf("loaded credential = %#v, want saved values", got)
+	if assert.NotNil(t, got) {
+		assert.Equal(t, "token-1", got.Token)
+		assert.Equal(t, "1010", got.AccountID)
+		assert.Equal(t, "user@example.com", got.User)
 	}
 }
 
@@ -72,24 +71,20 @@ func TestTokenResolutionPrecedence(t *testing.T) {
 				creds := &Credentials{Hosts: map[string]*HostCredential{
 					cfg.HostKey(): {Token: tt.stored},
 				}}
-				if err := creds.Save(); err != nil {
-					t.Fatalf("Save() error = %v", err)
+				if !assert.NoError(t, creds.Save()) {
+					return
 				}
 			}
 
 			got, err := Token(cfg, tt.flagToken)
 			if tt.wantErr {
-				if err == nil {
-					t.Fatalf("Token() error = nil, want error")
-				}
+				assert.Error(t, err)
 				return
 			}
-			if err != nil {
-				t.Fatalf("Token() error = %v", err)
+			if !assert.NoError(t, err) {
+				return
 			}
-			if got != tt.want {
-				t.Fatalf("Token() = %q, want %q", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -121,24 +116,20 @@ func TestAccountIDResolutionPrecedence(t *testing.T) {
 				creds := &Credentials{Hosts: map[string]*HostCredential{
 					cfg.HostKey(): {AccountID: tt.stored},
 				}}
-				if err := creds.Save(); err != nil {
-					t.Fatalf("Save() error = %v", err)
+				if !assert.NoError(t, creds.Save()) {
+					return
 				}
 			}
 
 			got, err := AccountID(cfg, tt.flagAccount)
 			if tt.wantErr {
-				if err == nil {
-					t.Fatalf("AccountID() error = nil, want error")
-				}
+				assert.Error(t, err)
 				return
 			}
-			if err != nil {
-				t.Fatalf("AccountID() error = %v", err)
+			if !assert.NoError(t, err) {
+				return
 			}
-			if got != tt.want {
-				t.Fatalf("AccountID() = %q, want %q", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

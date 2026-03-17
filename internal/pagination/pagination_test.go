@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAllAggregatesAllPages(t *testing.T) {
@@ -20,19 +21,12 @@ func TestAllAggregatesAllPages(t *testing.T) {
 			return nil, nil, errors.New("unexpected page")
 		}
 	})
-	if err != nil {
-		t.Fatalf("All() error = %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 
 	want := []int{1, 2, 3, 4, 5}
-	if len(items) != len(want) {
-		t.Fatalf("len(items) = %d, want %d", len(items), len(want))
-	}
-	for i := range want {
-		if items[i] != want[i] {
-			t.Fatalf("items[%d] = %d, want %d", i, items[i], want[i])
-		}
-	}
+	assert.Equal(t, want, items)
 }
 
 func TestAllStopsWithoutPagination(t *testing.T) {
@@ -42,16 +36,12 @@ func TestAllStopsWithoutPagination(t *testing.T) {
 		calls++
 		return []string{"only"}, nil, nil
 	})
-	if err != nil {
-		t.Fatalf("All() error = %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 
-	if calls != 1 {
-		t.Fatalf("calls = %d, want 1", calls)
-	}
-	if len(items) != 1 || items[0] != "only" {
-		t.Fatalf("items = %#v, want %#v", items, []string{"only"})
-	}
+	assert.Equal(t, 1, calls)
+	assert.Equal(t, []string{"only"}, items)
 }
 
 func TestAllPropagatesErrors(t *testing.T) {
@@ -63,7 +53,5 @@ func TestAllPropagatesErrors(t *testing.T) {
 		}
 		return []int{page}, &dnsimple.Pagination{TotalPages: 3}, nil
 	})
-	if !errors.Is(err, wantErr) {
-		t.Fatalf("All() error = %v, want %v", err, wantErr)
-	}
+	assert.ErrorIs(t, err, wantErr)
 }

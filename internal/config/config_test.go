@@ -2,6 +2,8 @@ package config
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func isolateConfigHome(t *testing.T) {
@@ -16,22 +18,14 @@ func TestLoadDefaults(t *testing.T) {
 	isolateConfigHome(t)
 
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 
-	if cfg.Sandbox {
-		t.Fatalf("Sandbox = true, want false")
-	}
-	if cfg.BaseURL != defaultBaseURL {
-		t.Fatalf("BaseURL = %q, want %q", cfg.BaseURL, defaultBaseURL)
-	}
-	if cfg.DefaultAccount != "" {
-		t.Fatalf("DefaultAccount = %q, want empty", cfg.DefaultAccount)
-	}
-	if cfg.PerPage != defaultPerPage {
-		t.Fatalf("PerPage = %d, want %d", cfg.PerPage, defaultPerPage)
-	}
+	assert.False(t, cfg.Sandbox)
+	assert.Equal(t, defaultBaseURL, cfg.BaseURL)
+	assert.Empty(t, cfg.DefaultAccount)
+	assert.Equal(t, defaultPerPage, cfg.PerPage)
 }
 
 func TestLoadFromEnvironment(t *testing.T) {
@@ -41,75 +35,51 @@ func TestLoadFromEnvironment(t *testing.T) {
 	t.Setenv("DNSIMPLE_PER_PAGE", "75")
 
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 
-	if !cfg.Sandbox {
-		t.Fatalf("Sandbox = false, want true")
-	}
-	if cfg.BaseURL != sandboxBaseURL {
-		t.Fatalf("BaseURL = %q, want %q", cfg.BaseURL, sandboxBaseURL)
-	}
-	if cfg.DefaultAccount != "1010" {
-		t.Fatalf("DefaultAccount = %q, want %q", cfg.DefaultAccount, "1010")
-	}
-	if cfg.PerPage != 75 {
-		t.Fatalf("PerPage = %d, want %d", cfg.PerPage, 75)
-	}
+	assert.True(t, cfg.Sandbox)
+	assert.Equal(t, sandboxBaseURL, cfg.BaseURL)
+	assert.Equal(t, "1010", cfg.DefaultAccount)
+	assert.Equal(t, 75, cfg.PerPage)
 }
 
 func TestSaveAndReload(t *testing.T) {
 	isolateConfigHome(t)
 
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 
 	cfg.SetSandbox(true)
 	cfg.DefaultAccount = "2020"
 	cfg.PerPage = 99
 
-	if err := cfg.Save(); err != nil {
-		t.Fatalf("Save() error = %v", err)
+	if !assert.NoError(t, cfg.Save()) {
+		return
 	}
 
 	reloaded, err := Load()
-	if err != nil {
-		t.Fatalf("Load() after Save error = %v", err)
+	if !assert.NoError(t, err) {
+		return
 	}
 
-	if !reloaded.Sandbox {
-		t.Fatalf("Sandbox = false, want true")
-	}
-	if reloaded.BaseURL != sandboxBaseURL {
-		t.Fatalf("BaseURL = %q, want %q", reloaded.BaseURL, sandboxBaseURL)
-	}
-	if reloaded.DefaultAccount != "2020" {
-		t.Fatalf("DefaultAccount = %q, want %q", reloaded.DefaultAccount, "2020")
-	}
-	if reloaded.PerPage != 99 {
-		t.Fatalf("PerPage = %d, want %d", reloaded.PerPage, 99)
-	}
+	assert.True(t, reloaded.Sandbox)
+	assert.Equal(t, sandboxBaseURL, reloaded.BaseURL)
+	assert.Equal(t, "2020", reloaded.DefaultAccount)
+	assert.Equal(t, 99, reloaded.PerPage)
 }
 
 func TestSetSandboxUpdatesBaseURLAndHostKey(t *testing.T) {
 	cfg := &Config{}
 
 	cfg.SetSandbox(true)
-	if cfg.BaseURL != sandboxBaseURL {
-		t.Fatalf("BaseURL = %q, want %q", cfg.BaseURL, sandboxBaseURL)
-	}
-	if cfg.HostKey() != "api.sandbox.dnsimple.com" {
-		t.Fatalf("HostKey() = %q, want %q", cfg.HostKey(), "api.sandbox.dnsimple.com")
-	}
+	assert.Equal(t, sandboxBaseURL, cfg.BaseURL)
+	assert.Equal(t, "api.sandbox.dnsimple.com", cfg.HostKey())
 
 	cfg.SetSandbox(false)
-	if cfg.BaseURL != defaultBaseURL {
-		t.Fatalf("BaseURL = %q, want %q", cfg.BaseURL, defaultBaseURL)
-	}
-	if cfg.HostKey() != "api.dnsimple.com" {
-		t.Fatalf("HostKey() = %q, want %q", cfg.HostKey(), "api.dnsimple.com")
-	}
+	assert.Equal(t, defaultBaseURL, cfg.BaseURL)
+	assert.Equal(t, "api.dnsimple.com", cfg.HostKey())
 }

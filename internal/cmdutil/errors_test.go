@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/stretchr/testify/assert"
 )
 
 func apiError(status int, message string, attrs map[string][]string) error {
@@ -29,9 +30,7 @@ func TestFormatAPIErrorWithGenericError(t *testing.T) {
 
 	FormatAPIError(&buf, errors.New("plain failure"))
 
-	if got := buf.String(); got != "Error: plain failure\n" {
-		t.Fatalf("FormatAPIError() = %q, want %q", got, "Error: plain failure\n")
-	}
+	assert.Equal(t, "Error: plain failure\n", buf.String())
 }
 
 func TestFormatAPIErrorUnauthorized(t *testing.T) {
@@ -40,9 +39,7 @@ func TestFormatAPIErrorUnauthorized(t *testing.T) {
 	FormatAPIError(&buf, apiError(http.StatusUnauthorized, "unauthorized", nil))
 
 	out := buf.String()
-	if out != "Error: Authentication failed. Your token may be invalid or expired.\n\nRun 'dnsimple auth login' to re-authenticate.\n" {
-		t.Fatalf("FormatAPIError() = %q", out)
-	}
+	assert.Equal(t, "Error: Authentication failed. Your token may be invalid or expired.\n\nRun 'dnsimple auth login' to re-authenticate.\n", out)
 }
 
 func TestFormatAPIErrorValidationErrors(t *testing.T) {
@@ -54,8 +51,6 @@ func TestFormatAPIErrorValidationErrors(t *testing.T) {
 
 	out := buf.String()
 	for _, part := range []string{"Error: Validation failed", "name: can't be blank, is invalid"} {
-		if !bytes.Contains(buf.Bytes(), []byte(part)) {
-			t.Fatalf("output %q does not contain %q", out, part)
-		}
+		assert.Contains(t, out, part)
 	}
 }
