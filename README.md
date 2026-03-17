@@ -45,7 +45,15 @@ Or pass it directly:
 dnsimple --token your-token [command]
 ```
 
-### Typical Flow
+Or pass it interactively:
+
+```shell
+dnsimple auth login
+
+# Paste your API token: ...
+```
+
+### Example Flow
 
 A common workflow looks like this:
 
