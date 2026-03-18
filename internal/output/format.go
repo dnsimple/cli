@@ -25,11 +25,12 @@ type Formattable interface {
 
 // Printer handles output rendering.
 type Printer struct {
-	Writer    io.Writer
-	ErrWriter io.Writer
-	Format    Format
-	Template  string
-	NoColor   bool
+	Writer     io.Writer
+	ErrWriter  io.Writer
+	Format     Format
+	Template   string
+	NoColor    bool
+	TableWidth int
 }
 
 // NewPrinter creates a new Printer with the given format settings.

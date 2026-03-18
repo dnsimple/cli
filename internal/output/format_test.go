@@ -68,6 +68,31 @@ func TestPrinterPrintTable(t *testing.T) {
 	}
 }
 
+func TestPrinterPrintTableWrapsLongCells(t *testing.T) {
+	var buf bytes.Buffer
+	p := &Printer{Writer: &buf, Format: FormatTable, TableWidth: 38}
+
+	err := p.Print(&stubFormattable{
+		headers: []string{"ID", "CONTENT", "TTL"},
+		rows: [][]string{
+			{"1", "alpha beta gamma delta epsilon zeta", "3600"},
+			{"2", strings.Repeat("A", 20), "3600"},
+		},
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	out := strings.TrimSuffix(buf.String(), "\n")
+	for _, line := range strings.Split(out, "\n") {
+		assert.LessOrEqual(t, len([]rune(line)), 38, "line exceeds configured width: %q", line)
+	}
+
+	assert.Contains(t, out, "alpha beta")
+	assert.Contains(t, out, "gamma delta")
+	assert.Contains(t, out, "AAAAAAAAAAAA")
+}
+
 func TestPrinterPrintTableEmptyHeaders(t *testing.T) {
 	var buf bytes.Buffer
 	p := &Printer{Writer: &buf, Format: FormatTable}
