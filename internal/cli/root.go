@@ -5,20 +5,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Execute runs the CLI with the given version and arguments.
-func Execute(version string, args []string) int {
-	f := cmdutil.NewFactory(version)
-
+// buildRootCmd creates the root command with all subcommands and global flags.
+func buildRootCmd(f *cmdutil.Factory) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:           "dnsimple",
 		Short:         "DNSimple CLI",
 		Long:          "Work with DNSimple from the command line.",
-		Version:       version,
 		SilenceErrors: true,
 		SilenceUsage:  true,
 	}
-
-	rootCmd.SetArgs(args)
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVarP(&f.Flags.Account, "account", "a", "", "Account ID to operate on")
@@ -48,6 +43,17 @@ func Execute(version string, args []string) int {
 	rootCmd.AddCommand(newBillingCmd(f))
 	rootCmd.AddCommand(newAnalyticsCmd(f))
 	rootCmd.AddCommand(newCompletionCmd())
+	rootCmd.AddCommand(newAICmd())
+
+	return rootCmd
+}
+
+// Execute runs the CLI with the given version and arguments.
+func Execute(version string, args []string) int {
+	f := cmdutil.NewFactory(version)
+	rootCmd := buildRootCmd(f)
+	rootCmd.Version = version
+	rootCmd.SetArgs(args)
 
 	if err := rootCmd.Execute(); err != nil {
 		cmdutil.FormatAPIError(rootCmd.ErrOrStderr(), err)
