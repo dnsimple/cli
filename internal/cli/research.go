@@ -28,18 +28,18 @@ func (d *domainResearchStatusOutput) TableRows() [][]string {
 
 func (d *domainResearchStatusOutput) JSONData() any { return d }
 
-func newDomainsResearchCmd(f *cmdutil.Factory) *cobra.Command {
+func newResearchCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "research",
 		Short: "Domain research operations",
 	}
 
-	cmd.AddCommand(newDomainsResearchStatusCmd(f))
+	cmd.AddCommand(newResearchStatusCmd(f))
 
 	return cmd
 }
 
-func newDomainsResearchStatusCmd(f *cmdutil.Factory) *cobra.Command {
+func newResearchStatusCmd(f *cmdutil.Factory) *cobra.Command {
 	return &cobra.Command{
 		Use:   "status <domain>",
 		Short: "Check domain availability",

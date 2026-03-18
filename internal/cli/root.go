@@ -42,6 +42,7 @@ func buildRootCmd(f *cmdutil.Factory) *cobra.Command {
 	rootCmd.AddCommand(newVanityNameServersCmd(f))
 	rootCmd.AddCommand(newBillingCmd(f))
 	rootCmd.AddCommand(newAnalyticsCmd(f))
+	rootCmd.AddCommand(newResearchCmd(f))
 	rootCmd.AddCommand(newCompletionCmd())
 	rootCmd.AddCommand(newAICmd())
 

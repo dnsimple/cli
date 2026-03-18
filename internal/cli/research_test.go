@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDomainsResearchStatus_Available(t *testing.T) {
+func TestResearchStatus_Available(t *testing.T) {
 	client, cfg := testCLIClient(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v2/1/domains/research/status", r.URL.Path)
 		assert.Equal(t, "available.com", r.URL.Query().Get("domain"))
@@ -27,7 +27,7 @@ func TestDomainsResearchStatus_Available(t *testing.T) {
 	f.Config = func() (*config.Config, error) { return cfg, nil }
 	f.AccountID = func() (string, error) { return "1", nil }
 
-	cmd := newDomainsResearchStatusCmd(f)
+	cmd := newResearchStatusCmd(f)
 	var stdout bytes.Buffer
 	cmd.SetOut(&stdout)
 	cmd.SetErr(&bytes.Buffer{})
@@ -39,7 +39,7 @@ func TestDomainsResearchStatus_Available(t *testing.T) {
 	assert.Contains(t, stdout.String(), "available")
 }
 
-func TestDomainsResearchStatus_Unavailable(t *testing.T) {
+func TestResearchStatus_Unavailable(t *testing.T) {
 	client, cfg := testCLIClient(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v2/1/domains/research/status", r.URL.Path)
 		assert.Equal(t, "taken.com", r.URL.Query().Get("domain"))
@@ -53,7 +53,7 @@ func TestDomainsResearchStatus_Unavailable(t *testing.T) {
 	f.Config = func() (*config.Config, error) { return cfg, nil }
 	f.AccountID = func() (string, error) { return "1", nil }
 
-	cmd := newDomainsResearchStatusCmd(f)
+	cmd := newResearchStatusCmd(f)
 	var stdout bytes.Buffer
 	cmd.SetOut(&stdout)
 	cmd.SetErr(&bytes.Buffer{})
@@ -65,7 +65,7 @@ func TestDomainsResearchStatus_Unavailable(t *testing.T) {
 	assert.Contains(t, stdout.String(), "unavailable")
 }
 
-func TestDomainsResearchStatus_UnsupportedTLD(t *testing.T) {
+func TestResearchStatus_UnsupportedTLD(t *testing.T) {
 	client, cfg := testCLIClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"data":{"request_id":"ghi-789","domain":"taken.co.fa","availability":"unknown","errors":["TLD not supported for registration"]}}`)
@@ -76,7 +76,7 @@ func TestDomainsResearchStatus_UnsupportedTLD(t *testing.T) {
 	f.Config = func() (*config.Config, error) { return cfg, nil }
 	f.AccountID = func() (string, error) { return "1", nil }
 
-	cmd := newDomainsResearchStatusCmd(f)
+	cmd := newResearchStatusCmd(f)
 	var stdout bytes.Buffer
 	cmd.SetOut(&stdout)
 	cmd.SetErr(&bytes.Buffer{})
@@ -88,7 +88,7 @@ func TestDomainsResearchStatus_UnsupportedTLD(t *testing.T) {
 	assert.Contains(t, stdout.String(), "TLD not supported for registration")
 }
 
-func TestDomainsResearchStatus_JSON(t *testing.T) {
+func TestResearchStatus_JSON(t *testing.T) {
 	client, cfg := testCLIClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"data":{"request_id":"abc-123","domain":"example.com","availability":"available","errors":[]}}`)
@@ -100,7 +100,7 @@ func TestDomainsResearchStatus_JSON(t *testing.T) {
 	f.AccountID = func() (string, error) { return "1", nil }
 	f.Flags.JSON = true
 
-	cmd := newDomainsResearchStatusCmd(f)
+	cmd := newResearchStatusCmd(f)
 	var stdout bytes.Buffer
 	cmd.SetOut(&stdout)
 	cmd.SetErr(&bytes.Buffer{})
