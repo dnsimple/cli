@@ -81,6 +81,7 @@ func newDomainsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(newDomainsDsRecordsCmd(f))
 	cmd.AddCommand(newDomainsEmailForwardsCmd(f))
 	cmd.AddCommand(newDomainsPushesCmd(f))
+	cmd.AddCommand(newDomainsResearchCmd(f))
 
 	return cmd
 }
