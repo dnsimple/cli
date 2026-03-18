@@ -156,11 +156,11 @@ You are interacting with the DNSimple CLI (` + "`dnsimple`" + `), a command-line
 
 ## Authentication
 
-The CLI requires a DNSimple API token. Configure it using one of these methods (in order of precedence):
+The CLI requires a DNSimple API token. The user must authenticate before you can use the CLI.
 
-1. ` + "`--token <token>`" + ` flag on any command
-2. ` + "`DNSIMPLE_TOKEN`" + ` environment variable
-3. Interactive login: ` + "`dnsimple auth login`" + ` (stores credentials in ~/.dnsimple/credentials.json)
+If the CLI is not authenticated, ask the user to run ` + "`dnsimple auth login`" + ` themselves. Do NOT pass tokens via ` + "`--token`" + ` or environment variables — never handle API tokens directly.
+
+You can check whether the CLI is already authenticated by running ` + "`dnsimple auth status`" + `.
 
 To use the sandbox environment for testing, add the ` + "`--sandbox`" + ` flag.
 
