@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
@@ -196,6 +197,7 @@ func newRegistrarRegisterCmd(f *cmdutil.Factory) *cobra.Command {
 	var registrantID int
 	var autoRenew, whoisPrivacy bool
 	var premiumPrice string
+	var extendedAttributes []string
 
 	cmd := &cobra.Command{
 		Use:   "register <domain>",
@@ -217,6 +219,7 @@ func newRegistrarRegisterCmd(f *cmdutil.Factory) *cobra.Command {
 				EnableAutoRenewal:  autoRenew,
 				EnableWhoisPrivacy: whoisPrivacy,
 				PremiumPrice:       premiumPrice,
+				ExtendedAttributes: parseExtendedAttributes(extendedAttributes),
 			}
 
 			resp, err := c.Registrar.RegisterDomain(context.Background(), accountID, args[0], input)
@@ -232,6 +235,7 @@ func newRegistrarRegisterCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd.Flags().BoolVar(&autoRenew, "auto-renew", true, "Enable auto-renewal")
 	cmd.Flags().BoolVar(&whoisPrivacy, "whois-privacy", false, "Enable WHOIS privacy")
 	cmd.Flags().StringVar(&premiumPrice, "premium-price", "", "Confirm premium price")
+	cmd.Flags().StringArrayVar(&extendedAttributes, "extended-attribute", nil, "Extended attributes (key=value)")
 	_ = cmd.MarkFlagRequired("registrant-id")
 
 	return cmd
@@ -242,6 +246,7 @@ func newRegistrarTransferCmd(f *cmdutil.Factory) *cobra.Command {
 	var authCode string
 	var autoRenew, whoisPrivacy bool
 	var premiumPrice string
+	var extendedAttributes []string
 
 	cmd := &cobra.Command{
 		Use:   "transfer <domain>",
@@ -264,6 +269,7 @@ func newRegistrarTransferCmd(f *cmdutil.Factory) *cobra.Command {
 				EnableAutoRenewal:  autoRenew,
 				EnableWhoisPrivacy: whoisPrivacy,
 				PremiumPrice:       premiumPrice,
+				ExtendedAttributes: parseExtendedAttributes(extendedAttributes),
 			}
 
 			resp, err := c.Registrar.TransferDomain(context.Background(), accountID, args[0], input)
@@ -280,6 +286,7 @@ func newRegistrarTransferCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd.Flags().BoolVar(&autoRenew, "auto-renew", true, "Enable auto-renewal")
 	cmd.Flags().BoolVar(&whoisPrivacy, "whois-privacy", false, "Enable WHOIS privacy")
 	cmd.Flags().StringVar(&premiumPrice, "premium-price", "", "Confirm premium price")
+	cmd.Flags().StringArrayVar(&extendedAttributes, "extended-attribute", nil, "Extended attributes (key=value)")
 	_ = cmd.MarkFlagRequired("registrant-id")
 
 	return cmd
@@ -387,4 +394,18 @@ func newRegistrarTransferOutCmd(f *cmdutil.Factory) *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func parseExtendedAttributes(attrs []string) map[string]string {
+	if len(attrs) == 0 {
+		return nil
+	}
+	m := make(map[string]string)
+	for _, kv := range attrs {
+		parts := strings.SplitN(kv, "=", 2)
+		if len(parts) == 2 {
+			m[parts[0]] = parts[1]
+		}
+	}
+	return m
 }
