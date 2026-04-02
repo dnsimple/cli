@@ -1,14 +1,14 @@
 #!/bin/sh
-# Copyright DNSimple Corporation. All rights reserved.
-# License: MIT
-#
-# Usage:
-#
-#   curl -fsSL https://raw.githubusercontent.com/dnsimple/dnsimple-cli/main/install.sh | sh
 #
 # Environment variables:
 #
-#   DNSIMPLE_INSTALL  - installation directory (default: $HOME/.dnsimple)
+#   DNSIMPLE_INSTALL   - installation directory (default: $HOME/.dnsimple)
+#   DNSIMPLE_BASE_URL  - base URL for downloading releases
+#
+# Examples:
+#
+#   curl -fsSL https://raw.githubusercontent.com/dnsimple/dnsimple-cli/main/install.sh | sh
+#   curl -fsSL .../install.sh | sh -s -- --base-url https://github.com/dnsimple/cli/releases
 
 set -e
 
@@ -19,7 +19,7 @@ YELLOW="$(tput setaf 3 2>/dev/null || printf '')"
 BLUE="$(tput setaf 4 2>/dev/null || printf '')"
 NO_COLOR="$(tput sgr0 2>/dev/null || printf '')"
 
-GITHUB_REPO="dnsimple/dnsimple-cli"
+DEFAULT_BASE_URL="https://github.com/dnsimple/dnsimple-cli/releases"
 BINARY_NAME="dnsimple"
 
 info() {
@@ -94,6 +94,7 @@ detect_arch() {
 
 detect_version() {
 	version="$1"
+	base_url="$2"
 
 	if [ -n "${version}" ]; then
 		# Strip leading 'v' if present, we add it back as needed
@@ -104,11 +105,14 @@ detect_version() {
 
 	info "Fetching latest version..."
 
+	# Follow the /latest redirect and extract the version from the final URL
 	if has curl; then
-		version="$(curl -s "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/')"
+		redirect_url="$(curl -sI -o /dev/null -w '%{url_effective}' -L "${base_url}/latest")"
 	elif has wget; then
-		version="$(wget -qO- "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/')"
+		redirect_url="$(wget --spider -S -O /dev/null "${base_url}/latest" 2>&1 | grep -i 'Location:' | tail -1 | awk '{print $2}' | tr -d '\r')"
 	fi
+
+	version="$(printf '%s' "${redirect_url:-}" | sed -E 's|.*/v?([0-9][^/]*)$|\1|')"
 
 	if [ -z "${version}" ]; then
 		error "Failed to determine latest version."
@@ -156,15 +160,17 @@ print_help() {
 		"  install.sh [options]" \
 		"" \
 		"Options:" \
-		"  -v, --version <version>  Install a specific version (default: latest)" \
-		"  -d, --dir <path>         Installation directory (default: \$HOME/.dnsimple)" \
-		"  -y, --yes                Skip confirmation prompt" \
-		"  -h, --help               Print this help message"
+		"  -v, --version <version>   Install a specific version (default: latest)" \
+		"  -d, --dir <path>          Installation directory (default: \$HOME/.dnsimple)" \
+		"  -b, --base-url <url>      Base URL for downloading releases" \
+		"  -y, --yes                 Skip confirmation prompt" \
+		"  -h, --help                Print this help message"
 }
 
 main() {
 	version=""
 	install_dir=""
+	base_url=""
 	force=false
 
 	while [ "$#" -gt 0 ]; do
@@ -185,6 +191,14 @@ main() {
 			install_dir="${1#*=}"
 			shift 1
 			;;
+		-b | --base-url)
+			base_url="$2"
+			shift 2
+			;;
+		-b=* | --base-url=*)
+			base_url="${1#*=}"
+			shift 1
+			;;
 		-y | --yes)
 			force=true
 			shift 1
@@ -203,7 +217,10 @@ main() {
 
 	os="$(detect_os)"
 	arch="$(detect_arch)"
-	version="$(detect_version "${version}")"
+	base_url="${base_url:-${DNSIMPLE_BASE_URL:-${DEFAULT_BASE_URL}}}"
+	# Strip trailing slash
+	base_url="${base_url%/}"
+	version="$(detect_version "${version}" "${base_url}")"
 
 	install_dir="${install_dir:-${DNSIMPLE_INSTALL:-$HOME/.dnsimple}}"
 	bin_dir="${install_dir}/bin"
@@ -214,8 +231,8 @@ main() {
 	fi
 
 	archive_name="${BINARY_NAME}_${version}_${os}_${arch}.${ext}"
-	download_url="https://github.com/${GITHUB_REPO}/releases/download/v${version}/${archive_name}"
-	checksums_url="https://github.com/${GITHUB_REPO}/releases/download/v${version}/checksums.txt"
+	download_url="${base_url}/download/v${version}/${archive_name}"
+	checksums_url="${base_url}/download/v${version}/checksums.txt"
 
 	printf '\n'
 	info "${BOLD}Version${NO_COLOR}:   ${GREEN}${version}${NO_COLOR}"
