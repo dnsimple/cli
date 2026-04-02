@@ -170,7 +170,7 @@ print_banner() {
 	printf '%s        |              |%s\n' "${YELLOW}" "${NO_COLOR}"
 	printf '%s        |   \\______/   |%s   "%s"\n' "${YELLOW}" "${NO_COLOR}" "${_message}"
 	printf '%s        |              |%s\n' "${YELLOW}" "${NO_COLOR}"
-	printf '%s        |     [*]      |%s   Run %sdnsimple --help%s to get started.\n' "${YELLOW}" "${NO_COLOR}" "${BOLD}" "${NO_COLOR}"
+	printf '%s        |  !|||   [★]  |%s   Run %sdnsimple --help%s to get started.\n' "${YELLOW}" "${NO_COLOR}" "${BOLD}" "${NO_COLOR}"
 	printf '%s%s%s\n' "${YELLOW}" "        '--------------'" "${NO_COLOR}"
 	printf '\n'
 }
