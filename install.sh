@@ -19,7 +19,7 @@ YELLOW="$(tput setaf 3 2>/dev/null || printf '')"
 BLUE="$(tput setaf 4 2>/dev/null || printf '')"
 NO_COLOR="$(tput sgr0 2>/dev/null || printf '')"
 
-DEFAULT_BASE_URL="https://github.com/dnsimple/dnsimple-cli/releases"
+DEFAULT_BASE_URL="https://github.com/dnsimple/dnsimple-cli-public/releases"
 BINARY_NAME="dnsimple"
 
 info() {
