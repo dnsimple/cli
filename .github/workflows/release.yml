@@ -35,7 +35,7 @@ jobs:
 
       - name: Publish to public repo
         env:
-          GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
           dist="dist"
