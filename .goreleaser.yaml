@@ -1,8 +1,9 @@
 version: 2
 
+project_name: dnsimple
+
 builds:
   - main: ./cmd/dnsimple
-    binary: dnsimple
     ldflags:
       - -s -w -X main.version={{.Version}}
     env:
@@ -14,6 +15,7 @@ builds:
     goarch:
       - amd64
       - arm64
+    binary: dnsimple
 
 archives:
   - format: tar.gz
@@ -32,10 +34,10 @@ changelog:
       - "^docs:"
       - "^test:"
 
-brews:
-  - repository:
-      owner: dnsimple
-      name: homebrew-tap
-    homepage: "https://dnsimple.com"
-    description: "DNSimple CLI"
-    license: "MIT"
+# brews:
+#   - repository:
+#       owner: dnsimple
+#       name: homebrew-tap
+#     homepage: "https://dnsimple.com"
+#     description: "DNSimple command-line tool."
+#     license: "MIT"
