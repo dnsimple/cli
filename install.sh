@@ -34,10 +34,6 @@ error() {
 	printf '%s\n' "${RED}x $*${NO_COLOR}" >&2
 }
 
-completed() {
-	printf '%s\n' "${GREEN}OK${NO_COLOR} $*"
-}
-
 has() {
 	command -v "$1" 1>/dev/null 2>&1
 }
@@ -150,6 +146,33 @@ verify_checksum() {
 		error "  Actual:   ${actual}"
 		return 1
 	fi
+}
+
+trusty_says() {
+	case $(awk 'BEGIN{srand(); printf "%d", rand()*6}') in
+	0) printf '%s' "Your CLI has resolved successfully!" ;;
+	1) printf '%s' "Ready to serve your domains!" ;;
+	2) printf '%s' "Hi, I'm Trusty! Let's manage some domains." ;;
+	3) printf '%s' "All records point to success!" ;;
+	4) printf '%s' "You're all set! Let's make DNS simple." ;;
+	5) printf '%s' "DNS made simple, right from your terminal!" ;;
+	esac
+}
+
+print_banner() {
+	_version="$1"
+	_message="$(trusty_says)"
+	printf '\n'
+	printf '%s             .----.%s\n' "${YELLOW}" "${NO_COLOR}"
+	printf '%s        .----|    |----.%s\n' "${YELLOW}" "${NO_COLOR}"
+	printf '%s        |              |%s\n' "${YELLOW}" "${NO_COLOR}"
+	printf '%s        |  (O)    (O)  |%s   %s%sDNSimple CLI v%s installed%s\n' "${YELLOW}" "${NO_COLOR}" "${GREEN}" "${BOLD}" "${_version}" "${NO_COLOR}"
+	printf '%s        |              |%s\n' "${YELLOW}" "${NO_COLOR}"
+	printf '%s        |   \\______/   |%s   "%s"\n' "${YELLOW}" "${NO_COLOR}" "${_message}"
+	printf '%s        |              |%s\n' "${YELLOW}" "${NO_COLOR}"
+	printf '%s        |     [*]      |%s   Run %sdnsimple --help%s to get started.\n' "${YELLOW}" "${NO_COLOR}" "${BOLD}" "${NO_COLOR}"
+	printf '%s%s%s\n' "${YELLOW}" "        '--------------'" "${NO_COLOR}"
+	printf '\n'
 }
 
 print_help() {
@@ -281,8 +304,7 @@ main() {
 	mv "${tmp_dir}/${BINARY_NAME}" "${bin_dir}/${BINARY_NAME}"
 	chmod +x "${bin_dir}/${BINARY_NAME}"
 
-	printf '\n'
-	completed "DNSimple CLI ${GREEN}v${version}${NO_COLOR} installed to ${BOLD}${bin_dir}/${BINARY_NAME}${NO_COLOR}"
+	print_banner "${version}"
 
 	if command -v "${BINARY_NAME}" >/dev/null 2>&1; then
 		printf '\n'
