@@ -32,10 +32,11 @@ checksum:
 changelog:
   disable: true
 
-# brews:
-#   - repository:
-#       owner: dnsimple
-#       name: homebrew-tap
-#     homepage: "https://dnsimple.com"
-#     description: "DNSimple command-line tool."
-#     license: "MIT"
+brews:
+  - repository:
+      owner: dnsimple
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://dnsimple.com"
+    description: "DNSimple command-line tool."
+    license: "MIT"
