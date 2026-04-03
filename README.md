@@ -12,8 +12,10 @@ A command-line interface for the [DNSimple API v2](https://developer.dnsimple.co
 ### Using the install script
 
 ```shell
-curl -fsSL https://dnsimple.com/install.sh | sh
+curl -fsSL https://dnsimple-cli.netlify.app/install.sh | sh
 ```
+
+The install URL will eventually move to `https://dnsimple.com/install.sh`.
 
 ### Using Homebrew
 
