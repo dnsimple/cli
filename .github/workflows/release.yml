@@ -24,11 +24,16 @@ jobs:
           go-version-file: "go.mod"
           cache: true
 
+      - name: Extract release notes
+        run: |
+          version="${GITHUB_REF#refs/tags/v}"
+          awk "/^## ${version} /{found=1; next} /^## /{found=0} found" CHANGELOG.md > /tmp/release-notes.md
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7.0.0
         with:
           version: "~> v2"
-          args: release --clean
+          args: release --clean --release-notes /tmp/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
@@ -44,7 +49,7 @@ jobs:
           gh release create "${tag}" \
             --repo dnsimple/dnsimple-cli-public \
             --title "${tag}" \
-            --notes "See https://github.com/dnsimple/dnsimple-cli/releases/tag/${tag} for release notes."
+            --notes-file /tmp/release-notes.md
 
           # Upload all release assets
           gh release upload "${tag}" \
