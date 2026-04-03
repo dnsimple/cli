@@ -38,20 +38,39 @@ has() {
 	command -v "$1" 1>/dev/null 2>&1
 }
 
+require_option_value() {
+	option="$1"
+	value="${2-}"
+
+	case "${value}" in
+	"" | -*)
+		error "Option ${option} requires a value."
+		print_help >&2
+		exit 1
+		;;
+	esac
+}
+
 download() {
 	file="$1"
 	url="$2"
 
 	if has curl; then
-		cmd="curl --fail --silent --location --output $file $url"
+		if curl --fail --silent --location --output "${file}" "${url}"; then
+			return 0
+		else
+			rc=$?
+		fi
 	elif has wget; then
-		cmd="wget --quiet --output-document=$file $url"
+		if wget --quiet --output-document="${file}" "${url}"; then
+			return 0
+		else
+			rc=$?
+		fi
 	else
 		error "No HTTP download program (curl, wget) found."
 		return 1
 	fi
-
-	$cmd && return 0 || rc=$?
 
 	error "Download failed (exit code $rc): ${BLUE}${url}${NO_COLOR}"
 	return $rc
@@ -199,27 +218,33 @@ main() {
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
 		-v | --version)
+			require_option_value "$1" "${2-}"
 			version="$2"
 			shift 2
 			;;
 		-v=* | --version=*)
 			version="${1#*=}"
+			require_option_value "${1%%=*}" "${version}"
 			shift 1
 			;;
 		-d | --dir)
+			require_option_value "$1" "${2-}"
 			install_dir="$2"
 			shift 2
 			;;
 		-d=* | --dir=*)
 			install_dir="${1#*=}"
+			require_option_value "${1%%=*}" "${install_dir}"
 			shift 1
 			;;
 		-b | --base-url)
+			require_option_value "$1" "${2-}"
 			base_url="$2"
 			shift 2
 			;;
 		-b=* | --base-url=*)
 			base_url="${1#*=}"
+			require_option_value "${1%%=*}" "${base_url}"
 			shift 1
 			;;
 		-y | --yes)
@@ -249,9 +274,12 @@ main() {
 	bin_dir="${install_dir}/bin"
 
 	ext="tar.gz"
+	exe_suffix=""
 	if [ "${os}" = "windows" ]; then
 		ext="zip"
+		exe_suffix=".exe"
 	fi
+	binary_file="${BINARY_NAME}${exe_suffix}"
 
 	archive_name="${BINARY_NAME}_${version}_${os}_${arch}.${ext}"
 	download_url="${base_url}/download/v${version}/${archive_name}"
@@ -301,14 +329,21 @@ main() {
 	fi
 
 	# Move binary into place
-	mv "${tmp_dir}/${BINARY_NAME}" "${bin_dir}/${BINARY_NAME}"
-	chmod +x "${bin_dir}/${BINARY_NAME}"
+	mv "${tmp_dir}/${binary_file}" "${bin_dir}/${binary_file}"
+	chmod +x "${bin_dir}/${binary_file}"
 
 	# Configure PATH before printing the banner so the prompt is visible
 	path_hint=""
-	if ! command -v "${BINARY_NAME}" >/dev/null 2>&1; then
+	case ":${PATH}:" in
+	*:"${bin_dir}":*)
+		path_hint="current"
+		;;
+	esac
+
+	if [ -z "${path_hint}" ]; then
 		info "Configuring ${BOLD}${bin_dir}${NO_COLOR} in PATH..."
 		# Determine the appropriate shell config file
+		export_line="export PATH=\"${bin_dir}:\$PATH\""
 		case "${SHELL:-}" in
 		*/zsh)
 			shell_config="$HOME/.zshrc"
@@ -326,6 +361,7 @@ main() {
 		*/fish)
 			shell_config="$HOME/.config/fish/config.fish"
 			shell_name="~/.config/fish/config.fish"
+			export_line="set -gx PATH \"${bin_dir}\" \$PATH"
 			;;
 		*)
 			shell_config=""
@@ -333,12 +369,7 @@ main() {
 			;;
 		esac
 
-		export_line="export PATH=\"${bin_dir}:\$PATH\""
-		if [ "${SHELL:-}" = "*/fish" ]; then
-			export_line="set -gx PATH \"${bin_dir}\" \$PATH"
-		fi
-
-		if [ -n "${shell_config}" ] && [ -f "${shell_config}" ] && grep -q "${bin_dir}" "${shell_config}" 2>/dev/null; then
+		if [ -n "${shell_config}" ] && [ -f "${shell_config}" ] && grep -Fq "${bin_dir}" "${shell_config}" 2>/dev/null; then
 			path_hint="already"
 		elif [ -n "${shell_config}" ] && { [ "${force}" = true ] || [ ! -t 0 ]; }; then
 			path_hint="manual"
@@ -359,8 +390,8 @@ main() {
 		fi
 	fi
 
-	if [ -z "${path_hint}" ]; then
-		: # binary already on PATH, nothing to do
+	if [ "${path_hint}" = "current" ]; then
+		info "PATH already includes ${BOLD}${bin_dir}${NO_COLOR}"
 	elif [ "${path_hint}" = "already" ]; then
 		info "PATH is already configured in ${BOLD}${shell_name}${NO_COLOR}"
 	elif [ "${path_hint}" = "added" ]; then
