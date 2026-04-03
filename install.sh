@@ -99,7 +99,7 @@ detect_version() {
 		return
 	fi
 
-	info "Fetching latest version..."
+	info "Fetching latest version..." >&2
 
 	# Follow the /latest redirect and extract the version from the final URL
 	if has curl; then
@@ -304,75 +304,79 @@ main() {
 	mv "${tmp_dir}/${BINARY_NAME}" "${bin_dir}/${BINARY_NAME}"
 	chmod +x "${bin_dir}/${BINARY_NAME}"
 
-	print_banner "${version}"
-
-	if command -v "${BINARY_NAME}" >/dev/null 2>&1; then
-		printf '\n'
-		info "Run '${BOLD}dnsimple --help${NO_COLOR}' to get started."
-		return
-	fi
-
-	printf '\n'
-
-	# Determine the appropriate shell config file
-	case "${SHELL:-}" in
-	*/zsh)
-		shell_config="$HOME/.zshrc"
-		shell_name="~/.zshrc"
-		;;
-	*/bash)
-		if [ -f "$HOME/.bashrc" ]; then
-			shell_config="$HOME/.bashrc"
-			shell_name="~/.bashrc"
-		else
-			shell_config="$HOME/.bash_profile"
-			shell_name="~/.bash_profile"
-		fi
-		;;
-	*/fish)
-		shell_config="$HOME/.config/fish/config.fish"
-		shell_name="~/.config/fish/config.fish"
-		;;
-	*)
-		shell_config=""
-		shell_name=""
-		;;
-	esac
-
-	export_line="export PATH=\"${bin_dir}:\$PATH\""
-	if [ "${SHELL:-}" = "*/fish" ]; then
-		export_line="set -gx PATH \"${bin_dir}\" \$PATH"
-	fi
-
-	# Check if already in a config file
-	if [ -n "${shell_config}" ] && [ -f "${shell_config}" ] && grep -q "${bin_dir}" "${shell_config}" 2>/dev/null; then
-		info "PATH is already configured in ${BOLD}${shell_name}${NO_COLOR}"
-		info "Restart your shell or run: ${BOLD}source ${shell_name}${NO_COLOR}"
-		return
-	fi
-
-	if [ -n "${shell_config}" ] && { [ "${force}" = true ] || [ ! -t 0 ]; }; then
-		# Non-interactive or --yes: don't modify PATH automatically
-		warn "Add the following to ${BOLD}${shell_name}${NO_COLOR}:"
-		printf '\n  %s\n\n' "${export_line}"
-		return
-	fi
-
-	if [ -n "${shell_config}" ] && [ -t 0 ]; then
-		printf '%s ' "Add to ${BOLD}${shell_name}${NO_COLOR}? ${BOLD}[y/N]${NO_COLOR}"
-		read -r yn </dev/tty
-		case "${yn}" in
-		[yY] | [yY][eE][sS])
-			printf '\n# DNSimple CLI\n%s\n' "${export_line}" >>"${shell_config}"
-			info "PATH configured in ${BOLD}${shell_name}${NO_COLOR}"
-			info "Restart your shell or run: ${BOLD}source ${shell_name}${NO_COLOR}"
-			return
+	# Configure PATH before printing the banner so the prompt is visible
+	path_hint=""
+	if ! command -v "${BINARY_NAME}" >/dev/null 2>&1; then
+		info "Configuring ${BOLD}${bin_dir}${NO_COLOR} in PATH..."
+		# Determine the appropriate shell config file
+		case "${SHELL:-}" in
+		*/zsh)
+			shell_config="$HOME/.zshrc"
+			shell_name="~/.zshrc"
+			;;
+		*/bash)
+			if [ -f "$HOME/.bashrc" ]; then
+				shell_config="$HOME/.bashrc"
+				shell_name="~/.bashrc"
+			else
+				shell_config="$HOME/.bash_profile"
+				shell_name="~/.bash_profile"
+			fi
+			;;
+		*/fish)
+			shell_config="$HOME/.config/fish/config.fish"
+			shell_name="~/.config/fish/config.fish"
+			;;
+		*)
+			shell_config=""
+			shell_name=""
 			;;
 		esac
+
+		export_line="export PATH=\"${bin_dir}:\$PATH\""
+		if [ "${SHELL:-}" = "*/fish" ]; then
+			export_line="set -gx PATH \"${bin_dir}\" \$PATH"
+		fi
+
+		if [ -n "${shell_config}" ] && [ -f "${shell_config}" ] && grep -q "${bin_dir}" "${shell_config}" 2>/dev/null; then
+			path_hint="already"
+		elif [ -n "${shell_config}" ] && { [ "${force}" = true ] || [ ! -t 0 ]; }; then
+			path_hint="manual"
+		elif [ -n "${shell_config}" ] && [ -t 0 ]; then
+			printf '%s ' "Add to ${BOLD}${shell_name}${NO_COLOR}? ${BOLD}[y/N]${NO_COLOR}"
+			read -r yn </dev/tty
+			case "${yn}" in
+			[yY] | [yY][eE][sS])
+				printf '\n# DNSimple CLI\n%s\n' "${export_line}" >>"${shell_config}"
+				path_hint="added"
+				;;
+			*)
+				path_hint="manual"
+				;;
+			esac
+		else
+			path_hint="manual"
+		fi
 	fi
 
-	warn "Manually add to your shell profile:"
-	printf '\n  %s\n\n' "${export_line}"
+	if [ -z "${path_hint}" ]; then
+		: # binary already on PATH, nothing to do
+	elif [ "${path_hint}" = "already" ]; then
+		info "PATH is already configured in ${BOLD}${shell_name}${NO_COLOR}"
+	elif [ "${path_hint}" = "added" ]; then
+		info "PATH configured in ${BOLD}${shell_name}${NO_COLOR}"
+	elif [ -n "${shell_name}" ]; then
+		warn "Add the following to ${BOLD}${shell_name}${NO_COLOR}:"
+		printf '\n  %s\n\n' "${export_line}"
+	else
+		warn "Manually add to your shell profile:"
+		printf '\n  %s\n\n' "${export_line}"
+	fi
+
+	# Make the binary available in the current session
+	export PATH="${bin_dir}:$PATH"
+
+	print_banner "${version}"
 }
 
 main "$@"
