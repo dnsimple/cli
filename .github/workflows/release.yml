@@ -38,7 +38,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
 
-      - name: Publish to public repo
+      - name: Publish to homebrew-tap
         env:
           GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
         run: |
@@ -47,11 +47,11 @@ jobs:
 
           # Create the release
           gh release create "${tag}" \
-            --repo dnsimple/dnsimple-cli-public \
+            --repo dnsimple/homebrew-tap \
             --title "${tag}" \
             --notes-file /tmp/release-notes.md
 
           # Upload all release assets
           gh release upload "${tag}" \
-            --repo dnsimple/dnsimple-cli-public \
+            --repo dnsimple/homebrew-tap \
             "${dist}"/*.tar.gz "${dist}"/*.zip "${dist}"/checksums.txt
