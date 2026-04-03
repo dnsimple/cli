@@ -16,6 +16,8 @@ func TestShouldCheck(t *testing.T) {
 	}
 
 	t.Run("normal invocation", func(t *testing.T) {
+		t.Setenv("CI", "")
+		t.Setenv("DNSIMPLE_NO_UPDATE_CHECK", "")
 		assert.True(t, ShouldCheck(base))
 	})
 
