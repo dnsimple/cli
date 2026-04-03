@@ -9,6 +9,18 @@ A command-line interface for the [DNSimple API v2](https://developer.dnsimple.co
 
 ## Installation
 
+### Using the install script
+
+```shell
+curl -fsSL https://dnsimple.com/install.sh | sh
+```
+
+### Using Homebrew
+
+```shell
+brew install dnsimple/tap/dnsimple
+```
+
 ### Using Go
 
 ```shell
