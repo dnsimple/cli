@@ -1,0 +1,8 @@
+[build]
+  command = "mkdir -p .netlify/publish && cp install.sh .netlify/publish/install.sh"
+  publish = ".netlify/publish"
+
+[[redirects]]
+  from = "/"
+  to = "https://dnsimple.com"
+  status = 301
