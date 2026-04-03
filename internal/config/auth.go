@@ -22,7 +22,7 @@ type Credentials struct {
 
 // credentialsPath returns the path to the credentials file.
 func credentialsPath() (string, error) {
-	dir, err := configDir()
+	dir, err := Dir()
 	if err != nil {
 		return "", err
 	}

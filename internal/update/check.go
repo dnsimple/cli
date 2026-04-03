@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/dnsimple/dnsimple-cli/internal/config"
 )
 
 const (
@@ -40,11 +42,11 @@ type CheckResult struct {
 var versionRe = regexp.MustCompile(`/v?(\d+\.\d+\.\d+)$`)
 
 func statePath() (string, error) {
-	dir, err := os.UserConfigDir()
+	dir, err := config.Dir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "dnsimple", stateFileName), nil
+	return filepath.Join(dir, stateFileName), nil
 }
 
 // LoadState reads the persisted update check state.
