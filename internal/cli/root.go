@@ -1,8 +1,15 @@
 package cli
 
 import (
+	"context"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-cli/internal/update"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // buildRootCmd creates the root command with all subcommands and global flags.
@@ -55,10 +62,45 @@ func Execute(version string, args []string) int {
 	rootCmd.Version = version
 	rootCmd.SetArgs(args)
 
-	if err := rootCmd.Execute(); err != nil {
-		cmdutil.FormatAPIError(rootCmd.ErrOrStderr(), err)
-		return cmdutil.ExitError
+	// Start async update check.
+	debug := containsFlag(args, "--debug")
+	var updateCh <-chan *update.CheckResult
+	if update.ShouldCheck(update.Opts{
+		CurrentVersion: version,
+		IsTerminal:     term.IsTerminal(int(os.Stderr.Fd())),
+		Quiet:          containsFlag(args, "-q", "--quiet"),
+		Debug:          debug,
+		Args:           args,
+	}) {
+		updateCh = update.CheckAsync(context.Background(), version, debug)
 	}
 
-	return cmdutil.ExitOK
+	exitCode := cmdutil.ExitOK
+	if err := rootCmd.Execute(); err != nil {
+		cmdutil.FormatAPIError(rootCmd.ErrOrStderr(), err)
+		exitCode = cmdutil.ExitError
+	}
+
+	// Print update notice if the check completed.
+	if updateCh != nil {
+		select {
+		case result := <-updateCh:
+			update.PrintNotice(os.Stderr, result)
+		case <-time.After(2 * time.Second):
+		}
+	}
+
+	return exitCode
+}
+
+// containsFlag returns true if any of the given flags appear in args.
+func containsFlag(args []string, flags ...string) bool {
+	for _, arg := range args {
+		for _, flag := range flags {
+			if arg == flag || strings.HasPrefix(arg, flag+"=") {
+				return true
+			}
+		}
+	}
+	return false
 }
