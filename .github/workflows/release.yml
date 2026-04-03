@@ -32,3 +32,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+
+      - name: Publish to public repo
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          dist="dist"
+
+          # Create the release
+          gh release create "${tag}" \
+            --repo dnsimple/dnsimple-cli-public \
+            --title "${tag}" \
+            --notes "See https://github.com/dnsimple/dnsimple-cli/releases/tag/${tag} for release notes."
+
+          # Upload all release assets
+          gh release upload "${tag}" \
+            --repo dnsimple/dnsimple-cli-public \
+            "${dist}"/*.tar.gz "${dist}"/*.zip "${dist}"/checksums.txt
