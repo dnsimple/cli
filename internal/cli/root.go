@@ -63,14 +63,16 @@ func Execute(version string, args []string) int {
 	rootCmd.SetArgs(args)
 
 	// Start async update check.
+	debug := containsFlag(args, "--debug")
 	var updateCh <-chan *update.CheckResult
 	if update.ShouldCheck(update.Opts{
 		CurrentVersion: version,
 		IsTerminal:     term.IsTerminal(int(os.Stderr.Fd())),
 		Quiet:          containsFlag(args, "-q", "--quiet"),
+		Debug:          debug,
 		Args:           args,
 	}) {
-		updateCh = update.CheckAsync(context.Background(), version)
+		updateCh = update.CheckAsync(context.Background(), version, debug)
 	}
 
 	exitCode := cmdutil.ExitOK

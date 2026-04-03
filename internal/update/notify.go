@@ -15,6 +15,7 @@ type Opts struct {
 	CurrentVersion string
 	IsTerminal     bool
 	Quiet          bool
+	Debug          bool
 	Args           []string
 }
 
@@ -51,8 +52,9 @@ func ShouldCheck(opts Opts) bool {
 
 // CheckAsync launches a background version check and returns a channel
 // that will receive the result (or nil on error/no update).
-func CheckAsync(ctx context.Context, currentVersion string) <-chan *CheckResult {
+func CheckAsync(ctx context.Context, currentVersion string, debug bool) <-chan *CheckResult {
 	ch := make(chan *CheckResult, 1)
+	logf := debugLogger(debug)
 
 	go func() {
 		defer func() {
@@ -65,22 +67,27 @@ func CheckAsync(ctx context.Context, currentVersion string) <-chan *CheckResult 
 
 		state, err := LoadState()
 		if err != nil {
+			logf("failed to load state: %v", err)
 			return
 		}
 
 		var latestVersion string
 
 		if !state.IsStale(DefaultCheckInterval) {
-			// Use cached version.
 			latestVersion = state.LatestVersion
+			logf("using cached version %s (checked %s ago)", latestVersion, time.Since(state.CheckedAt).Truncate(time.Second))
 		} else {
+			logf("state is stale, fetching latest version from %s", DefaultReleaseURL)
+
 			fetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 
 			latestVersion, err = FetchLatestVersion(fetchCtx, DefaultReleaseURL)
 			if err != nil {
+				logf("failed to fetch latest version: %v", err)
 				return
 			}
+			logf("fetched latest version: %s", latestVersion)
 
 			state.LatestVersion = latestVersion
 			state.CheckedAt = time.Now()
@@ -88,6 +95,7 @@ func CheckAsync(ctx context.Context, currentVersion string) <-chan *CheckResult 
 		}
 
 		if latestVersion == "" || !CompareVersions(currentVersion, latestVersion) {
+			logf("no update available (current=%s, latest=%s)", currentVersion, latestVersion)
 			return
 		}
 
@@ -99,15 +107,40 @@ func CheckAsync(ctx context.Context, currentVersion string) <-chan *CheckResult 
 			}
 		}
 
+		method := DetectInstallMethod(exe)
+		logf("update available %s -> %s (install method: %s, executable: %s)", currentVersion, latestVersion, installMethodName(method), exe)
+
 		ch <- &CheckResult{
 			CurrentVersion:  currentVersion,
 			LatestVersion:   latestVersion,
 			UpdateAvailable: true,
-			InstallMethod:   DetectInstallMethod(exe),
+			InstallMethod:   method,
 		}
 	}()
 
 	return ch
+}
+
+func debugLogger(enabled bool) func(string, ...any) {
+	if !enabled {
+		return func(string, ...any) {}
+	}
+	return func(format string, args ...any) {
+		fmt.Fprintf(os.Stderr, "[update] "+format+"\n", args...)
+	}
+}
+
+func installMethodName(m InstallMethod) string {
+	switch m {
+	case InstallMethodHomebrew:
+		return "homebrew"
+	case InstallMethodScript:
+		return "script"
+	case InstallMethodGo:
+		return "go"
+	default:
+		return "unknown"
+	}
 }
 
 // PrintNotice writes the update notification to the given writer.
