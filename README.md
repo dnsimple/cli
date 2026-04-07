@@ -99,6 +99,8 @@ The override chain is field-by-field: each of `--token`, `--account`, `--sandbox
 
 Resource-level destructive commands such as `delete` and `unapply` now prompt for confirmation in interactive terminals. In scripts, CI, or other non-interactive use, pass `--yes` to confirm explicitly and proceed without prompting.
 
+Registered domains are a higher-risk case: `dnsimple domains delete` first checks the domain state, and deleting a registered domain requires an extra acknowledgment because the operation downgrades the domain to `hosted` and permanently loses registration metadata. In non-interactive use, pass both `--yes` and `--confirm-registered-domain`.
+
 ### Example Flow
 
 A common workflow looks like this:

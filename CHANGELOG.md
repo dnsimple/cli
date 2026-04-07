@@ -17,6 +17,7 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 
 ### Fixed
 
+- `domains delete` now preflights the domain state and requires stronger acknowledgment before deleting a registered domain, because the operation downgrades it to `hosted` and permanently loses registration metadata. (dnsimple/dnsimple-cli#16)
 - `--format` now evaluates templates against the underlying resource data for wrapper-backed commands such as `domains get` and `domains list`, so templates like `{{.Name}}` and `{{range .}}{{.Name}}{{end}}` work as expected. (dnsimple/dnsimple-cli#17)
 - `auth switch` now validates that the requested account is accessible with the current token, instead of silently storing any value. (dnsimple/dnsimple-cli#25)
 - `auth status` now reports the resolved default account (the one commands actually use) instead of the token's bound account from `whoami`. (dnsimple/dnsimple-cli#25)
