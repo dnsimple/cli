@@ -49,6 +49,9 @@ dnsimple [command] [flags]
 
 The CLI supports two authentication modes that can be combined freely.
 
+> [!NOTE]
+> The CLI currently supports API token authentication only, including both classic and scoped API tokens. OAuth support may be considered in the future, but it is not currently on the roadmap.
+
 #### Stateful: stored contexts
 
 Authenticate once and the CLI remembers a named *context* (token, account, environment) on disk. Multiple contexts can coexist and you select one as active:
