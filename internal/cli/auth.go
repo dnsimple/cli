@@ -102,7 +102,11 @@ Get your token from:
 			}
 
 			// Validate the token by calling Whoami
-			c := client.NewClient(cfg, token, f.Version)
+			c := client.New(client.Options{
+				BaseURL: cfg.BaseURL,
+				Token:   token,
+				Version: f.Version,
+			})
 			whoami, err := c.Identity.Whoami(context.Background())
 			if err != nil {
 				return fmt.Errorf("authentication failed: %w", err)

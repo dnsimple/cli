@@ -24,6 +24,7 @@ func buildRootCmd(f *cmdutil.Factory) *cobra.Command {
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVarP(&f.Flags.Account, "account", "a", "", "Account ID to operate on")
+	rootCmd.PersistentFlags().StringVar(&f.Flags.Context, "context", "", "Authentication context to use for this invocation (overrides the active context)")
 	rootCmd.PersistentFlags().StringVar(&f.Flags.Token, "token", "", "API token (overrides DNSIMPLE_TOKEN env var)")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.Sandbox, "sandbox", false, "Use sandbox environment")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.JSON, "json", false, "Output as JSON")

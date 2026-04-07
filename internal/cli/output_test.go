@@ -117,5 +117,10 @@ func testCLIClient(t *testing.T, handler http.HandlerFunc) (*dnsimple.Client, *c
 	t.Cleanup(server.Close)
 
 	cfg := &config.Config{BaseURL: server.URL}
-	return internalclient.NewClient(cfg, "token", "test"), cfg
+	c := internalclient.New(internalclient.Options{
+		BaseURL: server.URL,
+		Token:   "token",
+		Version: "test",
+	})
+	return c, cfg
 }
