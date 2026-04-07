@@ -13,6 +13,7 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 
 - Credentials file (`credentials.yml`) now stores a list of named contexts instead of a host-keyed map. Existing files using the legacy `hosts:` schema are migrated automatically and in place on first load. (dnsimple/dnsimple-cli#28)
 - Field-by-field resolution chain: `--token`, `--account`, `--sandbox`, and `--context` each fall back independently to environment variables and then to the active stored context, so a single override does not require respecifying the others. (dnsimple/dnsimple-cli#28)
+- Resource-level destructive commands such as `delete` and `unapply` now prompt for confirmation in interactive terminals and require `--yes` in non-interactive use. (dnsimple/dnsimple-cli#29)
 
 ### Fixed
 

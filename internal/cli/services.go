@@ -187,7 +187,9 @@ func newServicesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newServicesUnapplyCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "unapply <service> <domain>",
 		Short: "Remove a service from a domain",
 		Args:  cobra.ExactArgs(2),
@@ -202,6 +204,10 @@ func newServicesUnapplyCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Remove service %s from %s?", args[0], args[1])); err != nil {
+				return err
+			}
+
 			_, err = c.Services.UnapplyService(context.Background(), accountID, args[0], args[1])
 			if err != nil {
 				return err
@@ -213,4 +219,8 @@ func newServicesUnapplyCmd(f *cmdutil.Factory) *cobra.Command {
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

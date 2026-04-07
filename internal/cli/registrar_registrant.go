@@ -187,7 +187,9 @@ func newRegistrantChangeCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newRegistrantChangeDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <change-id>",
 		Short: "Cancel a registrant change",
 		Args:  cobra.ExactArgs(1),
@@ -206,6 +208,10 @@ func newRegistrantChangeDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid change ID: %s", args[0])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Cancel registrant change %d?", changeID)); err != nil {
+				return err
+			}
+
 			_, err = c.Registrar.DeleteRegistrantChange(context.Background(), accountID, changeID)
 			if err != nil {
 				return err
@@ -217,4 +223,8 @@ func newRegistrantChangeDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

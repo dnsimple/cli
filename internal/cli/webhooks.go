@@ -152,7 +152,9 @@ func newWebhooksCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newWebhooksDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <webhook-id>",
 		Short: "Delete a webhook",
 		Args:  cobra.ExactArgs(1),
@@ -171,6 +173,10 @@ func newWebhooksDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid webhook ID: %s", args[0])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete webhook %d?", id)); err != nil {
+				return err
+			}
+
 			_, err = c.Webhooks.DeleteWebhook(context.Background(), accountID, id)
 			if err != nil {
 				return err
@@ -182,4 +188,8 @@ func newWebhooksDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

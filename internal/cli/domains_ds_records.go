@@ -174,7 +174,9 @@ func newDsRecordsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newDsRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <domain> <ds-record-id>",
 		Short: "Delete a DS record",
 		Args:  cobra.ExactArgs(2),
@@ -194,6 +196,10 @@ func newDsRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid DS record ID: %s", args[1])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete DS record %d from %s?", dsID, args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Domains.DeleteDelegationSignerRecord(context.Background(), accountID, args[0], dsID)
 			if err != nil {
 				return err
@@ -205,4 +211,8 @@ func newDsRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

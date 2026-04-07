@@ -95,6 +95,10 @@ dnsimple --token $TOK --account 1010 --sandbox zones list
 
 The override chain is field-by-field: each of `--token`, `--account`, `--sandbox`, and `--context` falls back to the matching environment variable and then to the active stored context. This means a script can supply only the parts that differ from the active context.
 
+### Destructive Commands
+
+Resource-level destructive commands such as `delete` and `unapply` now prompt for confirmation in interactive terminals. In scripts, CI, or other non-interactive use, pass `--yes` to confirm explicitly and proceed without prompting.
+
 ### Example Flow
 
 A common workflow looks like this:

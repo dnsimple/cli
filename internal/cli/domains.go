@@ -214,7 +214,9 @@ func newDomainsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newDomainsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <domain>",
 		Short: "Delete a domain from the account",
 		Args:  cobra.ExactArgs(1),
@@ -229,6 +231,10 @@ func newDomainsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete domain %s from the account?", args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Domains.DeleteDomain(context.Background(), accountID, args[0])
 			if err != nil {
 				return err
@@ -240,4 +246,8 @@ func newDomainsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

@@ -174,7 +174,9 @@ func newEmailForwardsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newEmailForwardsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <domain> <forward-id>",
 		Short: "Delete an email forward",
 		Args:  cobra.ExactArgs(2),
@@ -194,6 +196,10 @@ func newEmailForwardsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid forward ID: %s", args[1])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete email forward %d from %s?", forwardID, args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Domains.DeleteEmailForward(context.Background(), accountID, args[0], forwardID)
 			if err != nil {
 				return err
@@ -205,4 +211,8 @@ func newEmailForwardsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

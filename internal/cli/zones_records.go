@@ -332,7 +332,9 @@ func newRecordsUpdateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <zone> <record-id>",
 		Short: "Delete a zone record",
 		Args:  cobra.ExactArgs(2),
@@ -352,6 +354,10 @@ func newRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid record ID: %s", args[1])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete zone record %d from %s?", recordID, args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Zones.DeleteRecord(context.Background(), accountID, args[0], recordID)
 			if err != nil {
 				return err
@@ -363,4 +369,8 @@ func newRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

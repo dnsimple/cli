@@ -232,7 +232,7 @@ dnsimple services apply github-pages example.com
 
 - Use ` + "`--all`" + ` on list commands to fetch every page of results automatically.
 - Use ` + "`--json`" + ` when you need to parse output or chain commands.
-- Use ` + "`-q`" + ` (quiet) to suppress confirmation messages in scripts.
+- Use ` + "`--yes`" + ` on destructive commands in scripts and CI to skip confirmation prompts.
 - The ` + "`zones`" + ` and ` + "`zones records`" + ` commands are the primary way to manage DNS. The top-level ` + "`records`" + ` command is a shortcut alias.
 - Domain names (e.g. example.com) are used as zone identifiers — you don't need zone IDs.
 - Record IDs are numeric. Use ` + "`zones records list`" + ` with ` + "`--json`" + ` to find them.

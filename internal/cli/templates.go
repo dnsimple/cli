@@ -195,7 +195,9 @@ func newTemplatesUpdateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newTemplatesDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <template>",
 		Short: "Delete a template",
 		Args:  cobra.ExactArgs(1),
@@ -206,6 +208,10 @@ func newTemplatesDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 			}
 			accountID, err := f.AccountID()
 			if err != nil {
+				return err
+			}
+
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete template %s?", args[0])); err != nil {
 				return err
 			}
 
@@ -220,6 +226,10 @@ func newTemplatesDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }
 
 func newTemplatesApplyCmd(f *cmdutil.Factory) *cobra.Command {
