@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/dnsimple/dnsimple-cli/internal/config"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 type authStatusOutput struct {
@@ -204,27 +206,55 @@ Get your token from:
 	return cmd
 }
 
-// readLoginToken reads a token either from the command's stdin (when
-// --with-token is set or when reading interactively) and trims whitespace.
+// readLoginToken reads a token from the command's stdin and trims whitespace.
+//
+// With --with-token, input is read as a single line (the typical piping case)
+// and is not masked.
+//
+// Interactive (no --with-token), when stdin is a real TTY, the input is read
+// with terminal echo disabled so the token is not displayed. When stdin is
+// not a real TTY (tests, redirected input), the function falls back to a
+// plain line scan so behaviour stays predictable.
 func readLoginToken(cmd *cobra.Command, withToken bool) (string, error) {
-	if !withToken {
-		fmt.Fprint(cmd.ErrOrStderr(), "Paste your API token: ")
-	}
-	scanner := bufio.NewScanner(cmd.InOrStdin())
-	if !scanner.Scan() {
-		if withToken {
+	if withToken {
+		token, err := scanLine(cmd.InOrStdin())
+		if err != nil || token == "" {
 			return "", fmt.Errorf("no token provided on stdin")
 		}
-		return "", fmt.Errorf("no token provided")
+		return token, nil
 	}
-	token := strings.TrimSpace(scanner.Text())
-	if token == "" {
-		if withToken {
-			return "", fmt.Errorf("no token provided on stdin")
+
+	fmt.Fprint(cmd.ErrOrStderr(), "Paste your API token: ")
+
+	if f, ok := cmd.InOrStdin().(*os.File); ok && term.IsTerminal(int(f.Fd())) {
+		raw, err := term.ReadPassword(int(f.Fd()))
+		// ReadPassword leaves the cursor on the prompt line; emit a newline
+		// so subsequent output starts cleanly.
+		fmt.Fprintln(cmd.ErrOrStderr())
+		if err != nil {
+			return "", fmt.Errorf("failed to read token: %w", err)
 		}
+		token := strings.TrimSpace(string(raw))
+		if token == "" {
+			return "", fmt.Errorf("no token provided")
+		}
+		return token, nil
+	}
+
+	token, err := scanLine(cmd.InOrStdin())
+	if err != nil || token == "" {
 		return "", fmt.Errorf("no token provided")
 	}
 	return token, nil
+}
+
+// scanLine reads a single trimmed line from r.
+func scanLine(r io.Reader) (string, error) {
+	scanner := bufio.NewScanner(r)
+	if !scanner.Scan() {
+		return "", scanner.Err()
+	}
+	return strings.TrimSpace(scanner.Text()), nil
 }
 
 // resolveLoginAccount determines the account ID and user email associated
