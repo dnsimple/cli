@@ -47,25 +47,50 @@ dnsimple [command] [flags]
 
 ### Authentication
 
-Set your DNSimple API token:
+The CLI supports two authentication modes that can be combined freely.
+
+#### Stateful: stored contexts
+
+Authenticate once and the CLI remembers a named *context* (token, account, environment) on disk. Multiple contexts can coexist and you select one as active:
 
 ```shell
-export DNSIMPLE_TOKEN=your-token
-```
-
-Or pass it directly:
-
-```shell
-dnsimple --token your-token [command]
-```
-
-Or pass it interactively:
-
-```shell
+# Log in to production and store a context
 dnsimple auth login
 
-# Paste your API token: ...
+# Log in to sandbox alongside it
+dnsimple auth login --sandbox
+
+# List stored contexts (active is marked with *)
+dnsimple auth list
+
+# Switch the active context (by name or by account ID)
+dnsimple auth switch sandbox
+
+# Inspect the active context
+dnsimple auth status
+
+# Remove a stored context
+dnsimple auth logout --name sandbox
 ```
+
+The active context is used by every command unless overridden. Pass `--name` to `auth login` to choose a custom context name; otherwise it is derived from the environment (`production`, `sandbox`) with the account ID appended on collision.
+
+#### Stateless: per-invocation overrides
+
+For agents, scripts, and parallel shells where mutating shared on-disk state is undesirable, override the active context for a single command:
+
+```shell
+# Use a stored context by name without switching the active one
+dnsimple --context sandbox zones list
+
+# Override individual fields (token from env, sandbox environment)
+DNSIMPLE_TOKEN=$TOK dnsimple --sandbox zones list
+
+# Fully stateless invocation
+dnsimple --token $TOK --account 1010 --sandbox zones list
+```
+
+The override chain is field-by-field: each of `--token`, `--account`, `--sandbox`, and `--context` falls back to the matching environment variable and then to the active stored context. This means a script can supply only the parts that differ from the active context.
 
 ### Example Flow
 
@@ -114,13 +139,19 @@ dnsimple records delete example.com 12345
 
 We highly recommend testing against our [sandbox environment](https://developer.dnsimple.com/sandbox/) before using our production environment. This will allow you to avoid real purchases, live charges on your credit card, and reduce the chance of your running up against rate limits.
 
-To use the sandbox environment:
+To use the sandbox environment, either store a sandbox context:
 
 ```shell
-export DNSIMPLE_BASE_URL=https://api.sandbox.dnsimple.com
+dnsimple auth login --sandbox
 ```
 
-You will need to ensure that you are using an access token created in the sandbox environment. Production tokens will *not* work in the sandbox environment.
+Or pass `--sandbox` per invocation:
+
+```shell
+dnsimple --sandbox zones list
+```
+
+You will need a token created in the sandbox environment. Production tokens will *not* work in the sandbox environment.
 
 ## Documentation
 

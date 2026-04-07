@@ -58,8 +58,16 @@ func TestAuthStatusUsesTemplateOutputOnCommandStream(t *testing.T) {
 	f := cmdutil.NewFactory("test")
 	f.Client = func() (*dnsimple.Client, error) { return client, nil }
 	f.Config = func() (*config.Config, error) { return cfg, nil }
-	f.AccountID = func() (string, error) { return "202", nil }
-	f.Flags.Format = "{{.Environment}}/{{.UserEmail}}/{{.AccountEmail}}"
+	f.Context = func() (*config.ResolvedContext, error) {
+		return &config.ResolvedContext{
+			ContextName: "personal",
+			BaseURL:     cfg.BaseURL,
+			Host:        config.ProductionHost,
+			Token:       "tok",
+			AccountID:   "202",
+		}, nil
+	}
+	f.Flags.Format = "{{.Context}}/{{.Environment}}/{{.UserEmail}}/{{.AccountEmail}}"
 
 	cmd := newAuthStatusCmd(f)
 	var stdout bytes.Buffer
@@ -72,7 +80,7 @@ func TestAuthStatusUsesTemplateOutputOnCommandStream(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, "production/user@example.com/account@example.com", stdout.String())
+	assert.Equal(t, "personal/production/user@example.com/account@example.com", stdout.String())
 	assert.Zero(t, stderr.Len())
 }
 
@@ -93,7 +101,15 @@ func TestAuthStatusWarnsWhenDefaultAccountIsNotAccessible(t *testing.T) {
 	f := cmdutil.NewFactory("test")
 	f.Client = func() (*dnsimple.Client, error) { return client, nil }
 	f.Config = func() (*config.Config, error) { return cfg, nil }
-	f.AccountID = func() (string, error) { return "999", nil }
+	f.Context = func() (*config.ResolvedContext, error) {
+		return &config.ResolvedContext{
+			ContextName: "stale",
+			BaseURL:     cfg.BaseURL,
+			Host:        config.ProductionHost,
+			Token:       "tok",
+			AccountID:   "999",
+		}, nil
+	}
 	f.Flags.Format = "{{.AccountID}}/{{.AccountEmail}}/{{.Warning}}"
 
 	cmd := newAuthStatusCmd(f)
@@ -107,7 +123,7 @@ func TestAuthStatusWarnsWhenDefaultAccountIsNotAccessible(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, "999//account 999 is not accessible with the current token; run 'dnsimple auth switch <account-id>' to update", stdout.String())
+	assert.Equal(t, "999//account 999 is not accessible with the current token; run 'dnsimple auth login' to refresh the context", stdout.String())
 }
 
 func testCLIClient(t *testing.T, handler http.HandlerFunc) (*dnsimple.Client, *config.Config) {
@@ -117,5 +133,10 @@ func testCLIClient(t *testing.T, handler http.HandlerFunc) (*dnsimple.Client, *c
 	t.Cleanup(server.Close)
 
 	cfg := &config.Config{BaseURL: server.URL}
-	return internalclient.NewClient(cfg, "token", "test"), cfg
+	c := internalclient.New(internalclient.Options{
+		BaseURL: server.URL,
+		Token:   "token",
+		Version: "test",
+	})
+	return c, cfg
 }
