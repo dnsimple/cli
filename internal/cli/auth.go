@@ -18,7 +18,9 @@ import (
 )
 
 type authStatusOutput struct {
+	Context      string `json:"context,omitempty"`
 	Environment  string `json:"environment"`
+	Host         string `json:"host,omitempty"`
 	UserID       int64  `json:"user_id,omitempty"`
 	UserEmail    string `json:"user_email,omitempty"`
 	AccountID    int64  `json:"account_id,omitempty"`
@@ -31,7 +33,14 @@ func (a *authStatusOutput) TableHeaders() []string {
 }
 
 func (a *authStatusOutput) TableRows() [][]string {
-	rows := [][]string{{"Environment", a.Environment}}
+	var rows [][]string
+	if a.Context != "" {
+		rows = append(rows, []string{"Context", a.Context})
+	}
+	rows = append(rows, []string{"Environment", a.Environment})
+	if a.Host != "" {
+		rows = append(rows, []string{"Host", a.Host})
+	}
 	if a.UserID != 0 {
 		rows = append(rows, []string{"User", fmt.Sprintf("%s (ID: %d)", a.UserEmail, a.UserID)})
 	}
@@ -476,6 +485,11 @@ func newAuthStatusCmd(f *cmdutil.Factory) *cobra.Command {
 		Use:   "status",
 		Short: "Show current authentication status",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			rc, err := f.Context()
+			if err != nil {
+				return err
+			}
+
 			c, err := f.Client()
 			if err != nil {
 				return err
@@ -486,28 +500,21 @@ func newAuthStatusCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			cfg, err := f.Config()
-			if err != nil {
-				return err
+			data := &authStatusOutput{
+				Context:     rc.ContextName,
+				Environment: config.EnvironmentName(rc.Host),
+				Host:        rc.Host,
 			}
-
-			env := "production"
-			if cfg.Sandbox {
-				env = "sandbox"
-			}
-
-			data := &authStatusOutput{Environment: env}
 			if whoami.Data.User != nil {
 				data.UserID = whoami.Data.User.ID
 				data.UserEmail = whoami.Data.User.Email
 			}
 
-			// Show the default account commands will actually use, resolved through
-			// the same precedence chain (flag → env → config → stored credentials).
-			// Enrich the ID with an email by looking it up in the accessible accounts,
-			// and warn if the stored default no longer matches anything the token can see.
-			if accountID, err := f.AccountID(); err == nil && accountID != "" {
-				if id, parseErr := strconv.ParseInt(accountID, 10, 64); parseErr == nil {
+			// Enrich the resolved account ID with an email by looking it up in
+			// the accessible accounts. If the lookup succeeds but the account is
+			// not in the list, surface a warning so the user notices stale state.
+			if rc.AccountID != "" {
+				if id, parseErr := strconv.ParseInt(rc.AccountID, 10, 64); parseErr == nil {
 					data.AccountID = id
 					if accounts, err := c.Accounts.ListAccounts(context.Background(), nil); err == nil {
 						found := false
@@ -519,7 +526,7 @@ func newAuthStatusCmd(f *cmdutil.Factory) *cobra.Command {
 							}
 						}
 						if !found {
-							data.Warning = fmt.Sprintf("account %d is not accessible with the current token; run 'dnsimple auth switch <account-id>' to update", id)
+							data.Warning = fmt.Sprintf("account %d is not accessible with the current token; run 'dnsimple auth login' to refresh the context", id)
 						}
 					}
 				}
