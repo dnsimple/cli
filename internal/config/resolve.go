@@ -42,7 +42,8 @@ type ResolveOptions struct {
 	// ContextName is the value of --context (empty if not set).
 	ContextName string
 
-	// Sandbox is the value of --sandbox.
+	// Sandbox is the effective sandbox selection after config/env/flag
+	// resolution.
 	Sandbox bool
 
 	// DefaultAccount is the cfg.DefaultAccount value (from config file).

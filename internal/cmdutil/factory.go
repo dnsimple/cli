@@ -91,7 +91,7 @@ func NewFactory(version string) *Factory {
 			Token:          flags.Token,
 			Account:        flags.Account,
 			ContextName:    flags.Context,
-			Sandbox:        flags.Sandbox,
+			Sandbox:        cfg.Sandbox,
 			DefaultAccount: cfg.DefaultAccount,
 		})
 		if err != nil {

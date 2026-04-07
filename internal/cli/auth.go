@@ -163,16 +163,17 @@ Get your token from:
 			if err != nil {
 				return err
 			}
-			host := config.HostForSandbox(f.Flags.Sandbox)
+			host := config.HostForSandbox(cfg.Sandbox)
 
 			token, err := readLoginToken(cmd, withToken)
 			if err != nil {
 				return err
 			}
 
-			// Validate the token by calling Whoami against the chosen host.
-			// cfg.BaseURL is set by the factory from the --sandbox flag, and
-			// can be stubbed by tests via f.Config.
+			// Validate the token by calling Whoami against the effective API
+			// base URL. cfg.Sandbox already reflects persisted config/env plus
+			// any --sandbox flag override, and cfg.BaseURL can be stubbed by
+			// tests via f.Config.
 			c := client.New(client.Options{
 				BaseURL: cfg.BaseURL,
 				Token:   token,
@@ -397,7 +398,6 @@ func pickAutoContextName(creds *config.Credentials, host, accountID string) stri
 		}
 	}
 }
-
 
 func newAuthLogoutCmd(f *cmdutil.Factory) *cobra.Command {
 	var nameFlag string

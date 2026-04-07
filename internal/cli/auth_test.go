@@ -243,6 +243,40 @@ func TestAuthLoginWithSandboxFlagCreatesSandboxContext(t *testing.T) {
 	assert.Equal(t, "sandbox", creds.ActiveContext)
 }
 
+func TestAuthLoginWithPersistedSandboxConfigCreatesSandboxContext(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+
+	server := newWhoamiServer(t, `{"data":{"user":{"id":1,"email":"alice@example.com"},"account":{"id":24,"email":"acct@example.com"}}}`)
+	defer server.Close()
+
+	f := cmdutil.NewFactory("test")
+	f.Config = func() (*config.Config, error) {
+		return &config.Config{
+			BaseURL: server.URL,
+			Sandbox: true,
+		}, nil
+	}
+	cmd := newAuthLoginCmd(f)
+
+	cmd.SetIn(strings.NewReader("tok-sbx\n"))
+	cmd.SetErr(io.Discard)
+	cmd.SetOut(io.Discard)
+	if err := cmd.Flags().Set("with-token", "true"); err != nil {
+		t.Fatalf("set with-token: %v", err)
+	}
+
+	if err := cmd.RunE(cmd, nil); !assert.NoError(t, err) {
+		return
+	}
+
+	creds, _ := config.LoadCredentials()
+	if assert.Len(t, creds.Contexts, 1) {
+		assert.Equal(t, "sandbox", creds.Contexts[0].Name)
+		assert.Equal(t, config.SandboxHost, creds.Contexts[0].Host)
+	}
+	assert.Equal(t, "sandbox", creds.ActiveContext)
+}
+
 func TestAuthLoginWithExplicitNameCreatesNamedContext(t *testing.T) {
 	isolateConfigHomeForCLI(t)
 
@@ -664,7 +698,7 @@ func newWhoamiServer(t *testing.T, whoamiJSON string) *httptest.Server {
 // factory's Config so the pre-auth client targets the test server.
 func buildLoginCmdWithBaseURL(t *testing.T, f *cmdutil.Factory, baseURL string) *cobra.Command {
 	t.Helper()
-	cfg := &config.Config{BaseURL: baseURL}
+	cfg := &config.Config{BaseURL: baseURL, Sandbox: f.Flags.Sandbox}
 	f.Config = func() (*config.Config, error) { return cfg, nil }
 	return newAuthLoginCmd(f)
 }
