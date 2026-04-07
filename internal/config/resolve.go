@@ -123,11 +123,12 @@ func Resolve(creds *Credentials, opts ResolveOptions) (*ResolvedContext, error) 
 		rc.Host = ProductionHost
 	}
 
+	// A token is the minimum needed to talk to the API. The presence of an
+	// account is enforced by callers that actually need one (factory.AccountID
+	// in particular), so token-only commands such as `whoami` and
+	// `auth status` keep working even when no account is available yet.
 	if rc.Token == "" {
 		return nil, errors.New("not authenticated. Run 'dnsimple auth login' to authenticate")
-	}
-	if rc.AccountID == "" {
-		return nil, errors.New("no account specified. Use --account flag, DNSIMPLE_ACCOUNT env var, or run 'dnsimple auth login'")
 	}
 
 	if opts.BaseURLOverride != "" {

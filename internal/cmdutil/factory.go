@@ -1,6 +1,8 @@
 package cmdutil
 
 import (
+	"errors"
+
 	"github.com/dnsimple/dnsimple-cli/internal/client"
 	"github.com/dnsimple/dnsimple-cli/internal/config"
 	"github.com/dnsimple/dnsimple-cli/internal/output"
@@ -132,6 +134,9 @@ func NewFactory(version string) *Factory {
 		rc, err := f.Context()
 		if err != nil {
 			return "", err
+		}
+		if rc.AccountID == "" {
+			return "", errors.New("no account specified. Use --account flag, DNSIMPLE_ACCOUNT env var, or run 'dnsimple auth login'")
 		}
 		return rc.AccountID, nil
 	}

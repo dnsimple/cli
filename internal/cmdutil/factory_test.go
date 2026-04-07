@@ -42,3 +42,36 @@ func TestContextUsesPersistedSandboxSetting(t *testing.T) {
 	assert.Equal(t, "tok-sbx", rc.Token)
 	assert.Equal(t, "24", rc.AccountID)
 }
+
+func TestClientAllowsTokenOnlyContext(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("DNSIMPLE_TOKEN", "env-token")
+	t.Setenv("DNSIMPLE_ACCOUNT", "")
+
+	f := NewFactory("test")
+
+	c, err := f.Client()
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Equal(t, config.BaseURLForHost(config.ProductionHost), c.BaseURL)
+	assert.Equal(t, "dnsimple-cli/test", c.UserAgent)
+}
+
+func TestAccountIDErrorsWhenResolvedContextHasNoAccount(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("DNSIMPLE_TOKEN", "env-token")
+	t.Setenv("DNSIMPLE_ACCOUNT", "")
+
+	f := NewFactory("test")
+
+	_, err := f.AccountID()
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "no account specified")
+	}
+}

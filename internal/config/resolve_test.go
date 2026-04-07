@@ -282,14 +282,19 @@ func TestResolveErrorsWhenNoTokenAvailable(t *testing.T) {
 	}
 }
 
-func TestResolveErrorsWhenNoAccountAvailable(t *testing.T) {
+func TestResolveAllowsMissingAccountForTokenOnlyCommands(t *testing.T) {
 	t.Setenv("DNSIMPLE_ACCOUNT", "")
 	creds := &Credentials{}
 
-	_, err := Resolve(creds, ResolveOptions{Token: "tok"})
-	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "no account specified")
+	rc, err := Resolve(creds, ResolveOptions{Token: "tok"})
+	if !assert.NoError(t, err) {
+		return
 	}
+
+	assert.Equal(t, "tok", rc.Token)
+	assert.Empty(t, rc.AccountID)
+	assert.Equal(t, ProductionHost, rc.Host)
+	assert.Equal(t, defaultBaseURL, rc.BaseURL)
 }
 
 func TestResolveBaseURLOverrideForTests(t *testing.T) {
