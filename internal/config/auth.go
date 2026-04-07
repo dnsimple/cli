@@ -9,9 +9,42 @@ import (
 )
 
 const (
-	productionHost = "api.dnsimple.com"
-	sandboxHost    = "api.sandbox.dnsimple.com"
+	// ProductionHost is the canonical hostname of the production DNSimple API.
+	ProductionHost = "api.dnsimple.com"
+	// SandboxHost is the canonical hostname of the sandbox DNSimple API.
+	SandboxHost = "api.sandbox.dnsimple.com"
 )
+
+// EnvironmentName returns a human-readable environment label for a host.
+// Recognised hosts return "production" or "sandbox"; unknown hosts return
+// the host string verbatim.
+func EnvironmentName(host string) string {
+	switch host {
+	case ProductionHost:
+		return "production"
+	case SandboxHost:
+		return "sandbox"
+	default:
+		return host
+	}
+}
+
+// HostForSandbox returns the canonical host for the given environment toggle.
+func HostForSandbox(sandbox bool) string {
+	if sandbox {
+		return SandboxHost
+	}
+	return ProductionHost
+}
+
+// BaseURLForHost returns the canonical API URL for a known host. Unknown
+// hosts fall back to the production URL.
+func BaseURLForHost(host string) string {
+	if host == SandboxHost {
+		return sandboxBaseURL
+	}
+	return defaultBaseURL
+}
 
 // Context is a named authentication context. Each context binds a token to a
 // specific (host, account) pair and is identified by a unique name.
@@ -98,19 +131,19 @@ func LoadCredentials() (*Credentials, error) {
 // Each host entry becomes a context named after its environment. If both
 // production and sandbox exist, production becomes the active context.
 func (c *Credentials) migrateFromHosts(hosts map[string]*HostCredential) {
-	if h, ok := hosts[productionHost]; ok && h != nil {
+	if h, ok := hosts[ProductionHost]; ok && h != nil {
 		c.Contexts = append(c.Contexts, &Context{
 			Name:      "production",
-			Host:      productionHost,
+			Host:      ProductionHost,
 			Token:     h.Token,
 			AccountID: h.AccountID,
 			User:      h.User,
 		})
 	}
-	if h, ok := hosts[sandboxHost]; ok && h != nil {
+	if h, ok := hosts[SandboxHost]; ok && h != nil {
 		c.Contexts = append(c.Contexts, &Context{
 			Name:      "sandbox",
-			Host:      sandboxHost,
+			Host:      SandboxHost,
 			Token:     h.Token,
 			AccountID: h.AccountID,
 			User:      h.User,
@@ -119,7 +152,7 @@ func (c *Credentials) migrateFromHosts(hosts map[string]*HostCredential) {
 	if len(c.Contexts) == 0 {
 		return
 	}
-	if _, ok := hosts[productionHost]; ok {
+	if _, ok := hosts[ProductionHost]; ok {
 		c.ActiveContext = "production"
 	} else {
 		c.ActiveContext = c.Contexts[0].Name
@@ -280,10 +313,7 @@ func (c *Credentials) Delete(host string) {
 }
 
 func bareNameForHost(host string) string {
-	if host == sandboxHost {
-		return "sandbox"
-	}
-	return "production"
+	return EnvironmentName(host)
 }
 
 // Token resolves the API token from flag override, environment, or stored

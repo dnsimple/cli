@@ -115,10 +115,10 @@ func Resolve(creds *Credentials, opts ResolveOptions) (*ResolvedContext, error) 
 
 	// --sandbox host override wins over the context-supplied host.
 	if opts.Sandbox {
-		rc.Host = sandboxHost
+		rc.Host = SandboxHost
 	}
 	if rc.Host == "" {
-		rc.Host = productionHost
+		rc.Host = ProductionHost
 	}
 
 	if rc.Token == "" {
@@ -130,10 +130,8 @@ func Resolve(creds *Credentials, opts ResolveOptions) (*ResolvedContext, error) 
 
 	if opts.BaseURLOverride != "" {
 		rc.BaseURL = opts.BaseURLOverride
-	} else if rc.Host == sandboxHost {
-		rc.BaseURL = sandboxBaseURL
 	} else {
-		rc.BaseURL = defaultBaseURL
+		rc.BaseURL = BaseURLForHost(rc.Host)
 	}
 
 	return rc, nil
@@ -152,10 +150,10 @@ func pickContext(creds *Credentials, opts ResolveOptions) (*Context, error) {
 
 	if opts.Sandbox {
 		// Constrain selection to sandbox contexts.
-		if active := creds.Active(); active != nil && active.Host == sandboxHost {
+		if active := creds.Active(); active != nil && active.Host == SandboxHost {
 			return active, nil
 		}
-		sandboxes := contextsByHost(creds, sandboxHost)
+		sandboxes := contextsByHost(creds, SandboxHost)
 		switch len(sandboxes) {
 		case 0:
 			return nil, nil

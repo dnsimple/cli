@@ -9,7 +9,7 @@ import (
 func TestResolveActiveContext(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "personal", Host: productionHost, Token: "tok-personal", AccountID: "100", User: "alice@example.com"},
+			{Name: "personal", Host: ProductionHost, Token: "tok-personal", AccountID: "100", User: "alice@example.com"},
 		},
 		ActiveContext: "personal",
 	}
@@ -20,7 +20,7 @@ func TestResolveActiveContext(t *testing.T) {
 	}
 
 	assert.Equal(t, "personal", rc.ContextName)
-	assert.Equal(t, productionHost, rc.Host)
+	assert.Equal(t, ProductionHost, rc.Host)
 	assert.Equal(t, defaultBaseURL, rc.BaseURL)
 	assert.Equal(t, "tok-personal", rc.Token)
 	assert.Equal(t, "100", rc.AccountID)
@@ -30,8 +30,8 @@ func TestResolveActiveContext(t *testing.T) {
 func TestResolveContextFlagPicksNamedContext(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "personal", Host: productionHost, Token: "tok-personal", AccountID: "100"},
-			{Name: "work", Host: productionHost, Token: "tok-work", AccountID: "200"},
+			{Name: "personal", Host: ProductionHost, Token: "tok-personal", AccountID: "100"},
+			{Name: "work", Host: ProductionHost, Token: "tok-work", AccountID: "200"},
 		},
 		ActiveContext: "personal",
 	}
@@ -49,7 +49,7 @@ func TestResolveContextFlagPicksNamedContext(t *testing.T) {
 func TestResolveContextFlagErrorsOnUnknownName(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "personal", Host: productionHost, Token: "tok", AccountID: "100"},
+			{Name: "personal", Host: ProductionHost, Token: "tok", AccountID: "100"},
 		},
 		ActiveContext: "personal",
 	}
@@ -61,8 +61,8 @@ func TestResolveContextFlagErrorsOnUnknownName(t *testing.T) {
 func TestResolveSandboxFlagPicksLoneSandboxContext(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "personal", Host: productionHost, Token: "tok-personal", AccountID: "100"},
-			{Name: "sandbox", Host: sandboxHost, Token: "tok-sbx", AccountID: "24"},
+			{Name: "personal", Host: ProductionHost, Token: "tok-personal", AccountID: "100"},
+			{Name: "sandbox", Host: SandboxHost, Token: "tok-sbx", AccountID: "24"},
 		},
 		ActiveContext: "personal",
 	}
@@ -73,7 +73,7 @@ func TestResolveSandboxFlagPicksLoneSandboxContext(t *testing.T) {
 	}
 
 	assert.Equal(t, "sandbox", rc.ContextName)
-	assert.Equal(t, sandboxHost, rc.Host)
+	assert.Equal(t, SandboxHost, rc.Host)
 	assert.Equal(t, sandboxBaseURL, rc.BaseURL)
 	assert.Equal(t, "tok-sbx", rc.Token)
 	assert.Equal(t, "24", rc.AccountID)
@@ -82,8 +82,8 @@ func TestResolveSandboxFlagPicksLoneSandboxContext(t *testing.T) {
 func TestResolveSandboxFlagPrefersActiveSandbox(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "sandbox-a", Host: sandboxHost, Token: "tok-a", AccountID: "1"},
-			{Name: "sandbox-b", Host: sandboxHost, Token: "tok-b", AccountID: "2"},
+			{Name: "sandbox-a", Host: SandboxHost, Token: "tok-a", AccountID: "1"},
+			{Name: "sandbox-b", Host: SandboxHost, Token: "tok-b", AccountID: "2"},
 		},
 		ActiveContext: "sandbox-b",
 	}
@@ -100,9 +100,9 @@ func TestResolveSandboxFlagPrefersActiveSandbox(t *testing.T) {
 func TestResolveSandboxFlagErrorsOnMultipleSandboxContextsWithoutActive(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "personal", Host: productionHost, Token: "tok-personal", AccountID: "100"},
-			{Name: "sandbox-a", Host: sandboxHost, Token: "tok-a", AccountID: "1"},
-			{Name: "sandbox-b", Host: sandboxHost, Token: "tok-b", AccountID: "2"},
+			{Name: "personal", Host: ProductionHost, Token: "tok-personal", AccountID: "100"},
+			{Name: "sandbox-a", Host: SandboxHost, Token: "tok-a", AccountID: "1"},
+			{Name: "sandbox-b", Host: SandboxHost, Token: "tok-b", AccountID: "2"},
 		},
 		ActiveContext: "personal",
 	}
@@ -131,7 +131,7 @@ func TestResolveRawFlagsBypassStorage(t *testing.T) {
 	assert.Empty(t, rc.ContextName)
 	assert.Equal(t, "raw-token", rc.Token)
 	assert.Equal(t, "raw-account", rc.AccountID)
-	assert.Equal(t, productionHost, rc.Host)
+	assert.Equal(t, ProductionHost, rc.Host)
 	assert.Equal(t, defaultBaseURL, rc.BaseURL)
 }
 
@@ -147,14 +147,14 @@ func TestResolveRawFlagsWithSandbox(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, sandboxHost, rc.Host)
+	assert.Equal(t, SandboxHost, rc.Host)
 	assert.Equal(t, sandboxBaseURL, rc.BaseURL)
 }
 
 func TestResolveRawFlagsOverrideContext(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "work", Host: productionHost, Token: "tok-work", AccountID: "200"},
+			{Name: "work", Host: ProductionHost, Token: "tok-work", AccountID: "200"},
 		},
 		ActiveContext: "work",
 	}
@@ -173,13 +173,13 @@ func TestResolveRawFlagsOverrideContext(t *testing.T) {
 	assert.Equal(t, "raw-token", rc.Token)
 	assert.Equal(t, "raw-account", rc.AccountID)
 	// Host comes from the context (production), no --sandbox override.
-	assert.Equal(t, productionHost, rc.Host)
+	assert.Equal(t, ProductionHost, rc.Host)
 }
 
 func TestResolveContextWithSandboxOverrideHost(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "work", Host: productionHost, Token: "tok-work", AccountID: "200"},
+			{Name: "work", Host: ProductionHost, Token: "tok-work", AccountID: "200"},
 		},
 		ActiveContext: "work",
 	}
@@ -194,7 +194,7 @@ func TestResolveContextWithSandboxOverrideHost(t *testing.T) {
 
 	assert.Equal(t, "work", rc.ContextName)
 	assert.Equal(t, "tok-work", rc.Token)
-	assert.Equal(t, sandboxHost, rc.Host)
+	assert.Equal(t, SandboxHost, rc.Host)
 	assert.Equal(t, sandboxBaseURL, rc.BaseURL)
 }
 

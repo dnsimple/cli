@@ -28,7 +28,7 @@ func TestCredentialsSaveAndLoad(t *testing.T) {
 		Contexts: []*Context{
 			{
 				Name:      "production",
-				Host:      productionHost,
+				Host:      ProductionHost,
 				Token:     "token-1",
 				AccountID: "1010",
 				User:      "user@example.com",
@@ -49,7 +49,7 @@ func TestCredentialsSaveAndLoad(t *testing.T) {
 	if assert.Len(t, loaded.Contexts, 1) {
 		ctx := loaded.Contexts[0]
 		assert.Equal(t, "production", ctx.Name)
-		assert.Equal(t, productionHost, ctx.Host)
+		assert.Equal(t, ProductionHost, ctx.Host)
 		assert.Equal(t, "token-1", ctx.Token)
 		assert.Equal(t, "1010", ctx.AccountID)
 		assert.Equal(t, "user@example.com", ctx.User)
@@ -60,8 +60,8 @@ func TestCredentialsSaveAndLoad(t *testing.T) {
 func TestCredentialsFindAndActive(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "production", Host: productionHost, Token: "tok-prod"},
-			{Name: "sandbox", Host: sandboxHost, Token: "tok-sbx"},
+			{Name: "production", Host: ProductionHost, Token: "tok-prod"},
+			{Name: "sandbox", Host: SandboxHost, Token: "tok-sbx"},
 		},
 		ActiveContext: "sandbox",
 	}
@@ -79,7 +79,7 @@ func TestCredentialsFindAndActive(t *testing.T) {
 func TestCredentialsActiveReturnsNilWhenUnset(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "production", Host: productionHost, Token: "tok-prod"},
+			{Name: "production", Host: ProductionHost, Token: "tok-prod"},
 		},
 	}
 	assert.Nil(t, creds.Active())
@@ -87,8 +87,8 @@ func TestCredentialsActiveReturnsNilWhenUnset(t *testing.T) {
 
 func TestCredentialsAddAppends(t *testing.T) {
 	creds := &Credentials{}
-	creds.Add(&Context{Name: "personal", Host: productionHost, Token: "tok-1"})
-	creds.Add(&Context{Name: "work", Host: productionHost, Token: "tok-2"})
+	creds.Add(&Context{Name: "personal", Host: ProductionHost, Token: "tok-1"})
+	creds.Add(&Context{Name: "work", Host: ProductionHost, Token: "tok-2"})
 
 	assert.Len(t, creds.Contexts, 2)
 	assert.Equal(t, "personal", creds.Contexts[0].Name)
@@ -98,9 +98,9 @@ func TestCredentialsAddAppends(t *testing.T) {
 func TestCredentialsRemove(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "personal", Host: productionHost, Token: "tok-1"},
-			{Name: "work", Host: productionHost, Token: "tok-2"},
-			{Name: "sandbox", Host: sandboxHost, Token: "tok-3"},
+			{Name: "personal", Host: ProductionHost, Token: "tok-1"},
+			{Name: "work", Host: ProductionHost, Token: "tok-2"},
+			{Name: "sandbox", Host: SandboxHost, Token: "tok-3"},
 		},
 		ActiveContext: "work",
 	}
@@ -117,8 +117,8 @@ func TestCredentialsRemove(t *testing.T) {
 func TestCredentialsRemoveLeavesActiveAlone(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "personal", Host: productionHost, Token: "tok-1"},
-			{Name: "work", Host: productionHost, Token: "tok-2"},
+			{Name: "personal", Host: ProductionHost, Token: "tok-1"},
+			{Name: "work", Host: ProductionHost, Token: "tok-2"},
 		},
 		ActiveContext: "personal",
 	}
@@ -130,7 +130,7 @@ func TestCredentialsRemoveLeavesActiveAlone(t *testing.T) {
 func TestCredentialsRemoveLastClearsActive(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "personal", Host: productionHost, Token: "tok-1"},
+			{Name: "personal", Host: ProductionHost, Token: "tok-1"},
 		},
 		ActiveContext: "personal",
 	}
@@ -143,8 +143,8 @@ func TestCredentialsRemoveLastClearsActive(t *testing.T) {
 func TestCredentialsSetActive(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
-			{Name: "personal", Host: productionHost, Token: "tok-1"},
-			{Name: "sandbox", Host: sandboxHost, Token: "tok-2"},
+			{Name: "personal", Host: ProductionHost, Token: "tok-1"},
+			{Name: "sandbox", Host: SandboxHost, Token: "tok-2"},
 		},
 	}
 
@@ -178,13 +178,13 @@ func TestLoadCredentialsMigratesLegacyHostsFile(t *testing.T) {
 	if assert.Len(t, creds.Contexts, 2) {
 		// Production migrates first because we iterate in a fixed order.
 		assert.Equal(t, "production", creds.Contexts[0].Name)
-		assert.Equal(t, productionHost, creds.Contexts[0].Host)
+		assert.Equal(t, ProductionHost, creds.Contexts[0].Host)
 		assert.Equal(t, "prod-token", creds.Contexts[0].Token)
 		assert.Equal(t, "981", creds.Contexts[0].AccountID)
 		assert.Equal(t, "alice@example.com", creds.Contexts[0].User)
 
 		assert.Equal(t, "sandbox", creds.Contexts[1].Name)
-		assert.Equal(t, sandboxHost, creds.Contexts[1].Host)
+		assert.Equal(t, SandboxHost, creds.Contexts[1].Host)
 		assert.Equal(t, "sbx-token", creds.Contexts[1].Token)
 	}
 	assert.Equal(t, "production", creds.ActiveContext)
