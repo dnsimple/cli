@@ -32,6 +32,8 @@ func (a *analyticsOutput) TableRows() [][]string {
 
 func (a *analyticsOutput) JSONData() any { return a }
 
+func (a *analyticsOutput) TemplateData() any { return a.Data }
+
 func newAnalyticsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "analytics",

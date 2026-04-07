@@ -34,6 +34,8 @@ func (r *registrantChangeList) TableRows() [][]string {
 
 func (r *registrantChangeList) JSONData() any { return r }
 
+func (r *registrantChangeList) TemplateData() any { return r.Data }
+
 type registrantChangeOutput struct {
 	Data *dnsimple.RegistrantChange `json:"data"`
 }
@@ -56,6 +58,8 @@ func (r *registrantChangeOutput) TableRows() [][]string {
 }
 
 func (r *registrantChangeOutput) JSONData() any { return r }
+
+func (r *registrantChangeOutput) TemplateData() any { return r.Data }
 
 func newRegistrarRegistrantChangeCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{

@@ -33,6 +33,8 @@ func (c *chargeList) TableRows() [][]string {
 
 func (c *chargeList) JSONData() any { return c }
 
+func (c *chargeList) TemplateData() any { return c.Data }
+
 func newBillingCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "billing",

@@ -57,6 +57,10 @@ func (a *authStatusOutput) JSONData() any {
 	return a
 }
 
+func (a *authStatusOutput) TemplateData() any {
+	return a
+}
+
 func newAuthCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "auth",
@@ -105,6 +109,10 @@ func (a *authContextList) TableRows() [][]string {
 
 func (a *authContextList) JSONData() any {
 	return a
+}
+
+func (a *authContextList) TemplateData() any {
+	return a.Data
 }
 
 func newAuthListCmd(f *cmdutil.Factory) *cobra.Command {

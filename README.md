@@ -135,6 +135,22 @@ dnsimple records delete example.com 12345
 
 `example.com` is both the domain name and the zone name. After creating the domain, use the same value with the `zones` and `records` commands.
 
+### Output Formats
+
+Commands default to a human-friendly table. Use `--json` for structured output or `--format` for custom Go templates.
+
+`--json` preserves the CLI wrapper shape, including top-level `data` and optional `pagination` keys. `--format` evaluates the template against the unwrapped resource itself:
+
+```shell
+# Single-resource commands expose the resource fields directly
+dnsimple domains get example.com --format '{{.Name}}'
+
+# List commands expose the list of resources directly
+dnsimple domains list --format '{{range .}}{{.Name}}{{printf "\n"}}{{end}}'
+```
+
+To discover available template fields, inspect the corresponding `--json` output and use the fields inside `data` as the underlying resource model.
+
 ### Sandbox Environment
 
 We highly recommend testing against our [sandbox environment](https://developer.dnsimple.com/sandbox/) before using our production environment. This will allow you to avoid real purchases, live charges on your credit card, and reduce the chance of your running up against rate limits.

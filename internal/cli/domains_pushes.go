@@ -35,6 +35,8 @@ func (p *pushList) TableRows() [][]string {
 
 func (p *pushList) JSONData() any { return p }
 
+func (p *pushList) TemplateData() any { return p.Data }
+
 // pushItem adapts a single DomainPush for output.
 type pushItem struct {
 	Data *dnsimple.DomainPush `json:"data"`
@@ -57,6 +59,8 @@ func (p *pushItem) TableRows() [][]string {
 }
 
 func (p *pushItem) JSONData() any { return p }
+
+func (p *pushItem) TemplateData() any { return p.Data }
 
 func newDomainsPushesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{

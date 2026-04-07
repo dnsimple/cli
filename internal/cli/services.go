@@ -35,6 +35,8 @@ func (s *serviceList) TableRows() [][]string {
 
 func (s *serviceList) JSONData() any { return s }
 
+func (s *serviceList) TemplateData() any { return s.Data }
+
 type serviceItemOutput struct {
 	Data *dnsimple.Service `json:"data"`
 }
@@ -56,6 +58,8 @@ func (s *serviceItemOutput) TableRows() [][]string {
 }
 
 func (s *serviceItemOutput) JSONData() any { return s }
+
+func (s *serviceItemOutput) TemplateData() any { return s.Data }
 
 func newServicesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{

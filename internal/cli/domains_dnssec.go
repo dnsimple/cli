@@ -25,6 +25,8 @@ func (d *dnssecOutput) TableRows() [][]string {
 
 func (d *dnssecOutput) JSONData() any { return d }
 
+func (d *dnssecOutput) TemplateData() any { return d.Data }
+
 func newDomainsDnssecCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "dnssec",

@@ -37,6 +37,8 @@ func (c *contactList) TableRows() [][]string {
 
 func (c *contactList) JSONData() any { return c }
 
+func (c *contactList) TemplateData() any { return c.Data }
+
 // contactItem adapts a single Contact for output.
 type contactItem struct {
 	Data *dnsimple.Contact `json:"data"`
@@ -73,6 +75,8 @@ func (c *contactItem) TableRows() [][]string {
 }
 
 func (c *contactItem) JSONData() any { return c }
+
+func (c *contactItem) TemplateData() any { return c.Data }
 
 func newContactsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{

@@ -25,6 +25,8 @@ func (t *transferLockOutput) TableRows() [][]string {
 
 func (t *transferLockOutput) JSONData() any { return t }
 
+func (t *transferLockOutput) TemplateData() any { return t.Data }
+
 func newRegistrarTransferLockCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "transfer-lock",

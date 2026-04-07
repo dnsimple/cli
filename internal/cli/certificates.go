@@ -37,6 +37,8 @@ func (c *certList) TableRows() [][]string {
 
 func (c *certList) JSONData() any { return c }
 
+func (c *certList) TemplateData() any { return c.Data }
+
 // certItem adapts a single Certificate for output.
 type certItem struct {
 	Data *dnsimple.Certificate `json:"data"`
@@ -66,6 +68,8 @@ func (c *certItem) TableRows() [][]string {
 
 func (c *certItem) JSONData() any { return c }
 
+func (c *certItem) TemplateData() any { return c.Data }
+
 // certBundleOutput adapts CertificateBundle for output.
 type certBundleOutput struct {
 	Data *dnsimple.CertificateBundle `json:"data"`
@@ -94,6 +98,8 @@ func (c *certBundleOutput) TableRows() [][]string {
 
 func (c *certBundleOutput) JSONData() any { return c }
 
+func (c *certBundleOutput) TemplateData() any { return c.Data }
+
 // certPurchaseOutput adapts CertificatePurchase for output.
 type certPurchaseOutput struct {
 	Data *dnsimple.CertificatePurchase `json:"data"`
@@ -114,6 +120,8 @@ func (c *certPurchaseOutput) TableRows() [][]string {
 }
 
 func (c *certPurchaseOutput) JSONData() any { return c }
+
+func (c *certPurchaseOutput) TemplateData() any { return c.Data }
 
 // certRenewalOutput adapts CertificateRenewal for output.
 type certRenewalOutput struct {
@@ -136,6 +144,8 @@ func (c *certRenewalOutput) TableRows() [][]string {
 }
 
 func (c *certRenewalOutput) JSONData() any { return c }
+
+func (c *certRenewalOutput) TemplateData() any { return c.Data }
 
 func newCertificatesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{

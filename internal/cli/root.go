@@ -28,7 +28,7 @@ func buildRootCmd(f *cmdutil.Factory) *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&f.Flags.Token, "token", "", "API token (overrides DNSIMPLE_TOKEN env var)")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.Sandbox, "sandbox", false, "Use sandbox environment")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.JSON, "json", false, "Output as JSON")
-	rootCmd.PersistentFlags().StringVar(&f.Flags.Format, "format", "", "Custom output format (Go template)")
+	rootCmd.PersistentFlags().StringVar(&f.Flags.Format, "format", "", "Custom output format (Go template over the resource; use {{.Field}} for single items or {{range .}}{{.Field}}{{end}} for lists)")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.NoColor, "no-color", false, "Disable colored output")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.Debug, "debug", false, "Enable debug logging")
 	rootCmd.PersistentFlags().BoolVarP(&f.Flags.Quiet, "quiet", "q", false, "Suppress non-essential output")

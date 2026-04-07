@@ -21,6 +21,7 @@ type Formattable interface {
 	TableHeaders() []string
 	TableRows() [][]string
 	JSONData() any
+	TemplateData() any
 }
 
 // Printer handles output rendering.
@@ -66,5 +67,5 @@ func (p *Printer) printTemplate(data Formattable) error {
 	if err != nil {
 		return fmt.Errorf("invalid format template: %w", err)
 	}
-	return tmpl.Execute(p.Writer, data.JSONData())
+	return tmpl.Execute(p.Writer, data.TemplateData())
 }

@@ -34,6 +34,8 @@ func (t *templateList) TableRows() [][]string {
 
 func (t *templateList) JSONData() any { return t }
 
+func (t *templateList) TemplateData() any { return t.Data }
+
 type templateItemOutput struct {
 	Data *dnsimple.Template `json:"data"`
 }
@@ -55,6 +57,8 @@ func (t *templateItemOutput) TableRows() [][]string {
 }
 
 func (t *templateItemOutput) JSONData() any { return t }
+
+func (t *templateItemOutput) TemplateData() any { return t.Data }
 
 func newTemplatesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{

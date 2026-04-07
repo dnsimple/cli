@@ -39,6 +39,10 @@ func (d *domainList) JSONData() any {
 	return d
 }
 
+func (d *domainList) TemplateData() any {
+	return d.Data
+}
+
 // domainItem adapts a single Domain for output.
 type domainItem struct {
 	Data *dnsimple.Domain `json:"data"`
@@ -64,6 +68,10 @@ func (d *domainItem) TableRows() [][]string {
 
 func (d *domainItem) JSONData() any {
 	return d
+}
+
+func (d *domainItem) TemplateData() any {
+	return d.Data
 }
 
 func newDomainsCmd(f *cmdutil.Factory) *cobra.Command {

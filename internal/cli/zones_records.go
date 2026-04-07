@@ -45,6 +45,10 @@ func (r *recordList) JSONData() any {
 	return r
 }
 
+func (r *recordList) TemplateData() any {
+	return r.Data
+}
+
 // recordItem adapts a single ZoneRecord for output.
 type recordItem struct {
 	Data *dnsimple.ZoneRecord `json:"data"`
@@ -79,6 +83,10 @@ func (r *recordItem) TableRows() [][]string {
 
 func (r *recordItem) JSONData() any {
 	return r
+}
+
+func (r *recordItem) TemplateData() any {
+	return r.Data
 }
 
 func newZonesRecordsCmd(f *cmdutil.Factory) *cobra.Command {

@@ -35,6 +35,8 @@ func (e *emailForwardList) TableRows() [][]string {
 
 func (e *emailForwardList) JSONData() any { return e }
 
+func (e *emailForwardList) TemplateData() any { return e.Data }
+
 // emailForwardItem adapts a single EmailForward for output.
 type emailForwardItem struct {
 	Data *dnsimple.EmailForward `json:"data"`
@@ -57,6 +59,8 @@ func (e *emailForwardItem) TableRows() [][]string {
 }
 
 func (e *emailForwardItem) JSONData() any { return e }
+
+func (e *emailForwardItem) TemplateData() any { return e.Data }
 
 func newDomainsEmailForwardsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{

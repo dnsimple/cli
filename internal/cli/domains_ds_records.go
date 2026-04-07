@@ -36,6 +36,8 @@ func (d *dsRecordList) TableRows() [][]string {
 
 func (d *dsRecordList) JSONData() any { return d }
 
+func (d *dsRecordList) TemplateData() any { return d.Data }
+
 // dsRecordItem adapts a single DelegationSignerRecord for output.
 type dsRecordItem struct {
 	Data *dnsimple.DelegationSignerRecord `json:"data"`
@@ -60,6 +62,8 @@ func (d *dsRecordItem) TableRows() [][]string {
 }
 
 func (d *dsRecordItem) JSONData() any { return d }
+
+func (d *dsRecordItem) TemplateData() any { return d.Data }
 
 func newDomainsDsRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{

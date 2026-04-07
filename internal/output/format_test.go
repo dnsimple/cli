@@ -9,14 +9,21 @@ import (
 )
 
 type stubFormattable struct {
-	headers []string
-	rows    [][]string
-	json    any
+	headers  []string
+	rows     [][]string
+	json     any
+	template any
 }
 
 func (s *stubFormattable) TableHeaders() []string { return s.headers }
 func (s *stubFormattable) TableRows() [][]string  { return s.rows }
 func (s *stubFormattable) JSONData() any          { return s.json }
+func (s *stubFormattable) TemplateData() any {
+	if s.template != nil {
+		return s.template
+	}
+	return s.json
+}
 
 func TestPrinterPrintJSON(t *testing.T) {
 	var buf bytes.Buffer
@@ -39,7 +46,10 @@ func TestPrinterPrintTemplate(t *testing.T) {
 	var buf bytes.Buffer
 	p := &Printer{Writer: &buf, Format: FormatTemplate, Template: "{{.name}}/{{.id}}"}
 
-	err := p.Print(&stubFormattable{json: map[string]any{"name": "dnsimple", "id": 1010}})
+	err := p.Print(&stubFormattable{
+		json:     map[string]any{"data": map[string]any{"name": "wrapped", "id": 0}},
+		template: map[string]any{"name": "dnsimple", "id": 1010},
+	})
 	if !assert.NoError(t, err) {
 		return
 	}

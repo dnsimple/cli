@@ -32,6 +32,13 @@ func (d *delegationOutput) TableRows() [][]string {
 
 func (d *delegationOutput) JSONData() any { return d }
 
+func (d *delegationOutput) TemplateData() any {
+	if d.Data == nil {
+		return nil
+	}
+	return *d.Data
+}
+
 func newRegistrarDelegationCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegation",

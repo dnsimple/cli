@@ -31,6 +31,8 @@ func (w *webhookList) TableRows() [][]string {
 
 func (w *webhookList) JSONData() any { return w }
 
+func (w *webhookList) TemplateData() any { return w.Data }
+
 type webhookItemOutput struct {
 	Data *dnsimple.Webhook `json:"data"`
 }
@@ -47,6 +49,8 @@ func (w *webhookItemOutput) TableRows() [][]string {
 }
 
 func (w *webhookItemOutput) JSONData() any { return w }
+
+func (w *webhookItemOutput) TemplateData() any { return w.Data }
 
 func newWebhooksCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
