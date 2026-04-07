@@ -228,6 +228,50 @@ func TestResolveCfgDefaultAccountUsedWhenNoFlagOrEnv(t *testing.T) {
 	assert.Equal(t, "cfg-account", rc.AccountID)
 }
 
+func TestResolveCfgDefaultAccountDoesNotOverrideActiveContext(t *testing.T) {
+	t.Setenv("DNSIMPLE_TOKEN", "")
+	t.Setenv("DNSIMPLE_ACCOUNT", "")
+
+	creds := &Credentials{
+		Contexts: []*Context{
+			{Name: "personal", Host: ProductionHost, Token: "tok-personal", AccountID: "100"},
+		},
+		ActiveContext: "personal",
+	}
+
+	rc, err := Resolve(creds, ResolveOptions{DefaultAccount: "cfg-account"})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Equal(t, "personal", rc.ContextName)
+	assert.Equal(t, "100", rc.AccountID)
+}
+
+func TestResolveCfgDefaultAccountDoesNotOverrideNamedContext(t *testing.T) {
+	t.Setenv("DNSIMPLE_TOKEN", "")
+	t.Setenv("DNSIMPLE_ACCOUNT", "")
+
+	creds := &Credentials{
+		Contexts: []*Context{
+			{Name: "personal", Host: ProductionHost, Token: "tok-personal", AccountID: "100"},
+			{Name: "work", Host: ProductionHost, Token: "tok-work", AccountID: "200"},
+		},
+		ActiveContext: "personal",
+	}
+
+	rc, err := Resolve(creds, ResolveOptions{
+		ContextName:    "work",
+		DefaultAccount: "cfg-account",
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Equal(t, "work", rc.ContextName)
+	assert.Equal(t, "200", rc.AccountID)
+}
+
 func TestResolveErrorsWhenNoTokenAvailable(t *testing.T) {
 	t.Setenv("DNSIMPLE_TOKEN", "")
 	creds := &Credentials{}

@@ -60,8 +60,9 @@ type ResolveOptions struct {
 //
 //  1. Explicit raw override (--token / --account / --sandbox)
 //  2. Environment variable (DNSIMPLE_TOKEN / DNSIMPLE_ACCOUNT)
-//  3. cfg.DefaultAccount (account only)
-//  4. Stored context selected by --context, --sandbox, or active_context
+//  3. Stored context selected by --context, --sandbox, or active_context
+//  4. cfg.DefaultAccount (account only, fallback when the resolved context
+//     does not already supply an account)
 //
 // Storage is only consulted if --context is set or if the raw overrides do
 // not supply enough to satisfy the invocation.
@@ -76,9 +77,6 @@ func Resolve(creds *Credentials, opts ResolveOptions) (*ResolvedContext, error) 
 	rawAccount := opts.Account
 	if rawAccount == "" {
 		rawAccount = os.Getenv("DNSIMPLE_ACCOUNT")
-	}
-	if rawAccount == "" {
-		rawAccount = opts.DefaultAccount
 	}
 
 	// Decide whether we need to consult stored credentials.
@@ -112,6 +110,9 @@ func Resolve(creds *Credentials, opts ResolveOptions) (*ResolvedContext, error) 
 	}
 	if rawAccount != "" {
 		rc.AccountID = rawAccount
+	}
+	if rc.AccountID == "" && opts.DefaultAccount != "" {
+		rc.AccountID = opts.DefaultAccount
 	}
 
 	// --sandbox host override wins over the context-supplied host.
