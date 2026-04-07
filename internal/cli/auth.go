@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 
@@ -55,10 +54,80 @@ func newAuthCmd(f *cmdutil.Factory) *cobra.Command {
 
 	cmd.AddCommand(newAuthLoginCmd(f))
 	cmd.AddCommand(newAuthLogoutCmd(f))
+	cmd.AddCommand(newAuthListCmd(f))
 	cmd.AddCommand(newAuthStatusCmd(f))
 	cmd.AddCommand(newAuthSwitchCmd(f))
 
 	return cmd
+}
+
+// authContextRow is a single row in the `auth list` output.
+type authContextRow struct {
+	Active      bool   `json:"active"`
+	Name        string `json:"name"`
+	Environment string `json:"environment"`
+	Host        string `json:"host"`
+	AccountID   string `json:"account_id,omitempty"`
+	User        string `json:"user,omitempty"`
+}
+
+// authContextList is the `auth list` output.
+type authContextList struct {
+	Data []authContextRow `json:"contexts"`
+}
+
+func (a *authContextList) TableHeaders() []string {
+	return []string{"", "NAME", "ENVIRONMENT", "ACCOUNT", "USER"}
+}
+
+func (a *authContextList) TableRows() [][]string {
+	rows := make([][]string, len(a.Data))
+	for i, c := range a.Data {
+		marker := ""
+		if c.Active {
+			marker = "*"
+		}
+		rows[i] = []string{marker, c.Name, c.Environment, c.AccountID, c.User}
+	}
+	return rows
+}
+
+func (a *authContextList) JSONData() any {
+	return a
+}
+
+func newAuthListCmd(f *cmdutil.Factory) *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List authentication contexts",
+		Long: `List all stored authentication contexts and highlight the active one.
+
+This command does not contact the DNSimple API and works without a valid token.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			creds, err := config.LoadCredentials()
+			if err != nil {
+				return err
+			}
+
+			rows := make([]authContextRow, len(creds.Contexts))
+			for i, ctx := range creds.Contexts {
+				rows[i] = authContextRow{
+					Active:      ctx.Name == creds.ActiveContext,
+					Name:        ctx.Name,
+					Environment: config.EnvironmentName(ctx.Host),
+					Host:        ctx.Host,
+					AccountID:   ctx.AccountID,
+					User:        ctx.User,
+				}
+			}
+
+			if len(rows) == 0 {
+				fmt.Fprintln(cmd.ErrOrStderr(), "No contexts. Run 'dnsimple auth login' to create one.")
+			}
+
+			return f.Printer(cmd).Print(&authContextList{Data: rows})
+		},
+	}
 }
 
 func newAuthLoginCmd(f *cmdutil.Factory) *cobra.Command {
@@ -339,6 +408,13 @@ no contexts remain.`,
 	return cmd
 }
 
+// promptForAccountSelection presents a numbered list of accounts during
+// `auth login` when a user token grants access to more than one account.
+//
+// TUI: good candidate for an interactive picker (arrow keys, filtering) once
+// the CLI takes on a TUI library as a global dependency. Until then, the
+// numbered prompt is consistent with promptForContextSelection and works in
+// non-TTY environments such as piped stdin and CI.
 func promptForAccountSelection(in io.Reader, errOut io.Writer, accounts []dnsimple.Account) (string, error) {
 	fmt.Fprintln(errOut, "")
 	fmt.Fprintln(errOut, "Multiple accounts available:")
@@ -426,56 +502,119 @@ func newAuthStatusCmd(f *cmdutil.Factory) *cobra.Command {
 
 func newAuthSwitchCmd(f *cmdutil.Factory) *cobra.Command {
 	return &cobra.Command{
-		Use:   "switch <account-id>",
-		Short: "Switch default account",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := f.Config()
-			if err != nil {
-				return err
-			}
+		Use:   "switch [<name-or-account-id>]",
+		Short: "Switch the active authentication context",
+		Long: `Switch the active authentication context.
 
+With an argument: switches the active context to the named context. If no
+context with that name exists, falls back to matching against stored account
+IDs (errors when ambiguous).
+
+Without an argument: opens an interactive picker listing every stored context.
+
+Switching is a local operation; it does not contact the DNSimple API.`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
 			creds, err := config.LoadCredentials()
 			if err != nil {
 				return err
 			}
-
-			host := cfg.HostKey()
-			cred := creds.Get(host)
-			if cred == nil {
-				return fmt.Errorf("not authenticated. Run 'dnsimple auth login' first")
+			if len(creds.Contexts) == 0 {
+				return fmt.Errorf("no contexts. Run 'dnsimple auth login' to create one")
 			}
 
-			// Validate the requested account is accessible with the current token.
-			c, err := f.Client()
-			if err != nil {
-				return err
-			}
-			accounts, err := c.Accounts.ListAccounts(context.Background(), nil)
-			if err != nil {
-				return fmt.Errorf("failed to list accounts: %w", err)
-			}
-
-			target := args[0]
-			found := false
-			for _, a := range accounts.Data {
-				if strconv.FormatInt(a.ID, 10) == target {
-					found = true
-					break
+			var target string
+			if len(args) == 1 {
+				target, err = resolveSwitchTarget(creds, args[0])
+				if err != nil {
+					return err
+				}
+			} else {
+				target, err = promptForContextSelection(cmd.InOrStdin(), cmd.ErrOrStderr(), creds)
+				if err != nil {
+					return err
 				}
 			}
-			if !found {
-				return fmt.Errorf("account %s is not accessible with the current token", target)
+
+			if target == creds.ActiveContext {
+				fmt.Fprintf(cmd.ErrOrStderr(), "Already on context %q\n", target)
+				return nil
 			}
 
-			cred.AccountID = target
-			creds.Set(host, cred)
+			if err := creds.SetActive(target); err != nil {
+				return err
+			}
 			if err := creds.Save(); err != nil {
 				return err
 			}
 
-			fmt.Fprintf(os.Stderr, "Switched to account %s\n", target)
+			fmt.Fprintf(cmd.ErrOrStderr(), "Switched to context %q\n", target)
 			return nil
 		},
 	}
+}
+
+// resolveSwitchTarget maps the user's argument to a stored context name. The
+// argument is matched first as a context name, then as an account ID. An
+// account ID that matches multiple contexts produces an error listing them.
+func resolveSwitchTarget(creds *config.Credentials, arg string) (string, error) {
+	if creds.Find(arg) != nil {
+		return arg, nil
+	}
+
+	var matches []*config.Context
+	for _, ctx := range creds.Contexts {
+		if ctx.AccountID == arg {
+			matches = append(matches, ctx)
+		}
+	}
+	switch len(matches) {
+	case 0:
+		return "", fmt.Errorf("no context named %q (and no stored context has account %s)", arg, arg)
+	case 1:
+		return matches[0].Name, nil
+	default:
+		names := make([]string, len(matches))
+		for i, m := range matches {
+			names[i] = m.Name
+		}
+		return "", fmt.Errorf("multiple contexts have account %s (%s); pass the context name instead", arg, strings.Join(names, ", "))
+	}
+}
+
+// promptForContextSelection renders a numbered list of contexts and reads the
+// user's choice from stdin. The active context is marked with a "*".
+//
+// TUI: good candidate for an interactive picker (arrow keys, filtering) once
+// the CLI takes on a TUI library as a global dependency. Until then, the
+// numbered prompt is consistent with promptForAccountSelection, works in
+// non-TTY environments, and is trivial to test.
+func promptForContextSelection(in io.Reader, errOut io.Writer, creds *config.Credentials) (string, error) {
+	fmt.Fprintln(errOut, "")
+	fmt.Fprintln(errOut, "Available contexts:")
+	fmt.Fprintln(errOut, "")
+	for i, ctx := range creds.Contexts {
+		marker := " "
+		if ctx.Name == creds.ActiveContext {
+			marker = "*"
+		}
+		fmt.Fprintf(errOut, "  %s [%d] %-20s %-12s %s (%s)\n",
+			marker, i+1, ctx.Name, config.EnvironmentName(ctx.Host), ctx.User, ctx.AccountID)
+	}
+	fmt.Fprintln(errOut, "")
+	fmt.Fprint(errOut, "Select context number: ")
+
+	scanner := bufio.NewScanner(in)
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return "", fmt.Errorf("failed to read context selection: %w", err)
+		}
+		return "", fmt.Errorf("no context selected")
+	}
+
+	choice, err := strconv.Atoi(strings.TrimSpace(scanner.Text()))
+	if err != nil || choice < 1 || choice > len(creds.Contexts) {
+		return "", fmt.Errorf("invalid selection")
+	}
+	return creds.Contexts[choice-1].Name, nil
 }

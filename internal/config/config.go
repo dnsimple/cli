@@ -115,10 +115,3 @@ func (c *Config) Save() error {
 	return c.v.WriteConfigAs(filepath.Join(dir, configFileName+".yml"))
 }
 
-// HostKey returns the host key used for credential storage based on the current BaseURL.
-func (c *Config) HostKey() string {
-	if c.Sandbox {
-		return "api.sandbox.dnsimple.com"
-	}
-	return "api.dnsimple.com"
-}

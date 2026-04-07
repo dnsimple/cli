@@ -72,14 +72,12 @@ func TestSaveAndReload(t *testing.T) {
 	assert.Equal(t, 99, reloaded.PerPage)
 }
 
-func TestSetSandboxUpdatesBaseURLAndHostKey(t *testing.T) {
+func TestSetSandboxUpdatesBaseURL(t *testing.T) {
 	cfg := &Config{}
 
 	cfg.SetSandbox(true)
 	assert.Equal(t, sandboxBaseURL, cfg.BaseURL)
-	assert.Equal(t, "api.sandbox.dnsimple.com", cfg.HostKey())
 
 	cfg.SetSandbox(false)
 	assert.Equal(t, defaultBaseURL, cfg.BaseURL)
-	assert.Equal(t, "api.dnsimple.com", cfg.HostKey())
 }

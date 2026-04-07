@@ -379,6 +379,257 @@ func TestAuthLogoutErrorsWhenNoActiveAndNoName(t *testing.T) {
 	}
 }
 
+// --- auth list command ---
+
+func TestAuthListPrintsAllContextsAndMarksActive(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+
+	creds := &config.Credentials{
+		Contexts: []*config.Context{
+			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "981", User: "alice@example.com"},
+			{Name: "sandbox", Host: config.SandboxHost, Token: "tok-2", AccountID: "24", User: "bob@example.com"},
+		},
+		ActiveContext: "sandbox",
+	}
+	if err := creds.Save(); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	f := cmdutil.NewFactory("test")
+	cmd := newAuthListCmd(f)
+
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetErr(io.Discard)
+
+	if err := cmd.RunE(cmd, nil); !assert.NoError(t, err) {
+		return
+	}
+
+	out := stdout.String()
+	assert.Contains(t, out, "personal")
+	assert.Contains(t, out, "sandbox")
+	assert.Contains(t, out, "production")
+	assert.Contains(t, out, "981")
+	assert.Contains(t, out, "alice@example.com")
+	assert.Contains(t, out, "*", "active context should be marked")
+}
+
+func TestAuthListWithNoContextsIsEmpty(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+
+	f := cmdutil.NewFactory("test")
+	cmd := newAuthListCmd(f)
+
+	var stdout, stderr bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
+
+	if err := cmd.RunE(cmd, nil); !assert.NoError(t, err) {
+		return
+	}
+	assert.Contains(t, stderr.String(), "No contexts")
+}
+
+// --- auth switch ---
+
+func TestAuthSwitchByName(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+
+	creds := &config.Credentials{
+		Contexts: []*config.Context{
+			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "981"},
+			{Name: "sandbox", Host: config.SandboxHost, Token: "tok-2", AccountID: "24"},
+		},
+		ActiveContext: "personal",
+	}
+	if err := creds.Save(); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	f := cmdutil.NewFactory("test")
+	cmd := newAuthSwitchCmd(f)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	if err := cmd.RunE(cmd, []string{"sandbox"}); !assert.NoError(t, err) {
+		return
+	}
+
+	loaded, _ := config.LoadCredentials()
+	assert.Equal(t, "sandbox", loaded.ActiveContext)
+}
+
+func TestAuthSwitchByAccountID(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+
+	creds := &config.Credentials{
+		Contexts: []*config.Context{
+			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "981"},
+			{Name: "sandbox", Host: config.SandboxHost, Token: "tok-2", AccountID: "24"},
+		},
+		ActiveContext: "personal",
+	}
+	if err := creds.Save(); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	f := cmdutil.NewFactory("test")
+	cmd := newAuthSwitchCmd(f)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	if err := cmd.RunE(cmd, []string{"24"}); !assert.NoError(t, err) {
+		return
+	}
+
+	loaded, _ := config.LoadCredentials()
+	assert.Equal(t, "sandbox", loaded.ActiveContext)
+}
+
+func TestAuthSwitchByAmbiguousAccountIDErrors(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+
+	creds := &config.Credentials{
+		Contexts: []*config.Context{
+			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "981"},
+			{Name: "work", Host: config.ProductionHost, Token: "tok-2", AccountID: "981"},
+		},
+		ActiveContext: "personal",
+	}
+	if err := creds.Save(); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	f := cmdutil.NewFactory("test")
+	cmd := newAuthSwitchCmd(f)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	err := cmd.RunE(cmd, []string{"981"})
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "multiple contexts")
+		assert.Contains(t, err.Error(), "personal")
+		assert.Contains(t, err.Error(), "work")
+	}
+}
+
+func TestAuthSwitchUnknownErrors(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+
+	creds := &config.Credentials{
+		Contexts: []*config.Context{
+			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "981"},
+		},
+		ActiveContext: "personal",
+	}
+	if err := creds.Save(); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	f := cmdutil.NewFactory("test")
+	cmd := newAuthSwitchCmd(f)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	err := cmd.RunE(cmd, []string{"missing"})
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), `no context named "missing"`)
+	}
+}
+
+func TestAuthSwitchToCurrentIsNoOp(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+
+	creds := &config.Credentials{
+		Contexts: []*config.Context{
+			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "981"},
+		},
+		ActiveContext: "personal",
+	}
+	if err := creds.Save(); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	f := cmdutil.NewFactory("test")
+	cmd := newAuthSwitchCmd(f)
+	var stderr bytes.Buffer
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(&stderr)
+
+	if err := cmd.RunE(cmd, []string{"personal"}); !assert.NoError(t, err) {
+		return
+	}
+	assert.Contains(t, stderr.String(), "Already on context")
+}
+
+func TestAuthSwitchEmptyContextsErrors(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+
+	f := cmdutil.NewFactory("test")
+	cmd := newAuthSwitchCmd(f)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	err := cmd.RunE(cmd, []string{"any"})
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "no contexts")
+	}
+}
+
+func TestAuthSwitchInteractivePicker(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+
+	creds := &config.Credentials{
+		Contexts: []*config.Context{
+			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "981"},
+			{Name: "sandbox", Host: config.SandboxHost, Token: "tok-2", AccountID: "24"},
+		},
+		ActiveContext: "personal",
+	}
+	if err := creds.Save(); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	f := cmdutil.NewFactory("test")
+	cmd := newAuthSwitchCmd(f)
+	cmd.SetIn(strings.NewReader("2\n"))
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	if err := cmd.RunE(cmd, nil); !assert.NoError(t, err) {
+		return
+	}
+
+	loaded, _ := config.LoadCredentials()
+	assert.Equal(t, "sandbox", loaded.ActiveContext)
+}
+
+// --- promptForContextSelection ---
+
+func TestPromptForContextSelectionInvalidInputErrors(t *testing.T) {
+	creds := &config.Credentials{
+		Contexts: []*config.Context{
+			{Name: "personal", Host: config.ProductionHost},
+			{Name: "sandbox", Host: config.SandboxHost},
+		},
+	}
+
+	_, err := promptForContextSelection(strings.NewReader("99\n"), io.Discard, creds)
+	assert.EqualError(t, err, "invalid selection")
+}
+
+func TestPromptForContextSelectionEOFErrors(t *testing.T) {
+	creds := &config.Credentials{
+		Contexts: []*config.Context{
+			{Name: "personal", Host: config.ProductionHost},
+		},
+	}
+
+	_, err := promptForContextSelection(strings.NewReader(""), io.Discard, creds)
+	assert.EqualError(t, err, "no context selected")
+}
+
 // --- helpers ---
 
 // isolateConfigHomeForCLI redirects HOME to a temp dir so the test reads and
