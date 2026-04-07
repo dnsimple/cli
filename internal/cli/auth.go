@@ -22,6 +22,7 @@ type authStatusOutput struct {
 	UserEmail    string `json:"user_email,omitempty"`
 	AccountID    int64  `json:"account_id,omitempty"`
 	AccountEmail string `json:"account_email,omitempty"`
+	Warning      string `json:"warning,omitempty"`
 }
 
 func (a *authStatusOutput) TableHeaders() []string {
@@ -35,6 +36,9 @@ func (a *authStatusOutput) TableRows() [][]string {
 	}
 	if a.AccountID != 0 {
 		rows = append(rows, []string{"Account", fmt.Sprintf("%s (ID: %d)", a.AccountEmail, a.AccountID)})
+	}
+	if a.Warning != "" {
+		rows = append(rows, []string{"Warning", a.Warning})
 	}
 	return rows
 }
@@ -251,16 +255,22 @@ func newAuthStatusCmd(f *cmdutil.Factory) *cobra.Command {
 
 			// Show the default account commands will actually use, resolved through
 			// the same precedence chain (flag → env → config → stored credentials).
-			// Enrich the ID with an email by looking it up in the accessible accounts.
+			// Enrich the ID with an email by looking it up in the accessible accounts,
+			// and warn if the stored default no longer matches anything the token can see.
 			if accountID, err := f.AccountID(); err == nil && accountID != "" {
 				if id, parseErr := strconv.ParseInt(accountID, 10, 64); parseErr == nil {
 					data.AccountID = id
 					if accounts, err := c.Accounts.ListAccounts(context.Background(), nil); err == nil {
+						found := false
 						for _, a := range accounts.Data {
 							if a.ID == id {
 								data.AccountEmail = a.Email
+								found = true
 								break
 							}
+						}
+						if !found {
+							data.Warning = fmt.Sprintf("account %d is not accessible with the current token; run 'dnsimple auth switch <account-id>' to update", id)
 						}
 					}
 				}
