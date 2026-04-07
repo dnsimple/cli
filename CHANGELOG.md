@@ -2,6 +2,13 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## main
+
+### Fixed
+
+- `auth switch` now validates that the requested account is accessible with the current token, instead of silently storing any value. (dnsimple/dnsimple-cli#25)
+- `auth status` now reports the resolved default account (the one commands actually use) instead of the token's bound account from `whoami`. (dnsimple/dnsimple-cli#25)
+
 ## 0.4.0 - 2026-04-03
 
 ### Added
