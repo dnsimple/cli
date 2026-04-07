@@ -176,7 +176,7 @@ func TestResolveRawFlagsOverrideContext(t *testing.T) {
 	assert.Equal(t, ProductionHost, rc.Host)
 }
 
-func TestResolveContextWithSandboxOverrideHost(t *testing.T) {
+func TestResolveContextWithSandboxErrorsOnEnvironmentConflict(t *testing.T) {
 	creds := &Credentials{
 		Contexts: []*Context{
 			{Name: "work", Host: ProductionHost, Token: "tok-work", AccountID: "200"},
@@ -184,18 +184,14 @@ func TestResolveContextWithSandboxOverrideHost(t *testing.T) {
 		ActiveContext: "work",
 	}
 
-	rc, err := Resolve(creds, ResolveOptions{
+	_, err := Resolve(creds, ResolveOptions{
 		ContextName: "work",
 		Sandbox:     true,
 	})
-	if !assert.NoError(t, err) {
-		return
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), `context "work" targets production`)
+		assert.Contains(t, err.Error(), "sandbox mode is enabled")
 	}
-
-	assert.Equal(t, "work", rc.ContextName)
-	assert.Equal(t, "tok-work", rc.Token)
-	assert.Equal(t, SandboxHost, rc.Host)
-	assert.Equal(t, sandboxBaseURL, rc.BaseURL)
 }
 
 func TestResolveEnvVarsFillGaps(t *testing.T) {

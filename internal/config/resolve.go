@@ -148,6 +148,13 @@ func pickContext(creds *Credentials, opts ResolveOptions) (*Context, error) {
 		if ctx == nil {
 			return nil, fmt.Errorf("context %q not found", opts.ContextName)
 		}
+		if opts.Sandbox && ctx.Host != SandboxHost {
+			return nil, fmt.Errorf(
+				"context %q targets %s, but sandbox mode is enabled; unset --sandbox/DNSIMPLE_SANDBOX or choose a sandbox context",
+				opts.ContextName,
+				EnvironmentName(ctx.Host),
+			)
+		}
 		return ctx, nil
 	}
 
