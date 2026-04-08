@@ -22,6 +22,7 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 - `auth switch` now validates that the requested account is accessible with the current token, instead of silently storing any value. (dnsimple/dnsimple-cli#25)
 - `auth status` now reports the resolved default account (the one commands actually use) instead of the token's bound account from `whoami`. (dnsimple/dnsimple-cli#25)
 - `auth status` now reflects the active context's environment when the active context is sandbox without `--sandbox` being passed on the command line. (dnsimple/dnsimple-cli#28)
+- `analytics query` now renders only the columns that match the requested `--groupings` (plus `VOLUME`), validates supported grouping keys (`zone_name`, `date`) before calling the API, and rejects unknown values with a clear error. (dnsimple/dnsimple-cli#21)
 
 ## 0.4.0 - 2026-04-03
 
