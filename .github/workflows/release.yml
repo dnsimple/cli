@@ -29,6 +29,15 @@ jobs:
           version="${GITHUB_REF#refs/tags/v}"
           awk "/^## ${version} /{found=1; next} /^## /{found=0} found" CHANGELOG.md > /tmp/release-notes.md
 
+      - name: Mint homebrew-tap token
+        id: tap_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.HOMEBREW_TAP_APP_ID }}
+          private-key: ${{ secrets.HOMEBREW_TAP_APP_PRIVATE_KEY }}
+          owner: dnsimple
+          repositories: homebrew-tap
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7.0.0
         with:
@@ -36,11 +45,11 @@ jobs:
           args: release --clean --release-notes /tmp/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ steps.tap_token.outputs.token }}
 
       - name: Publish to homebrew-tap
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.tap_token.outputs.token }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
           dist="dist"

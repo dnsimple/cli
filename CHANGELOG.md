@@ -2,6 +2,12 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## main
+
+### Changed
+
+- Release pipeline now mints a short-lived GitHub App installation token to push Homebrew formula updates to `dnsimple/homebrew-tap`, replacing the previous personal access token. Commits are server-side signed by GitHub and satisfy the tap's verified-signature branch protection rule. (dnsimple/dnsimple-cli#34)
+
 ## 0.5.0 - 2026-04-08
 
 ### Added
