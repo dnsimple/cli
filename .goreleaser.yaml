@@ -37,13 +37,11 @@ brews:
       owner: dnsimple
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    # Match the dnsimple-release-bot GitHub App's bot identity so the
-    # Contents API commit is created as the GitHub App identity and is
-    # auto-signed by GitHub, satisfying the homebrew-tap branch protection
-    # rule that requires verified signatures.
+    # Omit the committer field from the Contents API call so GitHub
+    # auto-signs the commit as the dnsimple-release-bot GitHub App
+    # identity, satisfying the homebrew-tap branch protection rule
+    # that requires verified signatures.
     commit_author:
-      name: dnsimple-release-bot[bot]
-      email: 274471231+dnsimple-release-bot[bot]@users.noreply.github.com
       use_github_app_token: true
     # Temporary: override download URLs to point to the public homebrew-tap repo
     # while dnsimple-cli is still private.
