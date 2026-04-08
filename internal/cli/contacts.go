@@ -324,9 +324,7 @@ func newContactsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Contact %d deleted\n", contactID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Contact %d deleted\n", contactID)
 			return nil
 		},
 	}

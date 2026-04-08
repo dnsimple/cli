@@ -398,9 +398,7 @@ func newRegistrarTransferOutCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Transfer out authorized for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Transfer out authorized for %s\n", args[0])
 			return nil
 		},
 	}

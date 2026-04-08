@@ -14,7 +14,6 @@ import (
 type Opts struct {
 	CurrentVersion string
 	IsTerminal     bool
-	Quiet          bool
 	Debug          bool
 	Args           []string
 }
@@ -28,9 +27,6 @@ func ShouldCheck(opts Opts) bool {
 		return false
 	}
 	if !opts.IsTerminal {
-		return false
-	}
-	if opts.Quiet {
 		return false
 	}
 	if os.Getenv("CI") != "" {

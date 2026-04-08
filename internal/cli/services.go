@@ -174,9 +174,7 @@ func newServicesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Service %s applied to %s\n", args[0], args[1])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Service %s applied to %s\n", args[0], args[1])
 			return nil
 		},
 	}
@@ -213,9 +211,7 @@ func newServicesUnapplyCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Service %s removed from %s\n", args[0], args[1])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Service %s removed from %s\n", args[0], args[1])
 			return nil
 		},
 	}

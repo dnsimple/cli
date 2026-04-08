@@ -170,9 +170,7 @@ func newPushesAcceptCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Push %d accepted\n", pushID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Push %d accepted\n", pushID)
 			return nil
 		},
 	}
@@ -209,9 +207,7 @@ func newPushesRejectCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Push %d rejected\n", pushID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Push %d rejected\n", pushID)
 			return nil
 		},
 	}

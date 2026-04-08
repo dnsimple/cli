@@ -46,7 +46,6 @@ type GlobalFlags struct {
 	Format  string
 	NoColor bool
 	Debug   bool
-	Quiet   bool
 }
 
 // NewFactory creates a new Factory with lazy initialization.

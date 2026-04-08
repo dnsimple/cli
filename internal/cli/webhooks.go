@@ -182,9 +182,7 @@ func newWebhooksDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Webhook %d deleted\n", id)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Webhook %d deleted\n", id)
 			return nil
 		},
 	}

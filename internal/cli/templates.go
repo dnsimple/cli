@@ -220,9 +220,7 @@ func newTemplatesDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Template %s deleted\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Template %s deleted\n", args[0])
 			return nil
 		},
 	}
@@ -252,9 +250,7 @@ func newTemplatesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Template %s applied to %s\n", args[0], args[1])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Template %s applied to %s\n", args[0], args[1])
 			return nil
 		},
 	}

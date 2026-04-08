@@ -101,9 +101,7 @@ func newDelegationChangeCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Delegation updated for %s: %s\n", args[0], strings.Join(nameServers, ", "))
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Delegation updated for %s: %s\n", args[0], strings.Join(nameServers, ", "))
 			_ = resp
 			return nil
 		},

@@ -363,9 +363,7 @@ func newRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Record %d deleted from zone %s\n", recordID, args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Record %d deleted from zone %s\n", recordID, args[0])
 			return nil
 		},
 	}

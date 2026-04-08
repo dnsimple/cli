@@ -258,9 +258,7 @@ In scripts and CI, deleting a registered domain requires both --yes and
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Domain %s deleted\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Domain %s deleted\n", args[0])
 			return nil
 		},
 	}

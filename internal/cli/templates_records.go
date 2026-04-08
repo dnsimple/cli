@@ -201,9 +201,7 @@ func newTemplateRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Template record %d deleted\n", recordID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Template record %d deleted\n", recordID)
 			return nil
 		},
 	}

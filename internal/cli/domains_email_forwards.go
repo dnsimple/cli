@@ -205,9 +205,7 @@ func newEmailForwardsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Email forward %d deleted from %s\n", forwardID, args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Email forward %d deleted from %s\n", forwardID, args[0])
 			return nil
 		},
 	}

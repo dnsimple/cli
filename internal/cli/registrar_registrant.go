@@ -217,9 +217,7 @@ func newRegistrantChangeDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Registrant change %d cancelled\n", changeID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Registrant change %d cancelled\n", changeID)
 			return nil
 		},
 	}

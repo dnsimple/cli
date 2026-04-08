@@ -31,7 +31,6 @@ func buildRootCmd(f *cmdutil.Factory) *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&f.Flags.Format, "format", "", "Custom output format (Go template over the resource; use {{.Field}} for single items or {{range .}}{{.Field}}{{end}} for lists)")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.NoColor, "no-color", false, "Disable colored output")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.Debug, "debug", false, "Enable debug logging")
-	rootCmd.PersistentFlags().BoolVarP(&f.Flags.Quiet, "quiet", "q", false, "Suppress non-essential output")
 
 	// Register commands
 	rootCmd.AddCommand(newAuthCmd(f))
@@ -69,7 +68,6 @@ func Execute(version string, args []string) int {
 	if update.ShouldCheck(update.Opts{
 		CurrentVersion: version,
 		IsTerminal:     term.IsTerminal(int(os.Stderr.Fd())),
-		Quiet:          containsFlag(args, "-q", "--quiet"),
 		Debug:          debug,
 		Args:           args,
 	}) {

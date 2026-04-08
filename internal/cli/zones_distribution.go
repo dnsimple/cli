@@ -97,9 +97,7 @@ func newZonesActivateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "DNS activated for zone %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "DNS activated for zone %s\n", args[0])
 			return nil
 		},
 	}
@@ -126,9 +124,7 @@ func newZonesDeactivateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "DNS deactivated for zone %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "DNS deactivated for zone %s\n", args[0])
 			return nil
 		},
 	}
