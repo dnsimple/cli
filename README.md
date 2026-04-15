@@ -9,7 +9,27 @@ A command-line interface for the [DNSimple API v2](https://developer.dnsimple.co
 
 ## Installation
 
-### Using the install script
+### Windows
+
+Native Windows installation is currently available from the release ZIP archives.
+
+1. Download the latest `dnsimple_<version>_windows_amd64.zip` or `dnsimple_<version>_windows_arm64.zip` from the [GitHub Releases](https://github.com/dnsimple/dnsimple-cli/releases/latest) page.
+2. Extract `dnsimple.exe`.
+3. Move `dnsimple.exe` to a directory on your `PATH`, such as `%USERPROFILE%\bin`.
+4. Open a new terminal window and verify the installation:
+
+```powershell
+dnsimple version
+```
+
+> [!NOTE]
+> `winget` and a native PowerShell installer are not available yet.
+>
+> Homebrew is supported on macOS, Linux, and WSL. The `install.sh` script can also be used from WSL or Unix-like shells such as Git Bash, but it is not a native `powershell` or `cmd.exe` installer.
+
+### macOS and Linux
+
+#### Using the install script
 
 ```shell
 curl -fsSL http://cli-beta.dnsimple.com/install.sh | sh
@@ -17,19 +37,21 @@ curl -fsSL http://cli-beta.dnsimple.com/install.sh | sh
 
 The install URL will eventually move to `https://dnsimple.com/install.sh`.
 
-### Using Homebrew
+#### Using Homebrew
 
 ```shell
 brew install dnsimple/tap/dnsimple
 ```
 
-### Using Go
+### Cross-platform developer install
+
+#### Using Go
 
 ```shell
 go install github.com/dnsimple/dnsimple-cli/cmd/dnsimple@latest
 ```
 
-### From source
+#### From source
 
 ```shell
 git clone https://github.com/dnsimple/dnsimple-cli.git
