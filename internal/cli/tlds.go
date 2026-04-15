@@ -15,7 +15,7 @@ type tldList struct {
 }
 
 func (t *tldList) TableHeaders() []string {
-	return []string{"TLD", "TYPE", "REGISTRATION", "RENEWAL", "TRANSFER", "WHOIS PRIVACY"}
+	return []string{"TLD", "TYPE", "REGISTRATION", "RENEWAL", "TRANSFER", "WHOIS PRIVACY", "TRUSTEE"}
 }
 
 func (t *tldList) TableRows() [][]string {
@@ -28,9 +28,21 @@ func (t *tldList) TableRows() [][]string {
 			strconv.FormatBool(tld.RenewalEnabled),
 			strconv.FormatBool(tld.TransferEnabled),
 			strconv.FormatBool(tld.WhoisPrivacy),
+			tldTrusteeState(tld),
 		}
 	}
 	return rows
+}
+
+func tldTrusteeState(tld dnsimple.Tld) string {
+	switch {
+	case tld.TrusteeServiceRequired:
+		return "required"
+	case tld.TrusteeServiceEnabled:
+		return "optional"
+	default:
+		return "-"
+	}
 }
 
 func (t *tldList) JSONData() any { return t }
@@ -57,6 +69,8 @@ func (t *tldItemOutput) TableRows() [][]string {
 		{"Auto Renew Only", strconv.FormatBool(tld.AutoRenewOnly)},
 		{"Min Registration", strconv.Itoa(tld.MinimumRegistration)},
 		{"DNSSEC Interface", tld.DnssecInterfaceType},
+		{"Trustee Service Supported", strconv.FormatBool(tld.TrusteeServiceEnabled)},
+		{"Trustee Service Required", strconv.FormatBool(tld.TrusteeServiceRequired)},
 	}
 }
 
