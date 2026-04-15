@@ -15,7 +15,6 @@ const (
 	InstallMethodScript
 	InstallMethodPowerShell
 	InstallMethodGo
-	InstallMethodWinget
 )
 
 // DetectInstallMethod determines the installation method from the executable path.
@@ -33,12 +32,6 @@ func DetectInstallMethod(executablePath string) InstallMethod {
 
 	if strings.Contains(p, "/.dnsimple/bin/") {
 		return InstallMethodScript
-	}
-
-	if strings.Contains(p, "/Microsoft/WinGet/Links/") ||
-		strings.Contains(p, "/WinGet/Packages/") ||
-		strings.Contains(p, "/WindowsApps/") {
-		return InstallMethodWinget
 	}
 
 	// Check for Go bin directories.
@@ -67,8 +60,6 @@ func UpgradeCommand(method InstallMethod) string {
 		return "powershell -ExecutionPolicy Bypass -Command \"irm https://dnsimple-cli.netlify.app/install.ps1 | iex\""
 	case InstallMethodGo:
 		return "go install github.com/dnsimple/dnsimple-cli/cmd/dnsimple@latest"
-	case InstallMethodWinget:
-		return "winget upgrade --id DNSimple.DNSimpleCLI"
 	default:
 		return ""
 	}

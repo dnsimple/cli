@@ -136,8 +136,6 @@ func installMethodName(m InstallMethod) string {
 		return "powershell"
 	case InstallMethodGo:
 		return "go"
-	case InstallMethodWinget:
-		return "winget"
 	default:
 		return "unknown"
 	}
