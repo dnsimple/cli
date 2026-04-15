@@ -11,13 +11,15 @@ A command-line interface for the [DNSimple API v2](https://developer.dnsimple.co
 
 ### Windows
 
-Install with `winget` once the package is available:
+#### Using the PowerShell install script
 
 ```powershell
-winget install --id DNSimple.DNSimpleCLI
+powershell -ExecutionPolicy Bypass -Command "irm https://cli-beta.dnsimple.com/install.ps1 | iex"
 ```
 
-You can also install from the release ZIP archives:
+The installer downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
+
+#### Manual ZIP install
 
 1. Download the latest `dnsimple_<version>_windows_amd64.zip` or `dnsimple_<version>_windows_arm64.zip` from the [public release mirror](https://github.com/dnsimple/homebrew-tap/releases/latest) page.
 2. Extract `dnsimple.exe`.

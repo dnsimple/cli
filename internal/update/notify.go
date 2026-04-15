@@ -132,6 +132,8 @@ func installMethodName(m InstallMethod) string {
 		return "homebrew"
 	case InstallMethodScript:
 		return "script"
+	case InstallMethodPowerShell:
+		return "powershell"
 	case InstallMethodGo:
 		return "go"
 	case InstallMethodWinget:

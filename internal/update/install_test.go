@@ -17,6 +17,7 @@ func TestDetectInstallMethod(t *testing.T) {
 		{"homebrew usr local", "/usr/local/Cellar/dnsimple/0.3.0/bin/dnsimple", InstallMethodHomebrew},
 		{"install script", "/Users/me/.dnsimple/bin/dnsimple", InstallMethodScript},
 		{"install script linux", "/home/user/.dnsimple/bin/dnsimple", InstallMethodScript},
+		{"powershell install", "C:/Users/me/.dnsimple/bin/dnsimple.exe", InstallMethodPowerShell},
 		{"winget links", "C:/Users/me/AppData/Local/Microsoft/WinGet/Links/dnsimple.exe", InstallMethodWinget},
 		{"winget packages", "C:/Program Files/WinGet/Packages/DNSimple.DNSimpleCLI_Microsoft.Winget.Source_8wekyb3d8bbwe/dnsimple.exe", InstallMethodWinget},
 		{"unknown path", "/usr/local/bin/dnsimple", InstallMethodUnknown},
@@ -51,6 +52,7 @@ func TestUpgradeCommand(t *testing.T) {
 	}{
 		{InstallMethodHomebrew, "brew upgrade dnsimple"},
 		{InstallMethodScript, "curl -fsSL https://dnsimple-cli.netlify.app/install.sh | sh"},
+		{InstallMethodPowerShell, "powershell -ExecutionPolicy Bypass -Command \"irm https://dnsimple-cli.netlify.app/install.ps1 | iex\""},
 		{InstallMethodGo, "go install github.com/dnsimple/dnsimple-cli/cmd/dnsimple@latest"},
 		{InstallMethodWinget, "winget upgrade --id DNSimple.DNSimpleCLI"},
 		{InstallMethodUnknown, ""},

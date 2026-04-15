@@ -11,6 +11,7 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 ### Added
 
 - Release automation now prepares a `winget` submission from a `dnsimple/winget-pkgs` fork when `WINGET_GITHUB_TOKEN` is configured.
+- Add a native Windows `install.ps1` installer and publish it alongside `install.sh`.
 
 ## 0.5.1 - 2026-04-08
 

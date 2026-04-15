@@ -13,6 +13,7 @@ const (
 	InstallMethodUnknown InstallMethod = iota
 	InstallMethodHomebrew
 	InstallMethodScript
+	InstallMethodPowerShell
 	InstallMethodGo
 	InstallMethodWinget
 )
@@ -24,6 +25,10 @@ func DetectInstallMethod(executablePath string) InstallMethod {
 
 	if strings.Contains(p, "/Cellar/") || strings.Contains(p, "/homebrew/") {
 		return InstallMethodHomebrew
+	}
+
+	if strings.Contains(p, "/.dnsimple/bin/") && strings.HasSuffix(strings.ToLower(p), ".exe") {
+		return InstallMethodPowerShell
 	}
 
 	if strings.Contains(p, "/.dnsimple/bin/") {
@@ -58,6 +63,8 @@ func UpgradeCommand(method InstallMethod) string {
 		return "brew upgrade dnsimple"
 	case InstallMethodScript:
 		return "curl -fsSL https://dnsimple-cli.netlify.app/install.sh | sh"
+	case InstallMethodPowerShell:
+		return "powershell -ExecutionPolicy Bypass -Command \"irm https://dnsimple-cli.netlify.app/install.ps1 | iex\""
 	case InstallMethodGo:
 		return "go install github.com/dnsimple/dnsimple-cli/cmd/dnsimple@latest"
 	case InstallMethodWinget:
