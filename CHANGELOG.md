@@ -4,6 +4,8 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 
 ## Unreleased
 
+## 0.5.2 - 2026-04-15
+
 ### Added
 
 - Add a native Windows `install.ps1` installer and publish it alongside `install.sh`.
