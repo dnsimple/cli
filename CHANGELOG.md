@@ -2,6 +2,12 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Added
+
+- Add a native Windows `install.ps1` installer and publish it alongside `install.sh`.
+
 ## 0.5.1 - 2026-04-08
 
 ### Changed

@@ -18,7 +18,8 @@ builds:
     binary: dnsimple
 
 archives:
-  - formats:
+  - id: cli-archives
+    formats:
       - tar.gz
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
@@ -43,8 +44,8 @@ brews:
     # that requires verified signatures.
     commit_author:
       use_github_app_token: true
-    # Temporary: override download URLs to point to the public homebrew-tap repo
-    # while dnsimple-cli is still private.
+    # Release artifacts remain public on the homebrew-tap releases page
+    # while dnsimple-cli itself is private.
     url_template: "https://github.com/dnsimple/homebrew-tap/releases/download/v{{ .Version }}/{{ .ArtifactName }}"
     homepage: "https://dnsimple.com"
     description: "DNSimple command-line tool."

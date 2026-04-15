@@ -1,5 +1,5 @@
 [build]
-  command = "mkdir -p .netlify/publish && cp install.sh .netlify/publish/install.sh"
+  command = "mkdir -p .netlify/publish && cp install.sh install.ps1 .netlify/publish/"
   publish = ".netlify/publish"
 
 [[redirects]]
