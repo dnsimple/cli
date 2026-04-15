@@ -69,8 +69,8 @@ func (t *tldItemOutput) TableRows() [][]string {
 		{"Auto Renew Only", strconv.FormatBool(tld.AutoRenewOnly)},
 		{"Min Registration", strconv.Itoa(tld.MinimumRegistration)},
 		{"DNSSEC Interface", tld.DnssecInterfaceType},
-		{"Trustee Service Supported", strconv.FormatBool(tld.TrusteeServiceEnabled)},
-		{"Trustee Service Required", strconv.FormatBool(tld.TrusteeServiceRequired)},
+		{"Trustee Supported", strconv.FormatBool(tld.TrusteeServiceEnabled)},
+		{"Trustee Required", strconv.FormatBool(tld.TrusteeServiceRequired)},
 	}
 }
 

@@ -78,7 +78,7 @@ func (d *domainRegistrationOutput) TableRows() [][]string {
 		{"State", r.State},
 		{"Auto Renew", strconv.FormatBool(r.AutoRenew)},
 		{"WHOIS Privacy", strconv.FormatBool(r.WhoisPrivacy)},
-		{"Trustee Service", strconv.FormatBool(r.TrusteeService)},
+		{"Trustee", strconv.FormatBool(r.TrusteeService)},
 		{"Period", strconv.Itoa(r.Period)},
 	}
 }
@@ -128,7 +128,7 @@ func (d *domainTransferOutput) TableRows() [][]string {
 		{"State", t.State},
 		{"Auto Renew", strconv.FormatBool(t.AutoRenew)},
 		{"WHOIS Privacy", strconv.FormatBool(t.WhoisPrivacy)},
-		{"Trustee Service", strconv.FormatBool(t.TrusteeService)},
+		{"Trustee", strconv.FormatBool(t.TrusteeService)},
 	}
 }
 

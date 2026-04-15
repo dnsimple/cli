@@ -64,7 +64,7 @@ func (d *domainItem) TableRows() [][]string {
 		{"State", dom.State},
 		{"Auto Renew", strconv.FormatBool(dom.AutoRenew)},
 		{"Private WHOIS", strconv.FormatBool(dom.PrivateWhois)},
-		{"Trustee Service", strconv.FormatBool(dom.TrusteeService)},
+		{"Trustee", strconv.FormatBool(dom.TrusteeService)},
 		{"Expires At", dom.ExpiresAt},
 		{"Created At", dom.CreatedAt},
 		{"Updated At", dom.UpdatedAt},
