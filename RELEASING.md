@@ -9,8 +9,6 @@ This document describes the steps to release a new version of DNSimple/CLI.
 - You have a GPG key configured for signing tags
 - The repository GitHub Actions secrets required for release publishing are configured
 
-- `HOMEBREW_TAP_APP_ID` and `HOMEBREW_TAP_APP_PRIVATE_KEY` publish formula updates to `dnsimple/homebrew-tap`.
-
 ## Release process
 
 1. **Determine the new version** using [Semantic Versioning](https://semver.org/)
