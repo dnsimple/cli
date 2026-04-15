@@ -2,6 +2,16 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Changed
+
+- Release artifacts continue to publish to the public `dnsimple/homebrew-tap` release mirror, which is also used by the install script, update checker, and Windows package manifests.
+
+### Added
+
+- Release automation now prepares a `winget` submission from a `dnsimple/winget-pkgs` fork when `WINGET_GITHUB_TOKEN` is configured.
+
 ## 0.5.1 - 2026-04-08
 
 ### Changed

@@ -7,6 +7,14 @@ This document describes the steps to release a new version of DNSimple/CLI.
 - You have commit access to the repository
 - You have push access to the repository
 - You have a GPG key configured for signing tags
+- The repository GitHub Actions secrets required for release publishing are configured
+
+### Optional release integrations
+
+- `HOMEBREW_TAP_APP_ID` and `HOMEBREW_TAP_APP_PRIVATE_KEY` publish formula updates to `dnsimple/homebrew-tap`.
+- `WINGET_GITHUB_TOKEN` enables GoReleaser to open a pull request from the `dnsimple/winget-pkgs` fork into `microsoft/winget-pkgs`.
+
+If `WINGET_GITHUB_TOKEN` is not configured, the release still succeeds and skips the `winget` publication step.
 
 ## Release process
 
@@ -53,5 +61,8 @@ This document describes the steps to release a new version of DNSimple/CLI.
 
 ## Post-release
 
-- Verify the GitHub release was created
+- Verify the GitHub release was created in `dnsimple/dnsimple-cli`
+- Verify the public release mirror was updated in `dnsimple/homebrew-tap`
+- Verify the Homebrew formula was updated in `dnsimple/homebrew-tap`
+- If `WINGET_GITHUB_TOKEN` is configured, verify a pull request was opened against `microsoft/winget-pkgs`
 - Announce the release if necessary

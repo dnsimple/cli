@@ -11,9 +11,15 @@ A command-line interface for the [DNSimple API v2](https://developer.dnsimple.co
 
 ### Windows
 
-Native Windows installation is currently available from the release ZIP archives.
+Install with `winget` once the package is available:
 
-1. Download the latest `dnsimple_<version>_windows_amd64.zip` or `dnsimple_<version>_windows_arm64.zip` from the [GitHub Releases](https://github.com/dnsimple/dnsimple-cli/releases/latest) page.
+```powershell
+winget install --id DNSimple.DNSimpleCLI
+```
+
+You can also install from the release ZIP archives:
+
+1. Download the latest `dnsimple_<version>_windows_amd64.zip` or `dnsimple_<version>_windows_arm64.zip` from the [public release mirror](https://github.com/dnsimple/homebrew-tap/releases/latest) page.
 2. Extract `dnsimple.exe`.
 3. Move `dnsimple.exe` to a directory on your `PATH`, such as `%USERPROFILE%\bin`.
 4. Open a new terminal window and verify the installation:
@@ -23,8 +29,6 @@ dnsimple version
 ```
 
 > [!NOTE]
-> `winget` and a native PowerShell installer are not available yet.
->
 > Homebrew is supported on macOS, Linux, and WSL. The `install.sh` script can also be used from WSL or Unix-like shells such as Git Bash, but it is not a native `powershell` or `cmd.exe` installer.
 
 ### macOS and Linux
@@ -36,6 +40,8 @@ curl -fsSL http://cli-beta.dnsimple.com/install.sh | sh
 ```
 
 The install URL will eventually move to `https://dnsimple.com/install.sh`.
+
+The install script downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
 
 #### Using Homebrew
 

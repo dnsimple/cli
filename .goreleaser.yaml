@@ -18,7 +18,8 @@ builds:
     binary: dnsimple
 
 archives:
-  - formats:
+  - id: cli-archives
+    formats:
       - tar.gz
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
@@ -43,9 +44,40 @@ brews:
     # that requires verified signatures.
     commit_author:
       use_github_app_token: true
-    # Temporary: override download URLs to point to the public homebrew-tap repo
-    # while dnsimple-cli is still private.
+    # Release artifacts remain public on the homebrew-tap releases page
+    # while dnsimple-cli itself is private.
     url_template: "https://github.com/dnsimple/homebrew-tap/releases/download/v{{ .Version }}/{{ .ArtifactName }}"
     homepage: "https://dnsimple.com"
     description: "DNSimple command-line tool."
     license: "MIT"
+
+winget:
+  - name: dnsimple
+    publisher: DNSimple
+    package_identifier: DNSimple.DNSimpleCLI
+    package_name: DNSimple CLI
+    short_description: DNSimple command-line tool.
+    publisher_url: https://dnsimple.com
+    publisher_support_url: https://github.com/dnsimple/dnsimple-cli/issues
+    homepage: https://github.com/dnsimple/dnsimple-cli
+    license: MIT
+    ids:
+      - cli-archives
+    url_template: "https://github.com/dnsimple/homebrew-tap/releases/download/v{{ .Version }}/{{ .ArtifactName }}"
+    tags:
+      - dns
+      - dnsimple
+      - cli
+    skip_upload: "{{ if not .Env.WINGET_GITHUB_TOKEN }}true{{ end }}"
+    release_notes_url: "https://github.com/dnsimple/dnsimple-cli/releases/tag/{{ .Tag }}"
+    repository:
+      owner: dnsimple
+      name: winget-pkgs
+      branch: "dnsimple-{{ .Version }}"
+      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
+      pull_request:
+        enabled: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
