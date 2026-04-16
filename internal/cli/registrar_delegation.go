@@ -32,6 +32,13 @@ func (d *delegationOutput) TableRows() [][]string {
 
 func (d *delegationOutput) JSONData() any { return d }
 
+func (d *delegationOutput) TemplateData() any {
+	if d.Data == nil {
+		return nil
+	}
+	return *d.Data
+}
+
 func newRegistrarDelegationCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegation",
@@ -94,9 +101,7 @@ func newDelegationChangeCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Delegation updated for %s: %s\n", args[0], strings.Join(nameServers, ", "))
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Delegation updated for %s: %s\n", args[0], strings.Join(nameServers, ", "))
 			_ = resp
 			return nil
 		},

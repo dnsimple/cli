@@ -4,24 +4,39 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dnsimple/dnsimple-cli/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewClientUsesConfigAndCLIUserAgent(t *testing.T) {
-	cfg := &config.Config{BaseURL: "https://api.sandbox.dnsimple.com"}
+func TestNewUsesBaseURLAndCLIUserAgent(t *testing.T) {
+	c := New(Options{
+		BaseURL: "https://api.sandbox.dnsimple.com",
+		Token:   "token",
+		Version: "1.2.3",
+	})
 
-	client := NewClient(cfg, "token", "1.2.3")
-
-	assert.Equal(t, cfg.BaseURL, client.BaseURL)
-	assert.Equal(t, "dnsimple-cli/1.2.3", client.UserAgent)
+	assert.Equal(t, "https://api.sandbox.dnsimple.com", c.BaseURL)
+	assert.Equal(t, "dnsimple-cli/1.2.3", c.UserAgent)
+	assert.False(t, c.Debug)
 }
 
-func TestNewClientPreservesDevVersionInUserAgent(t *testing.T) {
-	cfg := &config.Config{BaseURL: "https://api.sandbox.dnsimple.com"}
+func TestNewPreservesDevVersionInUserAgent(t *testing.T) {
+	c := New(Options{
+		BaseURL: "https://api.sandbox.dnsimple.com",
+		Token:   "token",
+		Version: "dev",
+	})
 
-	client := NewClient(cfg, "token", "dev")
+	assert.True(t, strings.HasPrefix(c.UserAgent, "dnsimple-cli/"), "UserAgent = %q, want dnsimple-cli/*", c.UserAgent)
+	assert.Equal(t, "dnsimple-cli/dev", c.UserAgent)
+}
 
-	assert.True(t, strings.HasPrefix(client.UserAgent, "dnsimple-cli/"), "UserAgent = %q, want dnsimple-cli/*", client.UserAgent)
-	assert.Equal(t, "dnsimple-cli/dev", client.UserAgent)
+func TestNewEnablesDebugWhenRequested(t *testing.T) {
+	c := New(Options{
+		BaseURL: "https://api.dnsimple.com",
+		Token:   "token",
+		Version: "test",
+		Debug:   true,
+	})
+
+	assert.True(t, c.Debug)
 }

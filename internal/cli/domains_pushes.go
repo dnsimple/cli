@@ -35,6 +35,8 @@ func (p *pushList) TableRows() [][]string {
 
 func (p *pushList) JSONData() any { return p }
 
+func (p *pushList) TemplateData() any { return p.Data }
+
 // pushItem adapts a single DomainPush for output.
 type pushItem struct {
 	Data *dnsimple.DomainPush `json:"data"`
@@ -57,6 +59,8 @@ func (p *pushItem) TableRows() [][]string {
 }
 
 func (p *pushItem) JSONData() any { return p }
+
+func (p *pushItem) TemplateData() any { return p.Data }
 
 func newDomainsPushesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -166,9 +170,7 @@ func newPushesAcceptCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Push %d accepted\n", pushID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Push %d accepted\n", pushID)
 			return nil
 		},
 	}
@@ -205,9 +207,7 @@ func newPushesRejectCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Push %d rejected\n", pushID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Push %d rejected\n", pushID)
 			return nil
 		},
 	}

@@ -8,7 +8,7 @@ import (
 
 func newCompletionCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "completion <shell>",
+		Use:   "completion",
 		Short: "Generate shell completion scripts",
 		Long: `Generate shell completion scripts for dnsimple CLI.
 
@@ -29,24 +29,43 @@ To load completions:
 
   powershell:
     dnsimple completion powershell | Out-String | Invoke-Expression`,
-		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
-		Args:                  cobra.ExactArgs(1),
-		DisableFlagsInUseLine: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			switch args[0] {
-			case "bash":
-				return cmd.Root().GenBashCompletion(os.Stdout)
-			case "zsh":
-				return cmd.Root().GenZshCompletion(os.Stdout)
-			case "fish":
-				return cmd.Root().GenFishCompletion(os.Stdout, true)
-			case "powershell":
-				return cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
-			default:
-				return cmd.Help()
-			}
-		},
 	}
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "bash",
+		Short: "Generate the autocompletion script for bash",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Root().GenBashCompletion(os.Stdout)
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "zsh",
+		Short: "Generate the autocompletion script for zsh",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Root().GenZshCompletion(os.Stdout)
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "fish",
+		Short: "Generate the autocompletion script for fish",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Root().GenFishCompletion(os.Stdout, true)
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "powershell",
+		Short: "Generate the autocompletion script for powershell",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+		},
+	})
 
 	return cmd
 }

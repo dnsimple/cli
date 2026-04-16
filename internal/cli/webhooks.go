@@ -31,6 +31,8 @@ func (w *webhookList) TableRows() [][]string {
 
 func (w *webhookList) JSONData() any { return w }
 
+func (w *webhookList) TemplateData() any { return w.Data }
+
 type webhookItemOutput struct {
 	Data *dnsimple.Webhook `json:"data"`
 }
@@ -47,6 +49,8 @@ func (w *webhookItemOutput) TableRows() [][]string {
 }
 
 func (w *webhookItemOutput) JSONData() any { return w }
+
+func (w *webhookItemOutput) TemplateData() any { return w.Data }
 
 func newWebhooksCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -148,7 +152,9 @@ func newWebhooksCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newWebhooksDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <webhook-id>",
 		Short: "Delete a webhook",
 		Args:  cobra.ExactArgs(1),
@@ -167,15 +173,21 @@ func newWebhooksDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid webhook ID: %s", args[0])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete webhook %d?", id)); err != nil {
+				return err
+			}
+
 			_, err = c.Webhooks.DeleteWebhook(context.Background(), accountID, id)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Webhook %d deleted\n", id)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Webhook %d deleted\n", id)
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

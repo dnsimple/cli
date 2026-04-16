@@ -34,6 +34,10 @@ func (w *whoamiOutput) JSONData() any {
 	return w
 }
 
+func (w *whoamiOutput) TemplateData() any {
+	return w
+}
+
 func newWhoamiCmd(f *cmdutil.Factory) *cobra.Command {
 	return &cobra.Command{
 		Use:   "whoami",

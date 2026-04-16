@@ -25,6 +25,8 @@ func (d *dnssecOutput) TableRows() [][]string {
 
 func (d *dnssecOutput) JSONData() any { return d }
 
+func (d *dnssecOutput) TemplateData() any { return d.Data }
+
 func newDomainsDnssecCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "dnssec",
@@ -85,9 +87,7 @@ func newDnssecEnableCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "DNSSEC enabled for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "DNSSEC enabled for %s\n", args[0])
 			return nil
 		},
 	}
@@ -114,9 +114,7 @@ func newDnssecDisableCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "DNSSEC disabled for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "DNSSEC disabled for %s\n", args[0])
 			return nil
 		},
 	}

@@ -25,6 +25,8 @@ func (d *distributionOutput) TableRows() [][]string {
 
 func (d *distributionOutput) JSONData() any { return d }
 
+func (d *distributionOutput) TemplateData() any { return d.Data }
+
 // zoneFileOutput adapts ZoneFile for output.
 type zoneFileOutput struct {
 	Data *dnsimple.ZoneFile `json:"data"`
@@ -39,6 +41,8 @@ func (z *zoneFileOutput) TableRows() [][]string {
 }
 
 func (z *zoneFileOutput) JSONData() any { return z }
+
+func (z *zoneFileOutput) TemplateData() any { return z.Data }
 
 func newZonesFileCmd(f *cmdutil.Factory) *cobra.Command {
 	return &cobra.Command{
@@ -93,9 +97,7 @@ func newZonesActivateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "DNS activated for zone %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "DNS activated for zone %s\n", args[0])
 			return nil
 		},
 	}
@@ -122,9 +124,7 @@ func newZonesDeactivateCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "DNS deactivated for zone %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "DNS deactivated for zone %s\n", args[0])
 			return nil
 		},
 	}

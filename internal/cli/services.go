@@ -35,6 +35,8 @@ func (s *serviceList) TableRows() [][]string {
 
 func (s *serviceList) JSONData() any { return s }
 
+func (s *serviceList) TemplateData() any { return s.Data }
+
 type serviceItemOutput struct {
 	Data *dnsimple.Service `json:"data"`
 }
@@ -56,6 +58,8 @@ func (s *serviceItemOutput) TableRows() [][]string {
 }
 
 func (s *serviceItemOutput) JSONData() any { return s }
+
+func (s *serviceItemOutput) TemplateData() any { return s.Data }
 
 func newServicesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -170,9 +174,7 @@ func newServicesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Service %s applied to %s\n", args[0], args[1])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Service %s applied to %s\n", args[0], args[1])
 			return nil
 		},
 	}
@@ -183,7 +185,9 @@ func newServicesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newServicesUnapplyCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "unapply <service> <domain>",
 		Short: "Remove a service from a domain",
 		Args:  cobra.ExactArgs(2),
@@ -198,15 +202,21 @@ func newServicesUnapplyCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Remove service %s from %s?", args[0], args[1])); err != nil {
+				return err
+			}
+
 			_, err = c.Services.UnapplyService(context.Background(), accountID, args[0], args[1])
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Service %s removed from %s\n", args[0], args[1])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Service %s removed from %s\n", args[0], args[1])
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

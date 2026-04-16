@@ -33,8 +33,8 @@ type Config struct {
 	PerPage int
 }
 
-// configDir returns the configuration directory path.
-func configDir() (string, error) {
+// Dir returns the configuration directory path.
+func Dir() (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
@@ -44,7 +44,7 @@ func configDir() (string, error) {
 
 // Load reads the configuration from the config file and environment.
 func Load() (*Config, error) {
-	dir, err := configDir()
+	dir, err := Dir()
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (c *Config) SetSandbox(sandbox bool) {
 
 // Save writes the current configuration to disk.
 func (c *Config) Save() error {
-	dir, err := configDir()
+	dir, err := Dir()
 	if err != nil {
 		return err
 	}
@@ -115,10 +115,3 @@ func (c *Config) Save() error {
 	return c.v.WriteConfigAs(filepath.Join(dir, configFileName+".yml"))
 }
 
-// HostKey returns the host key used for credential storage based on the current BaseURL.
-func (c *Config) HostKey() string {
-	if c.Sandbox {
-		return "api.sandbox.dnsimple.com"
-	}
-	return "api.dnsimple.com"
-}

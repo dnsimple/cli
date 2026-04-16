@@ -35,6 +35,8 @@ func (t *tldList) TableRows() [][]string {
 
 func (t *tldList) JSONData() any { return t }
 
+func (t *tldList) TemplateData() any { return t.Data }
+
 type tldItemOutput struct {
 	Data *dnsimple.Tld `json:"data"`
 }
@@ -60,6 +62,8 @@ func (t *tldItemOutput) TableRows() [][]string {
 
 func (t *tldItemOutput) JSONData() any { return t }
 
+func (t *tldItemOutput) TemplateData() any { return t.Data }
+
 type tldExtendedAttributesList struct {
 	Data []dnsimple.TldExtendedAttribute `json:"data"`
 }
@@ -81,6 +85,8 @@ func (t *tldExtendedAttributesList) TableRows() [][]string {
 }
 
 func (t *tldExtendedAttributesList) JSONData() any { return t }
+
+func (t *tldExtendedAttributesList) TemplateData() any { return t.Data }
 
 func newTldsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{

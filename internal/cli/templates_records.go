@@ -35,6 +35,8 @@ func (t *templateRecordList) TableRows() [][]string {
 
 func (t *templateRecordList) JSONData() any { return t }
 
+func (t *templateRecordList) TemplateData() any { return t.Data }
+
 type templateRecordItemOutput struct {
 	Data *dnsimple.TemplateRecord `json:"data"`
 }
@@ -59,6 +61,8 @@ func (t *templateRecordItemOutput) TableRows() [][]string {
 }
 
 func (t *templateRecordItemOutput) JSONData() any { return t }
+
+func (t *templateRecordItemOutput) TemplateData() any { return t.Data }
 
 func newTemplatesRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -167,7 +171,9 @@ func newTemplateRecordsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newTemplateRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <template> <record-id>",
 		Short: "Delete a template record",
 		Args:  cobra.ExactArgs(2),
@@ -186,15 +192,21 @@ func newTemplateRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid record ID: %s", args[1])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete template record %d from %s?", recordID, args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Templates.DeleteTemplateRecord(context.Background(), accountID, args[0], recordID)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Template record %d deleted\n", recordID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Template record %d deleted\n", recordID)
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

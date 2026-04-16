@@ -35,6 +35,8 @@ func (e *emailForwardList) TableRows() [][]string {
 
 func (e *emailForwardList) JSONData() any { return e }
 
+func (e *emailForwardList) TemplateData() any { return e.Data }
+
 // emailForwardItem adapts a single EmailForward for output.
 type emailForwardItem struct {
 	Data *dnsimple.EmailForward `json:"data"`
@@ -57,6 +59,8 @@ func (e *emailForwardItem) TableRows() [][]string {
 }
 
 func (e *emailForwardItem) JSONData() any { return e }
+
+func (e *emailForwardItem) TemplateData() any { return e.Data }
 
 func newDomainsEmailForwardsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -170,7 +174,9 @@ func newEmailForwardsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newEmailForwardsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <domain> <forward-id>",
 		Short: "Delete an email forward",
 		Args:  cobra.ExactArgs(2),
@@ -190,15 +196,21 @@ func newEmailForwardsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid forward ID: %s", args[1])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete email forward %d from %s?", forwardID, args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Domains.DeleteEmailForward(context.Background(), accountID, args[0], forwardID)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Email forward %d deleted from %s\n", forwardID, args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Email forward %d deleted from %s\n", forwardID, args[0])
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

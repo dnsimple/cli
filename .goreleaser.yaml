@@ -1,0 +1,52 @@
+version: 2
+
+project_name: dnsimple
+
+builds:
+  - main: ./cmd/dnsimple
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    binary: dnsimple
+
+archives:
+  - id: cli-archives
+    formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  disable: true
+
+brews:
+  - repository:
+      owner: dnsimple
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    # Omit the committer field from the Contents API call so GitHub
+    # auto-signs the commit as the dnsimple-release-bot GitHub App
+    # identity, satisfying the homebrew-tap branch protection rule
+    # that requires verified signatures.
+    commit_author:
+      use_github_app_token: true
+    # Release artifacts remain public on the homebrew-tap releases page
+    # while dnsimple-cli itself is private.
+    url_template: "https://github.com/dnsimple/homebrew-tap/releases/download/v{{ .Version }}/{{ .ArtifactName }}"
+    homepage: "https://dnsimple.com"
+    description: "DNSimple command-line tool."
+    license: "MIT"

@@ -33,6 +33,10 @@ func (a *accountList) JSONData() any {
 	return a
 }
 
+func (a *accountList) TemplateData() any {
+	return a.Data
+}
+
 func newAccountsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "accounts",

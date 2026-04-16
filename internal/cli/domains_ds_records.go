@@ -36,6 +36,8 @@ func (d *dsRecordList) TableRows() [][]string {
 
 func (d *dsRecordList) JSONData() any { return d }
 
+func (d *dsRecordList) TemplateData() any { return d.Data }
+
 // dsRecordItem adapts a single DelegationSignerRecord for output.
 type dsRecordItem struct {
 	Data *dnsimple.DelegationSignerRecord `json:"data"`
@@ -60,6 +62,8 @@ func (d *dsRecordItem) TableRows() [][]string {
 }
 
 func (d *dsRecordItem) JSONData() any { return d }
+
+func (d *dsRecordItem) TemplateData() any { return d.Data }
 
 func newDomainsDsRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -170,7 +174,9 @@ func newDsRecordsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newDsRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <domain> <ds-record-id>",
 		Short: "Delete a DS record",
 		Args:  cobra.ExactArgs(2),
@@ -190,15 +196,21 @@ func newDsRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid DS record ID: %s", args[1])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete DS record %d from %s?", dsID, args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Domains.DeleteDelegationSignerRecord(context.Background(), accountID, args[0], dsID)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "DS record %d deleted from %s\n", dsID, args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "DS record %d deleted from %s\n", dsID, args[0])
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

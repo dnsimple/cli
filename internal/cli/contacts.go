@@ -37,6 +37,8 @@ func (c *contactList) TableRows() [][]string {
 
 func (c *contactList) JSONData() any { return c }
 
+func (c *contactList) TemplateData() any { return c.Data }
+
 // contactItem adapts a single Contact for output.
 type contactItem struct {
 	Data *dnsimple.Contact `json:"data"`
@@ -73,6 +75,8 @@ func (c *contactItem) TableRows() [][]string {
 }
 
 func (c *contactItem) JSONData() any { return c }
+
+func (c *contactItem) TemplateData() any { return c.Data }
 
 func newContactsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -289,7 +293,9 @@ func newContactsUpdateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newContactsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <contact-id>",
 		Short: "Delete a contact",
 		Args:  cobra.ExactArgs(1),
@@ -309,15 +315,21 @@ func newContactsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid contact ID: %s", args[0])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete contact %d?", contactID)); err != nil {
+				return err
+			}
+
 			_, err = c.Contacts.DeleteContact(context.Background(), accountID, contactID)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Contact %d deleted\n", contactID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Contact %d deleted\n", contactID)
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

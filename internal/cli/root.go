@@ -1,8 +1,15 @@
 package cli
 
 import (
+	"context"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-cli/internal/update"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // buildRootCmd creates the root command with all subcommands and global flags.
@@ -17,13 +24,13 @@ func buildRootCmd(f *cmdutil.Factory) *cobra.Command {
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVarP(&f.Flags.Account, "account", "a", "", "Account ID to operate on")
+	rootCmd.PersistentFlags().StringVar(&f.Flags.Context, "context", "", "Authentication context to use for this invocation (overrides the active context)")
 	rootCmd.PersistentFlags().StringVar(&f.Flags.Token, "token", "", "API token (overrides DNSIMPLE_TOKEN env var)")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.Sandbox, "sandbox", false, "Use sandbox environment")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.JSON, "json", false, "Output as JSON")
-	rootCmd.PersistentFlags().StringVar(&f.Flags.Format, "format", "", "Custom output format (Go template)")
+	rootCmd.PersistentFlags().StringVar(&f.Flags.Format, "format", "", "Custom output format (Go template over the resource; use {{.Field}} for single items or {{range .}}{{.Field}}{{end}} for lists)")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.NoColor, "no-color", false, "Disable colored output")
 	rootCmd.PersistentFlags().BoolVar(&f.Flags.Debug, "debug", false, "Enable debug logging")
-	rootCmd.PersistentFlags().BoolVarP(&f.Flags.Quiet, "quiet", "q", false, "Suppress non-essential output")
 
 	// Register commands
 	rootCmd.AddCommand(newAuthCmd(f))
@@ -56,10 +63,44 @@ func Execute(version string, args []string) int {
 	rootCmd.Version = version
 	rootCmd.SetArgs(args)
 
-	if err := rootCmd.Execute(); err != nil {
-		cmdutil.FormatAPIError(rootCmd.ErrOrStderr(), err)
-		return cmdutil.ExitError
+	// Start async update check.
+	debug := containsFlag(args, "--debug")
+	var updateCh <-chan *update.CheckResult
+	if update.ShouldCheck(update.Opts{
+		CurrentVersion: version,
+		IsTerminal:     term.IsTerminal(int(os.Stderr.Fd())),
+		Debug:          debug,
+		Args:           args,
+	}) {
+		updateCh = update.CheckAsync(context.Background(), version, debug)
 	}
 
-	return cmdutil.ExitOK
+	exitCode := cmdutil.ExitOK
+	if err := rootCmd.Execute(); err != nil {
+		cmdutil.FormatAPIError(rootCmd.ErrOrStderr(), err)
+		exitCode = cmdutil.ExitError
+	}
+
+	// Print update notice if the check completed.
+	if updateCh != nil {
+		select {
+		case result := <-updateCh:
+			update.PrintNotice(os.Stderr, result)
+		case <-time.After(2 * time.Second):
+		}
+	}
+
+	return exitCode
+}
+
+// containsFlag returns true if any of the given flags appear in args.
+func containsFlag(args []string, flags ...string) bool {
+	for _, arg := range args {
+		for _, flag := range flags {
+			if arg == flag || strings.HasPrefix(arg, flag+"=") {
+				return true
+			}
+		}
+	}
+	return false
 }

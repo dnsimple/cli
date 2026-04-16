@@ -162,9 +162,11 @@ If the CLI is not authenticated, ask the user to run ` + "`dnsimple auth login`"
 
 You can check whether the CLI is already authenticated by running ` + "`dnsimple auth status`" + `.
 
-To use the sandbox environment for testing, add the ` + "`--sandbox`" + ` flag.
+The CLI supports multiple stored authentication *contexts* (kubectl-style). Use ` + "`dnsimple auth list`" + ` to see them; the active one is marked with ` + "`*`" + `. To run a single command against a different stored context without changing the active one, pass ` + "`--context <name>`" + ` — this is the safe option for parallel agents because it does not mutate shared on-disk state.
 
-Most commands require an account ID. The CLI resolves it automatically from the token, but you can override it with ` + "`-a <account-id>`" + ` or ` + "`--account <account-id>`" + `.
+To use the sandbox environment for testing, add the ` + "`--sandbox`" + ` flag (or select a sandbox context with ` + "`--context`" + `).
+
+Most commands require an account ID. The CLI resolves it automatically from the active context, but you can override it with ` + "`-a <account-id>`" + ` or ` + "`--account <account-id>`" + `.
 
 `
 
@@ -230,7 +232,7 @@ dnsimple services apply github-pages example.com
 
 - Use ` + "`--all`" + ` on list commands to fetch every page of results automatically.
 - Use ` + "`--json`" + ` when you need to parse output or chain commands.
-- Use ` + "`-q`" + ` (quiet) to suppress confirmation messages in scripts.
+- Use ` + "`--yes`" + ` on destructive commands in scripts and CI to skip confirmation prompts.
 - The ` + "`zones`" + ` and ` + "`zones records`" + ` commands are the primary way to manage DNS. The top-level ` + "`records`" + ` command is a shortcut alias.
 - Domain names (e.g. example.com) are used as zone identifiers — you don't need zone IDs.
 - Record IDs are numeric. Use ` + "`zones records list`" + ` with ` + "`--json`" + ` to find them.

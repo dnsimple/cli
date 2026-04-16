@@ -41,9 +41,7 @@ func newAutoRenewalEnableCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Auto-renewal enabled for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Auto-renewal enabled for %s\n", args[0])
 			return nil
 		},
 	}
@@ -70,9 +68,7 @@ func newAutoRenewalDisableCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Auto-renewal disabled for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Auto-renewal disabled for %s\n", args[0])
 			return nil
 		},
 	}

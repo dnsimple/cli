@@ -30,6 +30,8 @@ func (d *domainCheckOutput) TableRows() [][]string {
 
 func (d *domainCheckOutput) JSONData() any { return d }
 
+func (d *domainCheckOutput) TemplateData() any { return d.Data }
+
 // domainPriceOutput adapts DomainPrice for output.
 type domainPriceOutput struct {
 	Data *dnsimple.DomainPrice `json:"data"`
@@ -50,6 +52,8 @@ func (d *domainPriceOutput) TableRows() [][]string {
 }
 
 func (d *domainPriceOutput) JSONData() any { return d }
+
+func (d *domainPriceOutput) TemplateData() any { return d.Data }
 
 // domainRegistrationOutput adapts DomainRegistration for output.
 type domainRegistrationOutput struct {
@@ -75,6 +79,8 @@ func (d *domainRegistrationOutput) TableRows() [][]string {
 
 func (d *domainRegistrationOutput) JSONData() any { return d }
 
+func (d *domainRegistrationOutput) TemplateData() any { return d.Data }
+
 // domainRenewalOutput adapts DomainRenewal for output.
 type domainRenewalOutput struct {
 	Data *dnsimple.DomainRenewal `json:"data"`
@@ -95,6 +101,8 @@ func (d *domainRenewalOutput) TableRows() [][]string {
 }
 
 func (d *domainRenewalOutput) JSONData() any { return d }
+
+func (d *domainRenewalOutput) TemplateData() any { return d.Data }
 
 // domainTransferOutput adapts DomainTransfer for output.
 type domainTransferOutput struct {
@@ -118,6 +126,8 @@ func (d *domainTransferOutput) TableRows() [][]string {
 }
 
 func (d *domainTransferOutput) JSONData() any { return d }
+
+func (d *domainTransferOutput) TemplateData() any { return d.Data }
 
 func newRegistrarCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -388,9 +398,7 @@ func newRegistrarTransferOutCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Transfer out authorized for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Transfer out authorized for %s\n", args[0])
 			return nil
 		},
 	}

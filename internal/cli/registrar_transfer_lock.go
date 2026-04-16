@@ -25,6 +25,8 @@ func (t *transferLockOutput) TableRows() [][]string {
 
 func (t *transferLockOutput) JSONData() any { return t }
 
+func (t *transferLockOutput) TemplateData() any { return t.Data }
+
 func newRegistrarTransferLockCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "transfer-lock",
@@ -85,9 +87,7 @@ func newTransferLockEnableCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Transfer lock enabled for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Transfer lock enabled for %s\n", args[0])
 			return nil
 		},
 	}
@@ -114,9 +114,7 @@ func newTransferLockDisableCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Transfer lock disabled for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Transfer lock disabled for %s\n", args[0])
 			return nil
 		},
 	}

@@ -45,6 +45,10 @@ func (r *recordList) JSONData() any {
 	return r
 }
 
+func (r *recordList) TemplateData() any {
+	return r.Data
+}
+
 // recordItem adapts a single ZoneRecord for output.
 type recordItem struct {
 	Data *dnsimple.ZoneRecord `json:"data"`
@@ -79,6 +83,10 @@ func (r *recordItem) TableRows() [][]string {
 
 func (r *recordItem) JSONData() any {
 	return r
+}
+
+func (r *recordItem) TemplateData() any {
+	return r.Data
 }
 
 func newZonesRecordsCmd(f *cmdutil.Factory) *cobra.Command {
@@ -324,7 +332,9 @@ func newRecordsUpdateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <zone> <record-id>",
 		Short: "Delete a zone record",
 		Args:  cobra.ExactArgs(2),
@@ -344,15 +354,21 @@ func newRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid record ID: %s", args[1])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete zone record %d from %s?", recordID, args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Zones.DeleteRecord(context.Background(), accountID, args[0], recordID)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Record %d deleted from zone %s\n", recordID, args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Record %d deleted from zone %s\n", recordID, args[0])
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }
