@@ -14,7 +14,7 @@ A command-line interface for the [DNSimple API v2](https://developer.dnsimple.co
 #### Using the PowerShell install script
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "irm https://cli-beta.dnsimple.com/install.ps1 | iex"
+irm "https://cli-beta.dnsimple.com/install.ps1" | iex
 ```
 
 The installer downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
