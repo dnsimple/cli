@@ -4,6 +4,10 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 
 ## Unreleased
 
+### Fixed
+
+- `dnsimple completion` now shows help text when invoked without a shell argument instead of returning `Error: accepts 1 arg(s), received 0`. Restructured as a parent command with `bash`, `zsh`, `fish`, and `powershell` subcommands. (dnsimple/dnsimple-cli#38)
+
 ## 0.5.2 - 2026-04-15
 
 ### Added
