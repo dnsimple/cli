@@ -4,6 +4,11 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 
 ## Unreleased
 
+### Added
+
+- `dnsimple research status <domain>` checks domain availability through the Domain Research endpoint, designed for high-volume bulk lookups and requiring dedicated paid access. (dnsimple/dnsimple-cli#4)
+- `dnsimple ai` now includes a "Choosing the Right Command" section that documents when to use `registrar check` (rate-limited, available on every plan) versus `research status` (bulk lookups, paid add-on). (dnsimple/dnsimple-cli#4)
+
 ### Fixed
 
 - `dnsimple completion` now shows help text when invoked without a shell argument instead of returning `Error: accepts 1 arg(s), received 0`. Restructured as a parent command with `bash`, `zsh`, `fish`, and `powershell` subcommands. (dnsimple/dnsimple-cli#38)
