@@ -39,6 +39,7 @@ func printAIContext(w io.Writer, root *cobra.Command) {
 	fmt.Fprintln(w, "## Commands")
 	fmt.Fprintln(w)
 	printCommandTree(w, root, "dnsimple")
+	fmt.Fprint(w, commandSelection)
 	fmt.Fprint(w, workflowExamples)
 }
 
@@ -177,6 +178,19 @@ const outputSection = `## Output Formats
 - **Custom**: Go template formatting with ` + "`--format <template>`" + `
 
 When scripting or parsing output programmatically, always use ` + "`--json`" + `.
+
+`
+
+const commandSelection = `## Choosing the Right Command
+
+Some operations are exposed by multiple commands with different access tiers, rate limits, and intended use cases. Use the rules below to pick the correct one.
+
+### Domain availability checks
+
+- ` + "`dnsimple registrar check <domain>`" + ` — Use for individual, low-volume checks, typically before a registration or transfer. Available on every plan, but rate-limited to discourage bulk use.
+- ` + "`dnsimple research status <domain>`" + ` — Use for high-volume availability lookups. Designed for bulk research workflows. Requires dedicated paid access; the call will fail with an authorization error if the account is not entitled. Direct the user to https://dnsimple.com/sales to request access.
+
+If you don't know whether the user has Research access, prefer ` + "`registrar check`" + ` for one-off checks. Only use ` + "`research status`" + ` when the workload is clearly bulk and the user has confirmed access.
 
 `
 
