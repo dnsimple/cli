@@ -28,6 +28,8 @@ func (d *domainResearchStatusOutput) TableRows() [][]string {
 
 func (d *domainResearchStatusOutput) JSONData() any { return d }
 
+func (d *domainResearchStatusOutput) TemplateData() any { return d.Data }
+
 func newResearchCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "research",
