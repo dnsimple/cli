@@ -239,7 +239,7 @@ dnsimple certificates letsencrypt issue example.com 98765
 
 ` + "```" + `
 dnsimple services list --json
-dnsimple services apply github-pages example.com
+dnsimple services apply example.com github-pages
 ` + "```" + `
 
 ## Tips

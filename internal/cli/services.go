@@ -147,10 +147,15 @@ func newServicesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 	var settings []string
 
 	cmd := &cobra.Command{
-		Use:   "apply <service> <domain>",
+		Use:   "apply <domain> <service>",
 		Short: "Apply a service to a domain",
-		Args:  cobra.ExactArgs(2),
+		Example: `  dnsimple services apply example.com github-pages
+  dnsimple services apply example.com heroku --settings app=my-heroku-app`,
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			domain := args[0]
+			service := args[1]
+
 			c, err := f.Client()
 			if err != nil {
 				return err
@@ -169,12 +174,12 @@ func newServicesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 				}
 			}
 
-			_, err = c.Services.ApplyService(context.Background(), accountID, args[0], args[1], s)
+			_, err = c.Services.ApplyService(context.Background(), accountID, service, domain, s)
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Service %s applied to %s\n", args[0], args[1])
+			fmt.Fprintf(cmd.OutOrStdout(), "Service %s applied to %s\n", service, domain)
 			return nil
 		},
 	}
@@ -188,10 +193,15 @@ func newServicesUnapplyCmd(f *cmdutil.Factory) *cobra.Command {
 	var yes bool
 
 	cmd := &cobra.Command{
-		Use:   "unapply <service> <domain>",
+		Use:   "unapply <domain> <service>",
 		Short: "Remove a service from a domain",
-		Args:  cobra.ExactArgs(2),
+		Example: `  dnsimple services unapply example.com github-pages
+  dnsimple services unapply example.com github-pages --yes`,
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			domain := args[0]
+			service := args[1]
+
 			c, err := f.Client()
 			if err != nil {
 				return err
@@ -202,16 +212,16 @@ func newServicesUnapplyCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Remove service %s from %s?", args[0], args[1])); err != nil {
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Remove service %s from %s?", service, domain)); err != nil {
 				return err
 			}
 
-			_, err = c.Services.UnapplyService(context.Background(), accountID, args[0], args[1])
+			_, err = c.Services.UnapplyService(context.Background(), accountID, service, domain)
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Service %s removed from %s\n", args[0], args[1])
+			fmt.Fprintf(cmd.OutOrStdout(), "Service %s removed from %s\n", service, domain)
 			return nil
 		},
 	}
