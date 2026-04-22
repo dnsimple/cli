@@ -9,6 +9,24 @@ A command-line interface for the [DNSimple API v2](https://developer.dnsimple.co
 
 ## Installation
 
+### macOS and Linux
+
+#### Using Homebrew
+
+```shell
+brew install dnsimple/tap/dnsimple
+```
+
+#### Using the install script
+
+```shell
+curl -fsSL http://cli-beta.dnsimple.com/install.sh | sh
+```
+
+The install URL will eventually move to `https://dnsimple.com/install.sh`.
+
+The install script downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
+
 ### Windows
 
 #### Using the PowerShell install script
@@ -32,24 +50,6 @@ dnsimple version
 
 > [!NOTE]
 > Homebrew is supported on macOS, Linux, and WSL. The `install.sh` script can also be used from WSL or Unix-like shells such as Git Bash, but it is not a native `powershell` or `cmd.exe` installer.
-
-### macOS and Linux
-
-#### Using the install script
-
-```shell
-curl -fsSL http://cli-beta.dnsimple.com/install.sh | sh
-```
-
-The install URL will eventually move to `https://dnsimple.com/install.sh`.
-
-The install script downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
-
-#### Using Homebrew
-
-```shell
-brew install dnsimple/tap/dnsimple
-```
 
 ### Cross-platform developer install
 
