@@ -2,6 +2,12 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Changed
+
+- `dnsimple services apply` and `dnsimple services unapply` now take arguments as `<domain> <service>`, matching other domain-scoped commands. This is a breaking change from the previous `<service> <domain>` order. (dnsimple/dnsimple-cli#19)
+
 ## 0.6.0 - 2026-04-22
 
 ### Added
