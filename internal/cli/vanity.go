@@ -10,7 +10,7 @@ import (
 
 func newVanityNameServersCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "vanity-name-servers",
+		Use:   "vanity-servers",
 		Short: "Manage vanity name servers",
 	}
 
