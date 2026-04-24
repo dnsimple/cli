@@ -91,9 +91,8 @@ func (r *recordItem) TemplateData() any {
 
 func newZonesRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "records",
-		Short:   "Manage zone records",
-		Aliases: []string{"record"},
+		Use:   "records",
+		Short: "Manage zone records",
 	}
 
 	cmd.AddCommand(newRecordsListCmd(f))

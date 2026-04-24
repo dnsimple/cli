@@ -151,7 +151,7 @@ func newCertificatesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "certificates",
 		Short:   "Manage SSL/TLS certificates",
-		Aliases: []string{"certs", "cert"},
+		Aliases: []string{"certs"},
 	}
 
 	cmd.AddCommand(newCertsListCmd(f))

@@ -62,9 +62,8 @@ func (t *templateItemOutput) TemplateData() any { return t.Data }
 
 func newTemplatesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "templates",
-		Short:   "Manage DNS templates",
-		Aliases: []string{"template"},
+		Use:   "templates",
+		Short: "Manage DNS templates",
 	}
 
 	cmd.AddCommand(newTemplatesListCmd(f))

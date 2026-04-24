@@ -74,9 +74,8 @@ func (z *zoneItem) TemplateData() any {
 
 func newZonesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "zones",
-		Short:   "Manage DNS zones",
-		Aliases: []string{"zone"},
+		Use:   "zones",
+		Short: "Manage DNS zones",
 	}
 
 	cmd.AddCommand(newZonesListCmd(f))

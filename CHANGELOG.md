@@ -9,6 +9,7 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 - `dnsimple services apply` and `dnsimple services unapply` now take arguments as `<domain> <service>`, matching other domain-scoped commands. This is a breaking change from the previous `<service> <domain>` order. (dnsimple/dnsimple-cli#19)
 - Simplified the `vanity-name-servers` command to `vanity-servers`.
 - Improved discoverability of the `dnsimple ai` command.
+- Removed singular aliases (`domain`, `zone`, `record`, `template`, `contact`, `cert`) from plural resource commands to reduce help-output clutter and align with the conventions used by other popular CLIs. The `certs` alias for `certificates` is kept as a length-shortening shortcut. (dnsimple/dnsimple-cli#35)
 
 ## 0.6.0 - 2026-04-22
 

@@ -80,9 +80,8 @@ func (c *contactItem) TemplateData() any { return c.Data }
 
 func newContactsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "contacts",
-		Short:   "Manage contacts",
-		Aliases: []string{"contact"},
+		Use:   "contacts",
+		Short: "Manage contacts",
 	}
 
 	cmd.AddCommand(newContactsListCmd(f))

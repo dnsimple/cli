@@ -80,9 +80,8 @@ func (d *domainItem) TemplateData() any {
 
 func newDomainsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "domains",
-		Short:   "Manage domains",
-		Aliases: []string{"domain"},
+		Use:   "domains",
+		Short: "Manage domains",
 	}
 
 	cmd.AddCommand(newDomainsListCmd(f))
