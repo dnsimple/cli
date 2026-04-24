@@ -12,17 +12,12 @@ import (
 func newAICmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ai",
-		Short: "Print AI-friendly context about this CLI",
-		Long: `Print a structured description of all commands, flags, and workflows
-that an AI agent can use to understand and operate this CLI.
+		Short: "Show how to use dnsimple (useful for AI agents and LLMs).",
+		Long: `Print a structured reference of all commands and common workflows. Formatted
+for AI agents and LLMs to understand this CLI and perform automated tasks.
 
-Usage with AI tools:
-
-  Pipe directly into an AI prompt:
-    dnsimple ai | pbcopy
-
-  Use as a bootstrapping step in an AI agent:
-    context=$(dnsimple ai)`,
+Paste the output into an AI prompt, or load it as a bootstrapping step for an
+agent.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printAIContext(cmd.OutOrStdout(), cmd.Root())
 			return nil
