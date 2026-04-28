@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/client"
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-cli/internal/config"
+	"github.com/dnsimple/cli/internal/client"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/config"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -376,7 +376,7 @@ func upsertLoginContext(creds *config.Credentials, host, token, accountID, user,
 }
 
 // pickAutoContextName picks the auto-derived context name following the
-// algorithm in dnsimple/dnsimple-cli#28:
+// algorithm in dnsimple/cli#28:
 //
 //  1. Bare environment name (production or sandbox)
 //  2. <env>-<account_id>

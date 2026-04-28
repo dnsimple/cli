@@ -3,7 +3,7 @@ package cmdutil
 import (
 	"testing"
 
-	"github.com/dnsimple/dnsimple-cli/internal/config"
+	"github.com/dnsimple/cli/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 

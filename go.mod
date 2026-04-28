@@ -1,4 +1,4 @@
-module github.com/dnsimple/dnsimple-cli
+module github.com/dnsimple/cli
 
 go 1.25.4
 

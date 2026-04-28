@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/spf13/cobra"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
 	"github.com/spf13/cobra"
 )

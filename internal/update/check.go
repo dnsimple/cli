@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dnsimple/dnsimple-cli/internal/config"
+	"github.com/dnsimple/cli/internal/config"
 )
 
 const (

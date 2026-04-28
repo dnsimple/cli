@@ -54,7 +54,7 @@ This document describes the steps to release a new version of DNSimple/CLI.
 
 ## Post-release
 
-- Verify the GitHub release was created in `dnsimple/dnsimple-cli`
+- Verify the GitHub release was created in `dnsimple/cli`
 - Verify the public release mirror was updated in `dnsimple/homebrew-tap`
 - Verify the Homebrew formula was updated in `dnsimple/homebrew-tap`
 - Announce the release if necessary

@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	internalclient "github.com/dnsimple/dnsimple-cli/internal/client"
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-cli/internal/config"
+	internalclient "github.com/dnsimple/cli/internal/client"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/config"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
 	"github.com/stretchr/testify/assert"
 )

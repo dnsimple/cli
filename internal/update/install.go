@@ -59,7 +59,7 @@ func UpgradeCommand(method InstallMethod) string {
 	case InstallMethodPowerShell:
 		return "powershell -ExecutionPolicy Bypass -Command \"irm https://dnsimple-cli.netlify.app/install.ps1 | iex\""
 	case InstallMethodGo:
-		return "go install github.com/dnsimple/dnsimple-cli/cmd/dnsimple@latest"
+		return "go install github.com/dnsimple/cli/cmd/dnsimple@latest"
 	default:
 		return ""
 	}

@@ -56,14 +56,14 @@ dnsimple version
 #### Using Go
 
 ```shell
-go install github.com/dnsimple/dnsimple-cli/cmd/dnsimple@latest
+go install github.com/dnsimple/cli/cmd/dnsimple@latest
 ```
 
 #### From source
 
 ```shell
-git clone https://github.com/dnsimple/dnsimple-cli.git
-cd dnsimple-cli
+git clone https://github.com/dnsimple/cli.git
+cd cli
 make build
 ```
 

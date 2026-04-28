@@ -45,7 +45,7 @@ brews:
     commit_author:
       use_github_app_token: true
     # Release artifacts remain public on the homebrew-tap releases page
-    # while dnsimple-cli itself is private.
+    # while the cli repo itself is private.
     url_template: "https://github.com/dnsimple/homebrew-tap/releases/download/v{{ .Version }}/{{ .ArtifactName }}"
     homepage: "https://dnsimple.com"
     description: "DNSimple command-line tool."

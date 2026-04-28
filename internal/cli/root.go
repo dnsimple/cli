@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-cli/internal/update"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/update"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

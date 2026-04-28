@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cli"
+	"github.com/dnsimple/cli/internal/cli"
 )
 
 // version is set at build time via ldflags.
