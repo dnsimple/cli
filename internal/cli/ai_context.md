@@ -30,10 +30,6 @@ These flags work with any command:
 
 When scripting or parsing output programmatically, always use `--json`.
 
-## Commands
-
-%s
-
 ## Common Workflows
 
 ### List all DNS records for a zone
@@ -114,6 +110,10 @@ dnsimple certificates letsencrypt issue example.com 98765
 dnsimple services list --json
 dnsimple services apply example.com github-pages
 ```
+
+## Commands
+
+%s
 
 ## Tips
 
