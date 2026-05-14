@@ -149,10 +149,10 @@ func newZonesListCmd(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&nameLike, "name-like", "", "Filter zones by name (partial match)")
+	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
+	cmd.Flags().StringVar(&sort, "sort", "", "Sort order")
 	cmd.Flags().IntVar(&page, "page", 0, "Page number")
 	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
-	cmd.Flags().StringVar(&sort, "sort", "", "Sort order")
-	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
 
 	return cmd
 }

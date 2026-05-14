@@ -156,10 +156,10 @@ func newDomainsListCmd(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&nameLike, "name-like", "", "Filter domains by name (partial match)")
+	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
+	cmd.Flags().StringVar(&sort, "sort", "", "Sort order (e.g., name:asc, expiration:desc)")
 	cmd.Flags().IntVar(&page, "page", 0, "Page number")
 	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
-	cmd.Flags().StringVar(&sort, "sort", "", "Sort order (e.g., name:asc, expiration:desc)")
-	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
 
 	return cmd
 }

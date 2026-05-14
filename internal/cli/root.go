@@ -54,6 +54,8 @@ func buildRootCmd(f *cmdutil.Factory) *cobra.Command {
 	rootCmd.AddCommand(newCompletionCmd())
 	rootCmd.AddCommand(newAICmd())
 
+	useDeclaredFlagOrder(rootCmd)
+
 	return rootCmd
 }
 
@@ -137,4 +139,13 @@ func containsFlag(args []string, flags ...string) bool {
 		}
 	}
 	return false
+}
+
+func useDeclaredFlagOrder(cmd *cobra.Command) {
+	cmd.Flags().SortFlags = false
+	cmd.LocalFlags().SortFlags = false
+
+	for _, child := range cmd.Commands() {
+		useDeclaredFlagOrder(child)
+	}
 }
