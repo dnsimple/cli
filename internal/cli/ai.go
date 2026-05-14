@@ -180,17 +180,6 @@ When scripting or parsing output programmatically, always use ` + "`--json`" + `
 
 %s
 
-## Choosing the Right Command
-
-Some operations are exposed by multiple commands with different access tiers, rate limits, and intended use cases. Use the rules below to pick the correct one.
-
-### Domain availability checks
-
-- ` + "`dnsimple registrar check <domain>`" + ` — Use for individual, low-volume checks, typically before a registration or transfer. Available on every plan, but rate-limited to discourage bulk use.
-- ` + "`dnsimple research status <domain>`" + ` — Use for high-volume availability lookups. Designed for bulk research workflows. Requires dedicated paid access; the call will fail with an authorization error if the account is not entitled. Direct the user to https://dnsimple.com/sales to request access.
-
-If you don't know whether the user has Research access, prefer ` + "`registrar check`" + ` for one-off checks. Only use ` + "`research status`" + ` when the workload is clearly bulk and the user has confirmed access.
-
 ## Common Workflows
 
 ### List all DNS records for a zone
@@ -217,12 +206,45 @@ dnsimple zones records update example.com 12345 --content 5.6.7.8
 dnsimple zones records delete example.com 12345
 ` + "```" + `
 
-### Check domain availability and register
+### Check domain availability
+
+Use ` + "`dnsimple registrar check <domain>`" + ` for individual, low-volume checks, typically before a registration or transfer. Available on every plan, but rate-limited to discourage bulk use.
 
 ` + "```" + `
 dnsimple registrar check example.com
+` + "```" + `
+
+For high-volume availability lookups (10+), use ` + "`dnsimple research status <domain>`" + `. Designed for bulk research workflows. Requires dedicated paid access; the call will fail with an authorization error if the account is not entitled. Direct the user to https://dnsimple.com/sales to request access.
+
+### Register a domain
+
+Follow this process:
+
+1. Check the domain is available (see "Check domain availability" above). If it is not, stop.
+2. Look up pricing with ` + "`dnsimple registrar prices <domain>`" + `.
+3. Present the registration price to the user and wait for explicit confirmation before proceeding.
+4. Register the domain. Unless the user specified otherwise, use their most recently updated contact as the registrant and leave auto-renewal enabled (the default).
+
+` + "```" + `
 dnsimple registrar prices example.com
+dnsimple contacts list --json
 dnsimple registrar register example.com --registrant-id 1234
+` + "```" + `
+
+### Transfer a domain
+
+Follow this process:
+
+1. Check the domain status (see "Check domain availability" above). The domain must already be registered.
+2. Look up pricing with ` + "`dnsimple registrar prices <domain>`" + `.
+3. Present the transfer price to the user and wait for explicit confirmation before proceeding.
+4. Ask the user for the auth (EPP) code from the losing registrar.
+5. Initiate the transfer. Unless the user specified otherwise, use their most recently updated contact as the registrant and leave auto-renewal enabled (the default).
+
+` + "```" + `
+dnsimple registrar prices example.com
+dnsimple contacts list --json
+dnsimple registrar transfer example.com --registrant-id 1234 --auth-code <code>
 ` + "```" + `
 
 ### Manage Let's Encrypt certificates
