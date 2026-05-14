@@ -30,25 +30,25 @@ When scripting or parsing output programmatically, always use `--json`.
 
 ### List all DNS records for a zone
 
-```
+```shell
 dnsimple zones records list example.com --all --json
 ```
 
 ### Create an A record
 
-```
+```shell
 dnsimple zones records create example.com --type A --name www --content 1.2.3.4 --ttl 3600
 ```
 
 ### Update an existing record
 
-```
+```shell
 dnsimple zones records update example.com 12345 --content 5.6.7.8
 ```
 
 ### Delete a record
 
-```
+```shell
 dnsimple zones records delete example.com 12345
 ```
 
@@ -56,11 +56,11 @@ dnsimple zones records delete example.com 12345
 
 Use `dnsimple registrar check <domain>` for individual, low-volume checks, typically before a registration or transfer. Available on every plan, but rate-limited to discourage bulk use.
 
-```
+```shell
 dnsimple registrar check example.com
 ```
 
-For high-volume availability lookups (10+), use `dnsimple research status <domain>`. Designed for bulk research workflows. Requires dedicated paid access; the call will fail with an authorization error if the account is not entitled. Direct the user to https://dnsimple.com/sales to request access.
+For high-volume availability lookups (10+), use `dnsimple research status <domain>`. Designed for bulk research workflows. Requires dedicated paid access; the call will fail with an authorization error if the account is not entitled. Direct the user to <https://dnsimple.com/sales> to request access.
 
 ### Register or transfer a domain
 
@@ -73,7 +73,7 @@ Follow this process:
 
 Register:
 
-```
+```shell
 dnsimple registrar prices example.com
 dnsimple contacts list --json
 dnsimple registrar register example.com --registrant-id 1234
@@ -81,7 +81,7 @@ dnsimple registrar register example.com --registrant-id 1234
 
 Transfer:
 
-```
+```shell
 dnsimple registrar prices example.com
 dnsimple contacts list --json
 dnsimple registrar transfer example.com --registrant-id 1234 --auth-code <code>
@@ -89,14 +89,14 @@ dnsimple registrar transfer example.com --registrant-id 1234 --auth-code <code>
 
 ### Manage Let's Encrypt certificates
 
-```
+```shell
 dnsimple certificates letsencrypt purchase example.com
 dnsimple certificates letsencrypt issue example.com 98765
 ```
 
 ### Apply a one-click service
 
-```
+```shell
 dnsimple services list --json
 dnsimple services apply example.com github-pages
 ```
