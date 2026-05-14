@@ -28,21 +28,13 @@ agent.`,
 }
 
 func printAIContext(w io.Writer, root *cobra.Command) {
-	fmt.Fprint(w, preamble)
-	printGlobalFlags(w, root)
-	fmt.Fprint(w, outputSection)
-	fmt.Fprintln(w, "## Commands")
-	fmt.Fprintln(w)
-	printCommandTree(w, root, "dnsimple")
-	fmt.Fprint(w, commandSelection)
-	fmt.Fprint(w, workflowExamples)
+	flags := strings.TrimRight(renderGlobalFlags(root), "\n")
+	tree := strings.TrimRight(renderCommandTree(root, "dnsimple"), "\n")
+	fmt.Fprintf(w, aiContext, flags, tree)
 }
 
-func printGlobalFlags(w io.Writer, root *cobra.Command) {
-	fmt.Fprintln(w, "## Global Flags")
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "These flags work with any command:")
-	fmt.Fprintln(w)
+func renderGlobalFlags(root *cobra.Command) string {
+	var b strings.Builder
 	root.PersistentFlags().VisitAll(func(f *pflag.Flag) {
 		if f.Hidden {
 			return
@@ -55,12 +47,18 @@ func printGlobalFlags(w io.Writer, root *cobra.Command) {
 		if f.DefValue != "" && f.DefValue != "false" && f.DefValue != "0" {
 			def = fmt.Sprintf(" (default: %s)", f.DefValue)
 		}
-		fmt.Fprintf(w, "- `%s`: %s%s\n", name, f.Usage, def)
+		fmt.Fprintf(&b, "- `%s`: %s%s\n", name, f.Usage, def)
 	})
-	fmt.Fprintln(w)
+	return b.String()
 }
 
-func printCommandTree(w io.Writer, cmd *cobra.Command, prefix string) {
+func renderCommandTree(cmd *cobra.Command, prefix string) string {
+	var b strings.Builder
+	writeCommandTree(&b, cmd, prefix)
+	return b.String()
+}
+
+func writeCommandTree(w io.Writer, cmd *cobra.Command, prefix string) {
 	for _, sub := range cmd.Commands() {
 		if sub.Hidden || sub.Name() == "help" || sub.Name() == "ai" || sub.Name() == "completion" {
 			continue
@@ -69,7 +67,7 @@ func printCommandTree(w io.Writer, cmd *cobra.Command, prefix string) {
 		fullCmd := prefix + " " + sub.Name()
 
 		if !sub.HasSubCommands() || sub.Runnable() {
-			printLeafCommand(w, sub, fullCmd)
+			writeLeafCommand(w, sub, fullCmd)
 		}
 
 		if sub.HasSubCommands() {
@@ -82,12 +80,12 @@ func printCommandTree(w io.Writer, cmd *cobra.Command, prefix string) {
 					fmt.Fprintf(w, "Aliases: %s\n\n", strings.Join(sub.Aliases, ", "))
 				}
 			}
-			printCommandTree(w, sub, fullCmd)
+			writeCommandTree(w, sub, fullCmd)
 		}
 	}
 }
 
-func printLeafCommand(w io.Writer, cmd *cobra.Command, fullCmd string) {
+func writeLeafCommand(w io.Writer, cmd *cobra.Command, fullCmd string) {
 	usage := fullCmd
 	if cmd.Use != "" {
 		parts := strings.SplitN(cmd.Use, " ", 2)
@@ -146,7 +144,7 @@ func isFlagRequired(cmd *cobra.Command, name string) bool {
 	return ok
 }
 
-const preamble = `# DNSimple CLI — AI Context
+const aiContext = `# DNSimple CLI — AI Context
 
 You are interacting with the DNSimple CLI (` + "`dnsimple`" + `), a command-line tool for managing domains, DNS records, certificates, and other DNSimple services via the DNSimple API v2.
 
@@ -164,9 +162,13 @@ To use the sandbox environment for testing, add the ` + "`--sandbox`" + ` flag (
 
 Most commands require an account ID. The CLI resolves it automatically from the active context, but you can override it with ` + "`-a <account-id>`" + ` or ` + "`--account <account-id>`" + `.
 
-`
+## Global Flags
 
-const outputSection = `## Output Formats
+These flags work with any command:
+
+%s
+
+## Output Formats
 
 - **Table** (default): Human-readable tabular output
 - **JSON**: Machine-readable output with ` + "`--json`" + `
@@ -174,9 +176,11 @@ const outputSection = `## Output Formats
 
 When scripting or parsing output programmatically, always use ` + "`--json`" + `.
 
-`
+## Commands
 
-const commandSelection = `## Choosing the Right Command
+%s
+
+## Choosing the Right Command
 
 Some operations are exposed by multiple commands with different access tiers, rate limits, and intended use cases. Use the rules below to pick the correct one.
 
@@ -187,9 +191,7 @@ Some operations are exposed by multiple commands with different access tiers, ra
 
 If you don't know whether the user has Research access, prefer ` + "`registrar check`" + ` for one-off checks. Only use ` + "`research status`" + ` when the workload is clearly bulk and the user has confirmed access.
 
-`
-
-const workflowExamples = `## Common Workflows
+## Common Workflows
 
 ### List all DNS records for a zone
 
