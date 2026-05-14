@@ -45,11 +45,15 @@ func TestAICommandOutputContainsPreamble(t *testing.T) {
 func TestAICommandOutputContainsDynamicCommands(t *testing.T) {
 	output := runAICommand(t)
 
-	assert.Contains(t, output, "dnsimple zones records create")
-	assert.Contains(t, output, "dnsimple registrar register")
-	assert.Contains(t, output, "dnsimple domains list")
-	assert.Contains(t, output, "dnsimple certificates")
-	assert.Contains(t, output, "dnsimple whoami")
+	assert.Contains(t, output, "All commands below are invoked as `dnsimple <command>`.")
+	assert.Contains(t, output, "### zones records")
+	assert.Contains(t, output, "- `create <zone>`: Create a zone record")
+	assert.Contains(t, output, "### registrar")
+	assert.Contains(t, output, "- `register <domain>`: Register a domain")
+	assert.Contains(t, output, "### domains")
+	assert.Contains(t, output, "- `list`: List domains")
+	assert.Contains(t, output, "### certificates")
+	assert.Contains(t, output, "### whoami")
 }
 
 func TestAICommandSlimOutputListsRequiredFlags(t *testing.T) {
@@ -76,9 +80,10 @@ func TestAICommandFullOutputIsLongerThanSlim(t *testing.T) {
 func TestAICommandRendersRecordsAliasWithoutDuplicatingSubtree(t *testing.T) {
 	output := runAICommand(t)
 
-	assert.Contains(t, output, "### dnsimple records (alias for `dnsimple zones records`)")
-	assert.Contains(t, output, "#### `dnsimple zones records create <zone>`")
-	assert.NotContains(t, output, "#### `dnsimple records create <zone>`")
+	assert.Contains(t, output, "### records (alias for `zones records`)")
+	assert.Contains(t, output, "### zones records")
+	assert.Contains(t, output, "- `create <zone>`: Create a zone record")
+	assert.NotContains(t, output, "dnsimple records create")
 }
 
 func TestAICommandExcludesItself(t *testing.T) {
