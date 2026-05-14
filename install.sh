@@ -342,8 +342,18 @@ main() {
 
 	if [ -z "${path_hint}" ]; then
 		info "Configuring ${BOLD}${bin_dir}${NO_COLOR} in PATH..."
+		# Write the rc-file entry with a literal $HOME when applicable, so the
+		# line stays portable across machines and doesn't leak the username.
+		case "${bin_dir}" in
+		"${HOME}/"*)
+			export_bin="\$HOME/${bin_dir#"${HOME}/"}"
+			;;
+		*)
+			export_bin="${bin_dir}"
+			;;
+		esac
 		# Determine the appropriate shell config file
-		export_line="export PATH=\"${bin_dir}:\$PATH\""
+		export_line="export PATH=\"${export_bin}:\$PATH\""
 		case "${SHELL:-}" in
 		*/zsh)
 			shell_config="$HOME/.zshrc"
@@ -361,7 +371,7 @@ main() {
 		*/fish)
 			shell_config="$HOME/.config/fish/config.fish"
 			shell_name="~/.config/fish/config.fish"
-			export_line="set -gx PATH \"${bin_dir}\" \$PATH"
+			export_line="set -gx PATH \"${export_bin}\" \$PATH"
 			;;
 		*)
 			shell_config=""
