@@ -6,15 +6,11 @@ You are interacting with the DNSimple CLI (`dnsimple`), a command-line tool for 
 
 The CLI requires a DNSimple API token. The user must authenticate before you can use the CLI.
 
-If the CLI is not authenticated, ask the user to run `dnsimple auth login` themselves. Do NOT pass tokens via `--token` or environment variables — never handle API tokens directly.
+You can check whether the CLI is already authenticated by running `dnsimple auth status`. If the CLI is not authenticated, ask the user to run `dnsimple auth login` themselves. Do NOT pass tokens via `--token` or environment variables — never handle API tokens directly. To login against the sandbox environment, pass the `--sandbox` flag to the command.
 
-You can check whether the CLI is already authenticated by running `dnsimple auth status`.
+The CLI supports multiple stored authentication *contexts*. Use `dnsimple auth list` to see them; the active one is marked with `*`. To run a single command against a different stored context without changing the active one, pass `--context <name>` — this is the safe option for parallel agents because it does not mutate shared on-disk state.
 
-The CLI supports multiple stored authentication *contexts* (kubectl-style). Use `dnsimple auth list` to see them; the active one is marked with `*`. To run a single command against a different stored context without changing the active one, pass `--context <name>` — this is the safe option for parallel agents because it does not mutate shared on-disk state.
-
-To use the sandbox environment for testing, add the `--sandbox` flag (or select a sandbox context with `--context`).
-
-Most commands require an account ID. The CLI resolves it automatically from the active context, but you can override it with `-a <account-id>` or `--account <account-id>`.
+Don't switch authentication context during a session, unless otherwise specified by the user. The sandbox environment is safer for testing and as a playground. If the user is logged in to a production account, ask for confirmation before executing destructive actions, or actions that could result in a charge like registering a domain or purchasing a product.
 
 ## Global Flags
 
