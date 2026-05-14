@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 

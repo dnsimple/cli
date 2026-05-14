@@ -3,7 +3,7 @@ module github.com/dnsimple/dnsimple-cli
 go 1.25.4
 
 require (
-	github.com/dnsimple/dnsimple-go/v8 v8.3.0
+	github.com/dnsimple/dnsimple-go/v9 v9.1.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0

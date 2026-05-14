@@ -6,7 +6,7 @@ import (
 	"github.com/dnsimple/dnsimple-cli/internal/client"
 	"github.com/dnsimple/dnsimple-cli/internal/config"
 	"github.com/dnsimple/dnsimple-cli/internal/output"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 

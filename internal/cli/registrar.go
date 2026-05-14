@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -43,8 +43,8 @@ func (d *domainPriceOutput) TableHeaders() []string {
 
 func (d *domainPriceOutput) TableRows() [][]string {
 	trustee := "-"
-	if d.Data.TrusteeServicePrice != nil {
-		trustee = fmt.Sprintf("%.2f", *d.Data.TrusteeServicePrice)
+	if d.Data.TrusteePrice != nil {
+		trustee = fmt.Sprintf("%.2f", *d.Data.TrusteePrice)
 	}
 	return [][]string{{
 		d.Data.Domain,
@@ -78,7 +78,7 @@ func (d *domainRegistrationOutput) TableRows() [][]string {
 		{"State", r.State},
 		{"Auto Renew", strconv.FormatBool(r.AutoRenew)},
 		{"WHOIS Privacy", strconv.FormatBool(r.WhoisPrivacy)},
-		{"Trustee", strconv.FormatBool(r.TrusteeService)},
+		{"Trustee", strconv.FormatBool(r.Trustee)},
 		{"Period", strconv.Itoa(r.Period)},
 	}
 }
@@ -128,7 +128,7 @@ func (d *domainTransferOutput) TableRows() [][]string {
 		{"State", t.State},
 		{"Auto Renew", strconv.FormatBool(t.AutoRenew)},
 		{"WHOIS Privacy", strconv.FormatBool(t.WhoisPrivacy)},
-		{"Trustee", strconv.FormatBool(t.TrusteeService)},
+		{"Trustee", strconv.FormatBool(t.Trustee)},
 	}
 }
 
@@ -235,7 +235,7 @@ func newRegistrarRegisterCmd(f *cmdutil.Factory) *cobra.Command {
 				RegistrantID:       registrantID,
 				EnableAutoRenewal:  autoRenew,
 				EnableWhoisPrivacy: whoisPrivacy,
-				TrusteeService:     &trusteeService,
+				Trustee:            &trusteeService,
 				PremiumPrice:       premiumPrice,
 				ExtendedAttributes: parseExtendedAttributes(extendedAttributes),
 			}
@@ -287,7 +287,7 @@ func newRegistrarTransferCmd(f *cmdutil.Factory) *cobra.Command {
 				AuthCode:           authCode,
 				EnableAutoRenewal:  autoRenew,
 				EnableWhoisPrivacy: whoisPrivacy,
-				TrusteeService:     &trusteeService,
+				Trustee:            &trusteeService,
 				PremiumPrice:       premiumPrice,
 				ExtendedAttributes: parseExtendedAttributes(extendedAttributes),
 			}
