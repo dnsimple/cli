@@ -6,6 +6,7 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 
 ### Changed
 
+- `dnsimple ai` no longer prints the full per-command flag tables by default; only required flags are listed. Pass `--full` for the complete reference, or run `<command> --help` to discover flags on demand. This shrinks the default output to reduce token usage.
 - Renamed the Go module path from `github.com/dnsimple/dnsimple-cli` to `github.com/dnsimple/cli` following the GitHub repository rename.
 
 ## 0.7.0 - 2026-04-24

@@ -13,7 +13,7 @@ func TestAICommandReturnsSuccess(t *testing.T) {
 	assert.Equal(t, cmdutil.ExitOK, code)
 }
 
-func runAICommand(t *testing.T) string {
+func runAICommand(t *testing.T, extraArgs ...string) string {
 	t.Helper()
 
 	f := cmdutil.NewFactory("test")
@@ -22,7 +22,7 @@ func runAICommand(t *testing.T) string {
 
 	var stdout bytes.Buffer
 	root.SetOut(&stdout)
-	root.SetArgs([]string{"ai"})
+	root.SetArgs(append([]string{"ai"}, extraArgs...))
 
 	err := root.Execute()
 	assert.NoError(t, err)
@@ -52,10 +52,25 @@ func TestAICommandOutputContainsDynamicCommands(t *testing.T) {
 	assert.Contains(t, output, "dnsimple whoami")
 }
 
-func TestAICommandOutputMarksRequiredFlags(t *testing.T) {
+func TestAICommandSlimOutputListsRequiredFlags(t *testing.T) {
 	output := runAICommand(t)
 
+	assert.Contains(t, output, "Required flags:")
+	assert.NotContains(t, output, "**(required)**")
+}
+
+func TestAICommandFullOutputMarksRequiredFlags(t *testing.T) {
+	output := runAICommand(t, "--full")
+
 	assert.Contains(t, output, "**(required)**")
+	assert.Contains(t, output, "Flags:")
+}
+
+func TestAICommandFullOutputIsLongerThanSlim(t *testing.T) {
+	slim := runAICommand(t)
+	full := runAICommand(t, "--full")
+
+	assert.Greater(t, len(full), len(slim))
 }
 
 func TestAICommandExcludesItself(t *testing.T) {
