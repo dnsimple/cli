@@ -165,7 +165,10 @@ environment ('production' or 'sandbox'), with the account ID appended on collisi
 Get your token from:
 
   Production: https://dnsimple.com/user
-  Sandbox:    https://sandbox.dnsimple.com/user`,
+  Sandbox:    https://sandbox.dnsimple.com/user
+
+See https://support.dnsimple.com/articles/api-access-token/ for instructions on
+generating an API token.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := f.Config()
 			if err != nil {
@@ -242,6 +245,7 @@ func readLoginToken(cmd *cobra.Command, withToken bool) (string, error) {
 		return token, nil
 	}
 
+	fmt.Fprintln(cmd.ErrOrStderr(), "Follow the instructions at https://support.dnsimple.com/articles/api-access-token/ to generate an API token.")
 	fmt.Fprint(cmd.ErrOrStderr(), "Paste your API token: ")
 
 	if f, ok := cmd.InOrStdin().(*os.File); ok && term.IsTerminal(int(f.Fd())) {
