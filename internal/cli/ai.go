@@ -13,6 +13,8 @@ import (
 //go:embed ai_context.md
 var aiContext string
 
+const aiAliasTargetAnnotation = "dnsimple.ai/alias-target"
+
 func newAICmd() *cobra.Command {
 	var full bool
 
@@ -82,6 +84,11 @@ func writeCommandTree(w io.Writer, cmd *cobra.Command, prefix string, full bool)
 
 		fullCmd := prefix + " " + sub.Name()
 
+		if target := sub.Annotations[aiAliasTargetAnnotation]; target != "" {
+			writeAliasCommand(w, fullCmd, target)
+			continue
+		}
+
 		if !sub.HasSubCommands() || sub.Runnable() {
 			writeLeafCommand(w, sub, fullCmd, full)
 		}
@@ -99,6 +106,10 @@ func writeCommandTree(w io.Writer, cmd *cobra.Command, prefix string, full bool)
 			writeCommandTree(w, sub, fullCmd, full)
 		}
 	}
+}
+
+func writeAliasCommand(w io.Writer, fullCmd string, target string) {
+	fmt.Fprintf(w, "### %s (alias for `%s`)\n\n", fullCmd, target)
 }
 
 func writeLeafCommand(w io.Writer, cmd *cobra.Command, fullCmd string, full bool) {
@@ -184,4 +195,3 @@ func isFlagRequired(cmd *cobra.Command, name string) bool {
 	_, ok := annotations[cobra.BashCompOneRequiredFlag]
 	return ok
 }
-

@@ -8,8 +8,9 @@ import (
 // newRecordsCmd creates a top-level "records" alias that delegates to "zones records".
 func newRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "records",
-		Short: "Manage zone records (alias for 'zones records')",
+		Use:         "records",
+		Short:       "Manage zone records (alias for 'zones records')",
+		Annotations: map[string]string{aiAliasTargetAnnotation: "dnsimple zones records"},
 	}
 
 	cmd.AddCommand(newRecordsListCmd(f))

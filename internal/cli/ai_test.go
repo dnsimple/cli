@@ -73,6 +73,14 @@ func TestAICommandFullOutputIsLongerThanSlim(t *testing.T) {
 	assert.Greater(t, len(full), len(slim))
 }
 
+func TestAICommandRendersRecordsAliasWithoutDuplicatingSubtree(t *testing.T) {
+	output := runAICommand(t)
+
+	assert.Contains(t, output, "### dnsimple records (alias for `dnsimple zones records`)")
+	assert.Contains(t, output, "#### `dnsimple zones records create <zone>`")
+	assert.NotContains(t, output, "#### `dnsimple records create <zone>`")
+}
+
 func TestAICommandExcludesItself(t *testing.T) {
 	output := runAICommand(t)
 
