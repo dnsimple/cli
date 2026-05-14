@@ -92,7 +92,7 @@ type authContextList struct {
 }
 
 func (a *authContextList) TableHeaders() []string {
-	return []string{"", "NAME", "ENVIRONMENT", "ACCOUNT", "USER"}
+	return []string{"", "NAME", "ENV", "ACCOUNT", "USER"}
 }
 
 func (a *authContextList) TableRows() [][]string {
@@ -647,8 +647,12 @@ func promptForContextSelection(in io.Reader, errOut io.Writer, creds *config.Cre
 		if ctx.Name == creds.ActiveContext {
 			marker = "*"
 		}
-		fmt.Fprintf(errOut, "  %s [%d] %-20s %-12s %s (%s)\n",
-			marker, i+1, ctx.Name, config.EnvironmentName(ctx.Host), ctx.User, ctx.AccountID)
+		fmt.Fprintf(errOut, "  %s [%d] %-20s env: %s, account: %s",
+			marker, i+1, ctx.Name, config.EnvironmentName(ctx.Host), ctx.AccountID)
+		if ctx.User != "" {
+			fmt.Fprintf(errOut, ", user: %s", ctx.User)
+		}
+		fmt.Fprintln(errOut)
 	}
 	fmt.Fprintln(errOut, "")
 	fmt.Fprint(errOut, "Select context number: ")

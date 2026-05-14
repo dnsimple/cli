@@ -441,6 +441,8 @@ func TestAuthListPrintsAllContextsAndMarksActive(t *testing.T) {
 	}
 
 	out := stdout.String()
+	assert.Contains(t, out, "ENV")
+	assert.NotContains(t, out, "ENVIRONMENT")
 	assert.Contains(t, out, "personal")
 	assert.Contains(t, out, "sandbox")
 	assert.Contains(t, out, "production")
@@ -472,8 +474,8 @@ func TestAuthSwitchByName(t *testing.T) {
 
 	creds := &config.Credentials{
 		Contexts: []*config.Context{
-			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "981"},
-			{Name: "sandbox", Host: config.SandboxHost, Token: "tok-2", AccountID: "24"},
+			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "1111"},
+			{Name: "sandbox", Host: config.SandboxHost, Token: "tok-2", AccountID: "2222"},
 		},
 		ActiveContext: "personal",
 	}
@@ -499,8 +501,8 @@ func TestAuthSwitchByAccountID(t *testing.T) {
 
 	creds := &config.Credentials{
 		Contexts: []*config.Context{
-			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "981"},
-			{Name: "sandbox", Host: config.SandboxHost, Token: "tok-2", AccountID: "24"},
+			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "1111"},
+			{Name: "sandbox", Host: config.SandboxHost, Token: "tok-2", AccountID: "2222"},
 		},
 		ActiveContext: "personal",
 	}
@@ -513,7 +515,7 @@ func TestAuthSwitchByAccountID(t *testing.T) {
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
-	if err := cmd.RunE(cmd, []string{"24"}); !assert.NoError(t, err) {
+	if err := cmd.RunE(cmd, []string{"2222"}); !assert.NoError(t, err) {
 		return
 	}
 
@@ -616,8 +618,8 @@ func TestAuthSwitchInteractivePicker(t *testing.T) {
 
 	creds := &config.Credentials{
 		Contexts: []*config.Context{
-			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "981"},
-			{Name: "sandbox", Host: config.SandboxHost, Token: "tok-2", AccountID: "24"},
+			{Name: "personal", Host: config.ProductionHost, Token: "tok-1", AccountID: "1111"},
+			{Name: "sandbox", Host: config.SandboxHost, Token: "tok-2", AccountID: "2222"},
 		},
 		ActiveContext: "personal",
 	}
@@ -628,8 +630,9 @@ func TestAuthSwitchInteractivePicker(t *testing.T) {
 	f := cmdutil.NewFactory("test")
 	cmd := newAuthSwitchCmd(f)
 	cmd.SetIn(strings.NewReader("2\n"))
+	var stderr bytes.Buffer
 	cmd.SetOut(io.Discard)
-	cmd.SetErr(io.Discard)
+	cmd.SetErr(&stderr)
 
 	if err := cmd.RunE(cmd, nil); !assert.NoError(t, err) {
 		return
@@ -637,6 +640,8 @@ func TestAuthSwitchInteractivePicker(t *testing.T) {
 
 	loaded, _ := config.LoadCredentials()
 	assert.Equal(t, "sandbox", loaded.ActiveContext)
+	assert.Contains(t, stderr.String(), "env: production, account: 1111")
+	assert.Contains(t, stderr.String(), "env: sandbox, account: 2222")
 }
 
 // --- promptForContextSelection ---
