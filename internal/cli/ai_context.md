@@ -62,14 +62,16 @@ dnsimple registrar check example.com
 
 For high-volume availability lookups (10+), use `dnsimple research status <domain>`. Designed for bulk research workflows. Requires dedicated paid access; the call will fail with an authorization error if the account is not entitled. Direct the user to https://dnsimple.com/sales to request access.
 
-### Register a domain
+### Register or transfer a domain
 
 Follow this process:
 
-1. Check the domain is available (see "Check domain availability" above). If it is not, stop.
+1. Check the domain status (see "Check domain availability" above). Register only if available; transfer only if already registered.
 2. Look up pricing with `dnsimple registrar prices <domain>`.
-3. Present the registration price to the user and wait for explicit confirmation before proceeding.
-4. Register the domain. Unless the user specified otherwise, use their most recently updated contact as the registrant and leave auto-renewal enabled (the default).
+3. Present the registration or transfer price to the user and wait for explicit confirmation before proceeding.
+4. Unless the user specified otherwise, use their most recently updated contact as the registrant and leave auto-renewal enabled (the default). For transfers, ask the user for the auth (EPP) code from the losing registrar.
+
+Register:
 
 ```
 dnsimple registrar prices example.com
@@ -77,15 +79,7 @@ dnsimple contacts list --json
 dnsimple registrar register example.com --registrant-id 1234
 ```
 
-### Transfer a domain
-
-Follow this process:
-
-1. Check the domain status (see "Check domain availability" above). The domain must already be registered.
-2. Look up pricing with `dnsimple registrar prices <domain>`.
-3. Present the transfer price to the user and wait for explicit confirmation before proceeding.
-4. Ask the user for the auth (EPP) code from the losing registrar.
-5. Initiate the transfer. Unless the user specified otherwise, use their most recently updated contact as the registrant and leave auto-renewal enabled (the default).
+Transfer:
 
 ```
 dnsimple registrar prices example.com
