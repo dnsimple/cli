@@ -107,8 +107,8 @@ func newDelegationChangeCmd(f *cmdutil.Factory) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&nameServers, "ns", nil, "Name servers (comma-separated)")
-	_ = cmd.MarkFlagRequired("ns")
+	cmd.Flags().StringSliceVar(&nameServers, "name-servers", nil, "Name servers (comma-separated)")
+	_ = cmd.MarkFlagRequired("name-servers")
 
 	return cmd
 }
