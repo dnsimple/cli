@@ -44,7 +44,7 @@ func newResearchCmd(f *cmdutil.Factory) *cobra.Command {
 func newResearchStatusCmd(f *cmdutil.Factory) *cobra.Command {
 	return &cobra.Command{
 		Use:   "status <domain>",
-		Short: "Check domain availability",
+		Short: "Bulk domain availability research",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := f.Client()
