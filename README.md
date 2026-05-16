@@ -2,11 +2,6 @@
 
 A command-line interface for the [DNSimple API v2](https://developer.dnsimple.com/v2/).
 
-## Requirements
-
-- Go 1.25+
-- An activated DNSimple account
-
 ## Installation
 
 ### macOS and Linux
