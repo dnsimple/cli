@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/dnsimple/cli/internal/cmdutil"
-	"github.com/dnsimple/cli/internal/pagination"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -78,8 +77,7 @@ func newDomainsPushesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newPushesListCmd(f *cmdutil.Factory) *cobra.Command {
-	var page, perPage int
-	var all bool
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -97,40 +95,27 @@ func newPushesListCmd(f *cmdutil.Factory) *cobra.Command {
 
 			opts := &dnsimple.ListOptions{}
 
-			if all {
-				items, err := pagination.All(func(p int) ([]dnsimple.DomainPush, *dnsimple.Pagination, error) {
-					opts.Page = &p
+			return runList(cmd, f, lf, "domain pushes",
+				func(page, perPage int) ([]dnsimple.DomainPush, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
 					resp, err := c.Domains.ListPushes(context.Background(), accountID, opts)
 					if err != nil {
 						return nil, nil, err
 					}
 					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.DomainPush, pg *dnsimple.Pagination) *pushList {
+					return &pushList{Data: items, Pagination: pg}
 				})
-				if err != nil {
-					return err
-				}
-				return f.Printer(cmd).Print(&pushList{Data: items})
-			}
-
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
-
-			resp, err := c.Domains.ListPushes(context.Background(), accountID, opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).PrintList(&pushList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "domain pushes"))
 		},
 	}
 
-	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
+	lf.register(cmd)
 
 	return cmd
 }

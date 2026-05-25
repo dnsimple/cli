@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/dnsimple/cli/internal/cmdutil"
-	"github.com/dnsimple/cli/internal/pagination"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -81,8 +80,7 @@ func newDomainsDsRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newDsRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
-	var page, perPage int
-	var all bool
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list <domain>",
@@ -101,40 +99,27 @@ func newDsRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
 
 			opts := &dnsimple.ListOptions{}
 
-			if all {
-				items, err := pagination.All(func(p int) ([]dnsimple.DelegationSignerRecord, *dnsimple.Pagination, error) {
-					opts.Page = &p
+			return runList(cmd, f, lf, "DS records",
+				func(page, perPage int) ([]dnsimple.DelegationSignerRecord, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
 					resp, err := c.Domains.ListDelegationSignerRecords(context.Background(), accountID, args[0], opts)
 					if err != nil {
 						return nil, nil, err
 					}
 					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.DelegationSignerRecord, pg *dnsimple.Pagination) *dsRecordList {
+					return &dsRecordList{Data: items, Pagination: pg}
 				})
-				if err != nil {
-					return err
-				}
-				return f.Printer(cmd).Print(&dsRecordList{Data: items})
-			}
-
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
-
-			resp, err := c.Domains.ListDelegationSignerRecords(context.Background(), accountID, args[0], opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).PrintList(&dsRecordList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "DS records"))
 		},
 	}
 
-	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
+	lf.register(cmd)
 
 	return cmd
 }

@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/dnsimple/cli/internal/cmdutil"
-	"github.com/dnsimple/cli/internal/pagination"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -78,8 +77,7 @@ func newDomainsEmailForwardsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newEmailForwardsListCmd(f *cmdutil.Factory) *cobra.Command {
-	var page, perPage int
-	var all bool
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list <domain>",
@@ -98,40 +96,27 @@ func newEmailForwardsListCmd(f *cmdutil.Factory) *cobra.Command {
 
 			opts := &dnsimple.ListOptions{}
 
-			if all {
-				items, err := pagination.All(func(p int) ([]dnsimple.EmailForward, *dnsimple.Pagination, error) {
-					opts.Page = &p
+			return runList(cmd, f, lf, "email forwards",
+				func(page, perPage int) ([]dnsimple.EmailForward, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
 					resp, err := c.Domains.ListEmailForwards(context.Background(), accountID, args[0], opts)
 					if err != nil {
 						return nil, nil, err
 					}
 					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.EmailForward, pg *dnsimple.Pagination) *emailForwardList {
+					return &emailForwardList{Data: items, Pagination: pg}
 				})
-				if err != nil {
-					return err
-				}
-				return f.Printer(cmd).Print(&emailForwardList{Data: items})
-			}
-
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
-
-			resp, err := c.Domains.ListEmailForwards(context.Background(), accountID, args[0], opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).PrintList(&emailForwardList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "email forwards"))
 		},
 	}
 
-	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
+	lf.register(cmd)
 
 	return cmd
 }

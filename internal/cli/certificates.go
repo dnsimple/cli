@@ -164,8 +164,8 @@ func newCertificatesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newCertsListCmd(f *cmdutil.Factory) *cobra.Command {
-	var page, perPage int
 	var sort string
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list <domain>",
@@ -183,28 +183,32 @@ func newCertsListCmd(f *cmdutil.Factory) *cobra.Command {
 			}
 
 			opts := &dnsimple.ListOptions{}
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
 			if sort != "" {
 				opts.Sort = &sort
 			}
 
-			resp, err := c.Certificates.ListCertificates(context.Background(), accountID, args[0], opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).PrintList(&certList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "certificates"))
+			return runList(cmd, f, lf, "certificates",
+				func(page, perPage int) ([]dnsimple.Certificate, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Certificates.ListCertificates(context.Background(), accountID, args[0], opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Certificate, pg *dnsimple.Pagination) *certList {
+					return &certList{Data: items, Pagination: pg}
+				})
 		},
 	}
 
 	cmd.Flags().StringVar(&sort, "sort", "", "Sort order")
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
+	lf.register(cmd)
 
 	return cmd
 }

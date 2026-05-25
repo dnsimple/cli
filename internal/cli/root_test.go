@@ -20,12 +20,15 @@ func TestExecuteUnknownCommandReturnsError(t *testing.T) {
 }
 
 func TestHelpUsesDeclaredLocalFlagOrder(t *testing.T) {
+	// Command-specific flags are declared first; the shared pagination flags
+	// (--all/--page/--per-page) are registered together at the end.
 	analyticsHelp := commandHelpOutput(t, "analytics", "query")
 	assertContainsInOrder(t, analyticsHelp,
 		"--start-date",
 		"--end-date",
 		"--groupings",
 		"--sort",
+		"--all",
 		"--page",
 		"--per-page",
 	)
@@ -33,8 +36,8 @@ func TestHelpUsesDeclaredLocalFlagOrder(t *testing.T) {
 	domainsHelp := commandHelpOutput(t, "domains", "list")
 	assertContainsInOrder(t, domainsHelp,
 		"--name-like",
-		"--all",
 		"--sort",
+		"--all",
 		"--page",
 		"--per-page",
 	)

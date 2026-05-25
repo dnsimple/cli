@@ -280,6 +280,9 @@ func TestPaginatedListCommandsExposeNavigationFlags(t *testing.T) {
 		"domains list":           newDomainsListCmd(f),
 		"zones list":             newZonesListCmd(f),
 		"contacts list":          newContactsListCmd(f),
+		"certificates list":      newCertsListCmd(f),
+		"tlds list":              newTldsListCmd(f),
+		"analytics query":        newAnalyticsQueryCmd(f),
 	}
 	for name, cmd := range commands {
 		for _, flag := range []string{"all", "page", "per-page"} {
