@@ -33,6 +33,7 @@ type PageInfo struct {
 	TotalPages   int
 	TotalEntries int
 	CanFetchAll  bool // command exposes an --all flag
+	CanPaginate  bool // command exposes --page/--per-page flags
 }
 
 // Printer handles output rendering.
@@ -72,19 +73,35 @@ func (p *Printer) Print(data Formattable) error {
 // (or AI agent) can see that more results exist and how to reach them. JSON and
 // template output are left untouched: JSON already embeds the pagination object.
 func (p *Printer) PrintList(data Formattable, info *PageInfo) error {
-	if p.Format == FormatTable && info != nil && info.TotalPages > 1 {
-		p.writePageHint(info)
+	hint := p.Format == FormatTable && info != nil && info.TotalPages > 1 && p.ErrWriter != nil
+	if hint {
+		// Summary above the table so it stays visible before a long list scrolls past.
+		fmt.Fprintf(p.ErrWriter, "Showing %d of %d %s (page %d of %d).\n\n",
+			info.Shown, info.TotalEntries, info.Noun, info.CurrentPage, info.TotalPages)
 	}
-	return p.Print(data)
+	if err := p.Print(data); err != nil {
+		return err
+	}
+	if hint {
+		// Navigation advice below the table, where it lands next to the prompt.
+		if nav := info.navHint(); nav != "" {
+			fmt.Fprintf(p.ErrWriter, "\n%s\n", nav)
+		}
+	}
+	return nil
 }
 
-func (p *Printer) writePageHint(info *PageInfo) {
-	nav := "Pass --page <n> or --per-page <n> to see more."
-	if info.CanFetchAll {
-		nav = "Pass --all to fetch every page, or --page <n>/--per-page <n> to navigate."
+// navHint returns advice on retrieving more results, naming only the flags the
+// command actually defines. It is empty when the command exposes no way to page.
+func (info *PageInfo) navHint() string {
+	switch {
+	case info.CanFetchAll:
+		return "Pass --all to fetch every page, or --page <n>/--per-page <n> to navigate."
+	case info.CanPaginate:
+		return "Pass --page <n> or --per-page <n> to see more."
+	default:
+		return ""
 	}
-	fmt.Fprintf(p.ErrWriter, "Showing %d of %d %s (page %d of %d). %s\n",
-		info.Shown, info.TotalEntries, info.Noun, info.CurrentPage, info.TotalPages, nav)
 }
 
 func (p *Printer) printJSON(data Formattable) error {

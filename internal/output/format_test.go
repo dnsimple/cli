@@ -119,7 +119,7 @@ func TestPrinterPrintListHintOmitsAllFlagWhenUnsupported(t *testing.T) {
 	p := &Printer{Writer: &out, ErrWriter: &errOut, Format: FormatTable}
 
 	err := p.PrintList(listData(), &PageInfo{
-		Noun: "certificates", Shown: 30, CurrentPage: 1, TotalPages: 5, TotalEntries: 142, CanFetchAll: false,
+		Noun: "certificates", Shown: 30, CurrentPage: 1, TotalPages: 5, TotalEntries: 142, CanFetchAll: false, CanPaginate: true,
 	})
 	if !assert.NoError(t, err) {
 		return
@@ -128,6 +128,24 @@ func TestPrinterPrintListHintOmitsAllFlagWhenUnsupported(t *testing.T) {
 	assert.Contains(t, errOut.String(), "Showing 30 of 142 certificates (page 1 of 5)")
 	assert.NotContains(t, errOut.String(), "--all")
 	assert.Contains(t, errOut.String(), "--page")
+}
+
+func TestPrinterPrintListNoNavAdviceWhenNoPaginationFlags(t *testing.T) {
+	var out, errOut bytes.Buffer
+	p := &Printer{Writer: &out, ErrWriter: &errOut, Format: FormatTable}
+
+	// Command exposes neither --all nor --page: show the summary but never
+	// advise a flag that does not exist on the command.
+	err := p.PrintList(listData(), &PageInfo{
+		Noun: "services", Shown: 30, CurrentPage: 1, TotalPages: 2, TotalEntries: 41,
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Contains(t, errOut.String(), "Showing 30 of 41 services (page 1 of 2)")
+	assert.NotContains(t, errOut.String(), "--page")
+	assert.NotContains(t, errOut.String(), "--all")
 }
 
 func TestPrinterPrintListNoHintOnSinglePage(t *testing.T) {

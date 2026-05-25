@@ -11,6 +11,7 @@ import (
 	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/dnsimple/cli/internal/config"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -260,6 +261,31 @@ func TestRecordsListNoHintOnSinglePage(t *testing.T) {
 
 	assert.Zero(t, stderr.Len())
 	assert.Contains(t, stdout.String(), "1.2.3.4")
+}
+
+// A paginated list command must expose the navigation flags its hint advertises,
+// otherwise the hint points users at flags that error with "unknown flag".
+func TestPaginatedListCommandsExposeNavigationFlags(t *testing.T) {
+	f := cmdutil.NewFactory("test")
+	commands := map[string]*cobra.Command{
+		"services list":          newServicesListCmd(f),
+		"services applied":       newServicesAppliedCmd(f),
+		"templates list":         newTemplatesListCmd(f),
+		"template records list":  newTemplateRecordsListCmd(f),
+		"email-forwards list":    newEmailForwardsListCmd(f),
+		"ds-records list":        newDsRecordsListCmd(f),
+		"pushes list":            newPushesListCmd(f),
+		"registrant-change list": newRegistrantChangeListCmd(f),
+		"records list":           newRecordsListCmd(f),
+		"domains list":           newDomainsListCmd(f),
+		"zones list":             newZonesListCmd(f),
+		"contacts list":          newContactsListCmd(f),
+	}
+	for name, cmd := range commands {
+		for _, flag := range []string{"all", "page", "per-page"} {
+			assert.NotNilf(t, cmd.Flags().Lookup(flag), "%s should define --%s", name, flag)
+		}
+	}
 }
 
 func testCLIClient(t *testing.T, handler http.HandlerFunc) (*dnsimple.Client, *config.Config) {

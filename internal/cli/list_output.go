@@ -20,5 +20,6 @@ func pageHint(cmd *cobra.Command, pg *dnsimple.Pagination, shown int, noun strin
 		TotalPages:   pg.TotalPages,
 		TotalEntries: pg.TotalEntries,
 		CanFetchAll:  cmd.Flags().Lookup("all") != nil,
+		CanPaginate:  cmd.Flags().Lookup("page") != nil,
 	}
 }

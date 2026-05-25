@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/pagination"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -77,6 +78,8 @@ func newRegistrarRegistrantChangeCmd(f *cmdutil.Factory) *cobra.Command {
 
 func newRegistrantChangeListCmd(f *cmdutil.Factory) *cobra.Command {
 	var state, domainID, contactID string
+	var page, perPage int
+	var all bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -102,6 +105,28 @@ func newRegistrantChangeListCmd(f *cmdutil.Factory) *cobra.Command {
 				opts.ContactId = &contactID
 			}
 
+			if all {
+				items, err := pagination.All(func(p int) ([]dnsimple.RegistrantChange, *dnsimple.Pagination, error) {
+					opts.Page = &p
+					resp, err := c.Registrar.ListRegistrantChange(context.Background(), accountID, opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				})
+				if err != nil {
+					return err
+				}
+				return f.Printer(cmd).Print(&registrantChangeList{Data: items})
+			}
+
+			if page > 0 {
+				opts.Page = &page
+			}
+			if perPage > 0 {
+				opts.PerPage = &perPage
+			}
+
 			resp, err := c.Registrar.ListRegistrantChange(context.Background(), accountID, opts)
 			if err != nil {
 				return err
@@ -114,6 +139,9 @@ func newRegistrantChangeListCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&state, "state", "", "Filter by state")
 	cmd.Flags().StringVar(&domainID, "domain-id", "", "Filter by domain ID")
 	cmd.Flags().StringVar(&contactID, "contact-id", "", "Filter by contact ID")
+	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
+	cmd.Flags().IntVar(&page, "page", 0, "Page number")
+	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
 
 	return cmd
 }
