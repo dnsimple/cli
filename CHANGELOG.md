@@ -7,6 +7,11 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 ### Added
 
 - List commands now show a `Showing X of Y` pagination hint and expose `--all`/`--page`/`--per-page` consistently, making it obvious when results span multiple pages and how to retrieve the rest. (dnsimple/cli#51)
+- Trustee service support: pass `--trustee` to `registrar register` and `registrar transfer` to enable the trustee service on domains that require a local presence, and the trustee state now surfaces in `domains get`, `registrar prices`, `registrar check`, and `tlds` output. (dnsimple/cli#37)
+
+### Changed
+
+- Upgraded the DNSimple Go client (`dnsimple-go`) from v8 to v9. (dnsimple/cli#37)
 
 ## 0.8.0 - 2026-05-14
 
