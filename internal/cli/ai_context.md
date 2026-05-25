@@ -26,6 +26,15 @@ These flags work with any command:
 
 When scripting or parsing output programmatically, always use `--json`.
 
+## Pagination
+
+List commands are paginated and return only the first page by default (30 items).
+The `--json` response includes a `pagination` object (`current_page`, `per_page`,
+`total_pages`, `total_entries`) — inspect it to decide whether more results exist. In
+the default table output, a `Showing X of Y ...` hint is written to stderr when more
+pages are available. To retrieve everything in one call, pass `--all` (where supported);
+otherwise page through with `--page <n>` and `--per-page <n>`.
+
 ## Common Workflows
 
 ### List all DNS records for a zone

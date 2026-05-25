@@ -151,7 +151,7 @@ func newDomainsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer(cmd).Print(&domainList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).PrintList(&domainList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "domains"))
 		},
 	}
 

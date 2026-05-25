@@ -96,7 +96,7 @@ func newPushesListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer(cmd).Print(&pushList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).PrintList(&pushList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "domain pushes"))
 		},
 	}
 }

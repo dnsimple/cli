@@ -24,6 +24,17 @@ type Formattable interface {
 	TemplateData() any
 }
 
+// PageInfo describes pagination state for the table discovery hint. It is
+// intentionally SDK-free so the output package stays decoupled from the API client.
+type PageInfo struct {
+	Noun         string // resource label, e.g. "records"
+	Shown        int    // items on the current page
+	CurrentPage  int
+	TotalPages   int
+	TotalEntries int
+	CanFetchAll  bool // command exposes an --all flag
+}
+
 // Printer handles output rendering.
 type Printer struct {
 	Writer    io.Writer
@@ -54,6 +65,26 @@ func (p *Printer) Print(data Formattable) error {
 	default:
 		return p.printTable(data)
 	}
+}
+
+// PrintList renders a paginated list. For table output spanning more than one
+// page it writes a discovery hint to the error stream above the table, so a user
+// (or AI agent) can see that more results exist and how to reach them. JSON and
+// template output are left untouched: JSON already embeds the pagination object.
+func (p *Printer) PrintList(data Formattable, info *PageInfo) error {
+	if p.Format == FormatTable && info != nil && info.TotalPages > 1 {
+		p.writePageHint(info)
+	}
+	return p.Print(data)
+}
+
+func (p *Printer) writePageHint(info *PageInfo) {
+	nav := "Pass --page <n> or --per-page <n> to see more."
+	if info.CanFetchAll {
+		nav = "Pass --all to fetch every page, or --page <n>/--per-page <n> to navigate."
+	}
+	fmt.Fprintf(p.ErrWriter, "Showing %d of %d %s (page %d of %d). %s\n",
+		info.Shown, info.TotalEntries, info.Noun, info.CurrentPage, info.TotalPages, nav)
 }
 
 func (p *Printer) printJSON(data Formattable) error {

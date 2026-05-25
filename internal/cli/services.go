@@ -91,7 +91,7 @@ func newServicesListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer(cmd).Print(&serviceList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).PrintList(&serviceList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "services"))
 		},
 	}
 }
@@ -138,7 +138,7 @@ func newServicesAppliedCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer(cmd).Print(&serviceList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).PrintList(&serviceList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "applied services"))
 		},
 	}
 }

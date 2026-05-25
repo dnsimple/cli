@@ -130,7 +130,7 @@ func newTldsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer(cmd).Print(&tldList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).PrintList(&tldList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "TLDs"))
 		},
 	}
 

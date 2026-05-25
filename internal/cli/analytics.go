@@ -163,11 +163,11 @@ func newAnalyticsQueryCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer(cmd).Print(&analyticsOutput{
+			return f.Printer(cmd).PrintList(&analyticsOutput{
 				Data:       resp.Data,
 				Pagination: resp.Pagination,
 				Groupings:  effectiveGroupings,
-			})
+			}, pageHint(cmd, resp.Pagination, len(resp.Data), "analytics rows"))
 		},
 	}
 

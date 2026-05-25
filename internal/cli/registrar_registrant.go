@@ -107,7 +107,7 @@ func newRegistrantChangeListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer(cmd).Print(&registrantChangeList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).PrintList(&registrantChangeList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "registrant changes"))
 		},
 	}
 

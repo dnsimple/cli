@@ -166,7 +166,7 @@ func newRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer(cmd).Print(&recordList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).PrintList(&recordList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "records"))
 		},
 	}
 
