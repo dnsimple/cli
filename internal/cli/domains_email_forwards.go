@@ -77,7 +77,9 @@ func newDomainsEmailForwardsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newEmailForwardsListCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "list <domain>",
 		Short: "List email forwards",
 		Args:  cobra.ExactArgs(1),
@@ -92,14 +94,31 @@ func newEmailForwardsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Domains.ListEmailForwards(context.Background(), accountID, args[0], nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&emailForwardList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "email forwards",
+				func(page, perPage int) ([]dnsimple.EmailForward, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Domains.ListEmailForwards(context.Background(), accountID, args[0], opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.EmailForward, pg *dnsimple.Pagination) *emailForwardList {
+					return &emailForwardList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newEmailForwardsGetCmd(f *cmdutil.Factory) *cobra.Command {

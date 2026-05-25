@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/dnsimple/cli/internal/cmdutil"
-	"github.com/dnsimple/cli/internal/pagination"
 	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -90,10 +89,8 @@ func newZonesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newZonesListCmd(f *cmdutil.Factory) *cobra.Command {
-	var nameLike string
-	var page, perPage int
-	var sort string
-	var all bool
+	var nameLike, sort string
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -117,42 +114,29 @@ func newZonesListCmd(f *cmdutil.Factory) *cobra.Command {
 				opts.Sort = &sort
 			}
 
-			if all {
-				items, err := pagination.All(func(p int) ([]dnsimple.Zone, *dnsimple.Pagination, error) {
-					opts.Page = &p
+			return runList(cmd, f, lf, "zones",
+				func(page, perPage int) ([]dnsimple.Zone, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
 					resp, err := c.Zones.ListZones(context.Background(), accountID, opts)
 					if err != nil {
 						return nil, nil, err
 					}
 					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Zone, pg *dnsimple.Pagination) *zoneList {
+					return &zoneList{Data: items, Pagination: pg}
 				})
-				if err != nil {
-					return err
-				}
-				return f.Printer(cmd).Print(&zoneList{Data: items})
-			}
-
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
-
-			resp, err := c.Zones.ListZones(context.Background(), accountID, opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).Print(&zoneList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 
 	cmd.Flags().StringVar(&nameLike, "name-like", "", "Filter zones by name (partial match)")
-	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
 	cmd.Flags().StringVar(&sort, "sort", "", "Sort order")
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
+	lf.register(cmd)
 
 	return cmd
 }

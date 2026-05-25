@@ -79,7 +79,9 @@ func newTemplatesRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newTemplateRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "list <template>",
 		Short: "List template records",
 		Args:  cobra.ExactArgs(1),
@@ -93,14 +95,31 @@ func newTemplateRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Templates.ListTemplateRecords(context.Background(), accountID, args[0], nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&templateRecordList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "template records",
+				func(page, perPage int) ([]dnsimple.TemplateRecord, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Templates.ListTemplateRecords(context.Background(), accountID, args[0], opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.TemplateRecord, pg *dnsimple.Pagination) *templateRecordList {
+					return &templateRecordList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newTemplateRecordsGetCmd(f *cmdutil.Factory) *cobra.Command {

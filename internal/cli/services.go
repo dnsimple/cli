@@ -77,7 +77,9 @@ func newServicesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newServicesListCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List available one-click services",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -86,14 +88,31 @@ func newServicesListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Services.ListServices(context.Background(), nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&serviceList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "services",
+				func(page, perPage int) ([]dnsimple.Service, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Services.ListServices(context.Background(), opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Service, pg *dnsimple.Pagination) *serviceList {
+					return &serviceList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newServicesGetCmd(f *cmdutil.Factory) *cobra.Command {
@@ -118,7 +137,9 @@ func newServicesGetCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newServicesAppliedCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "applied <domain>",
 		Short: "List services applied to a domain",
 		Args:  cobra.ExactArgs(1),
@@ -133,14 +154,31 @@ func newServicesAppliedCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Services.AppliedServices(context.Background(), accountID, args[0], nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&serviceList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "applied services",
+				func(page, perPage int) ([]dnsimple.Service, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Services.AppliedServices(context.Background(), accountID, args[0], opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Service, pg *dnsimple.Pagination) *serviceList {
+					return &serviceList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newServicesApplyCmd(f *cmdutil.Factory) *cobra.Command {

@@ -80,7 +80,9 @@ func newDomainsDsRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newDsRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "list <domain>",
 		Short: "List DS records",
 		Args:  cobra.ExactArgs(1),
@@ -95,14 +97,31 @@ func newDsRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Domains.ListDelegationSignerRecords(context.Background(), accountID, args[0], nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&dsRecordList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "DS records",
+				func(page, perPage int) ([]dnsimple.DelegationSignerRecord, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Domains.ListDelegationSignerRecords(context.Background(), accountID, args[0], opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.DelegationSignerRecord, pg *dnsimple.Pagination) *dsRecordList {
+					return &dsRecordList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newDsRecordsGetCmd(f *cmdutil.Factory) *cobra.Command {

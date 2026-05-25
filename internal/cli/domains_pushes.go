@@ -77,7 +77,9 @@ func newDomainsPushesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newPushesListCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List pending domain pushes",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -91,14 +93,31 @@ func newPushesListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Domains.ListPushes(context.Background(), accountID, nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&pushList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "domain pushes",
+				func(page, perPage int) ([]dnsimple.DomainPush, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Domains.ListPushes(context.Background(), accountID, opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.DomainPush, pg *dnsimple.Pagination) *pushList {
+					return &pushList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newPushesInitiateCmd(f *cmdutil.Factory) *cobra.Command {
