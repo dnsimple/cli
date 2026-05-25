@@ -1,7 +1,7 @@
 package pagination
 
 import (
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 )
 
 // FetchPage is a function that fetches a single page of results.

@@ -1,8 +1,8 @@
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dnsimple/dnsimple-go/v8 v8.3.0 h1:/vKSG7HWC3lAbpC38KC7JVp4M4CMyHQwKaVLcekAAGQ=
-github.com/dnsimple/dnsimple-go/v8 v8.3.0/go.mod h1:61MdYHRL+p2TBBUVEkxo1n4iRF6s3R9fZcvQvyt5du8=
+github.com/dnsimple/dnsimple-go/v9 v9.1.0 h1:y9ZacZk+fv3cUWDPVh8mdgvwin9DwQl8aQFBHWytC9E=
+github.com/dnsimple/dnsimple-go/v9 v9.1.0/go.mod h1:OcXRl+Ozh0ukD9Et8/IbfZv1ny4CpiUrHYk//yXR2q0=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=
