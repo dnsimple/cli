@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/spf13/cobra"
 )
 
 func newVanityNameServersCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "vanity-name-servers",
+		Use:   "vanity-servers",
 		Short: "Manage vanity name servers",
 	}
 

@@ -2,14 +2,17 @@
 
 A command-line interface for the [DNSimple API v2](https://developer.dnsimple.com/v2/).
 
-## Requirements
-
-- Go 1.25+
-- An activated DNSimple account
-
 ## Installation
 
-### Using the install script
+### macOS and Linux
+
+#### Using Homebrew
+
+```shell
+brew install dnsimple/tap/dnsimple
+```
+
+#### Using the install script
 
 ```shell
 curl -fsSL http://cli-beta.dnsimple.com/install.sh | sh
@@ -17,23 +20,45 @@ curl -fsSL http://cli-beta.dnsimple.com/install.sh | sh
 
 The install URL will eventually move to `https://dnsimple.com/install.sh`.
 
-### Using Homebrew
+The install script downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
 
-```shell
-brew install dnsimple/tap/dnsimple
+### Windows
+
+#### Using the PowerShell install script
+
+```powershell
+irm "https://cli-beta.dnsimple.com/install.ps1" | iex
 ```
 
-### Using Go
+The installer downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
 
-```shell
-go install github.com/dnsimple/dnsimple-cli/cmd/dnsimple@latest
+#### Manual ZIP install
+
+1. Download the latest `dnsimple_<version>_windows_amd64.zip` or `dnsimple_<version>_windows_arm64.zip` from the [public release mirror](https://github.com/dnsimple/homebrew-tap/releases/latest) page.
+2. Extract `dnsimple.exe`.
+3. Move `dnsimple.exe` to a directory on your `PATH`, such as `%USERPROFILE%\bin`.
+4. Open a new terminal window and verify the installation:
+
+```powershell
+dnsimple version
 ```
 
-### From source
+> [!NOTE]
+> Homebrew is supported on macOS, Linux, and WSL. The `install.sh` script can also be used from WSL or Unix-like shells such as Git Bash, but it is not a native `powershell` or `cmd.exe` installer.
+
+### Cross-platform developer install
+
+#### Using Go
 
 ```shell
-git clone https://github.com/dnsimple/dnsimple-cli.git
-cd dnsimple-cli
+go install github.com/dnsimple/cli/cmd/dnsimple@latest
+```
+
+#### From source
+
+```shell
+git clone https://github.com/dnsimple/cli.git
+cd cli
 make build
 ```
 

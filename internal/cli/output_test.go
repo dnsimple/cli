@@ -7,10 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	internalclient "github.com/dnsimple/dnsimple-cli/internal/client"
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-cli/internal/config"
+	internalclient "github.com/dnsimple/cli/internal/client"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/config"
 	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -181,6 +182,113 @@ func TestDomainsListUsesTemplateOutputOnUnderlyingResourceList(t *testing.T) {
 
 	assert.Equal(t, "alpha.example\nbeta.example\n", stdout.String())
 	assert.Zero(t, stderr.Len())
+}
+
+func TestRecordsListShowsPaginationHintOnTable(t *testing.T) {
+	client, cfg := testCLIClient(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v2/1950/zones/example.com/records", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"data":[{"id":1,"type":"A","name":"","content":"1.2.3.4","ttl":3600},{"id":2,"type":"A","name":"www","content":"1.2.3.5","ttl":3600}],"pagination":{"current_page":1,"per_page":30,"total_entries":142,"total_pages":5}}`)
+	})
+
+	f := cmdutil.NewFactory("test")
+	f.Client = func() (*dnsimple.Client, error) { return client, nil }
+	f.Config = func() (*config.Config, error) { return cfg, nil }
+	f.AccountID = func() (string, error) { return "1950", nil }
+
+	cmd := newRecordsListCmd(f)
+	var stdout, stderr bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
+
+	err := cmd.RunE(cmd, []string{"example.com"})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Contains(t, stderr.String(), "Showing 2 of 142 records (page 1 of 5)")
+	assert.Contains(t, stderr.String(), "--all")
+	assert.Contains(t, stdout.String(), "1.2.3.4")
+}
+
+func TestRecordsListJSONIncludesPaginationWithoutHint(t *testing.T) {
+	client, cfg := testCLIClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"data":[{"id":1,"type":"A","name":"","content":"1.2.3.4","ttl":3600}],"pagination":{"current_page":1,"per_page":30,"total_entries":142,"total_pages":5}}`)
+	})
+
+	f := cmdutil.NewFactory("test")
+	f.Client = func() (*dnsimple.Client, error) { return client, nil }
+	f.Config = func() (*config.Config, error) { return cfg, nil }
+	f.AccountID = func() (string, error) { return "1950", nil }
+	f.Flags.JSON = true
+
+	cmd := newRecordsListCmd(f)
+	var stdout, stderr bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
+
+	err := cmd.RunE(cmd, []string{"example.com"})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Zero(t, stderr.Len())
+	assert.Contains(t, stdout.String(), `"pagination"`)
+	assert.Contains(t, stdout.String(), `"total_entries": 142`)
+}
+
+func TestRecordsListNoHintOnSinglePage(t *testing.T) {
+	client, cfg := testCLIClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"data":[{"id":1,"type":"A","name":"","content":"1.2.3.4","ttl":3600}],"pagination":{"current_page":1,"per_page":30,"total_entries":1,"total_pages":1}}`)
+	})
+
+	f := cmdutil.NewFactory("test")
+	f.Client = func() (*dnsimple.Client, error) { return client, nil }
+	f.Config = func() (*config.Config, error) { return cfg, nil }
+	f.AccountID = func() (string, error) { return "1950", nil }
+
+	cmd := newRecordsListCmd(f)
+	var stdout, stderr bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
+
+	err := cmd.RunE(cmd, []string{"example.com"})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Zero(t, stderr.Len())
+	assert.Contains(t, stdout.String(), "1.2.3.4")
+}
+
+// A paginated list command must expose the navigation flags its hint advertises,
+// otherwise the hint points users at flags that error with "unknown flag".
+func TestPaginatedListCommandsExposeNavigationFlags(t *testing.T) {
+	f := cmdutil.NewFactory("test")
+	commands := map[string]*cobra.Command{
+		"services list":          newServicesListCmd(f),
+		"services applied":       newServicesAppliedCmd(f),
+		"templates list":         newTemplatesListCmd(f),
+		"template records list":  newTemplateRecordsListCmd(f),
+		"email-forwards list":    newEmailForwardsListCmd(f),
+		"ds-records list":        newDsRecordsListCmd(f),
+		"pushes list":            newPushesListCmd(f),
+		"registrant-change list": newRegistrantChangeListCmd(f),
+		"records list":           newRecordsListCmd(f),
+		"domains list":           newDomainsListCmd(f),
+		"zones list":             newZonesListCmd(f),
+		"contacts list":          newContactsListCmd(f),
+		"certificates list":      newCertsListCmd(f),
+		"tlds list":              newTldsListCmd(f),
+		"analytics query":        newAnalyticsQueryCmd(f),
+	}
+	for name, cmd := range commands {
+		for _, flag := range []string{"all", "page", "per-page"} {
+			assert.NotNilf(t, cmd.Flags().Lookup(flag), "%s should define --%s", name, flag)
+		}
+	}
 }
 
 func testCLIClient(t *testing.T, handler http.HandlerFunc) (*dnsimple.Client, *config.Config) {

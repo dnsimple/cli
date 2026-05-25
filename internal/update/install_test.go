@@ -17,6 +17,7 @@ func TestDetectInstallMethod(t *testing.T) {
 		{"homebrew usr local", "/usr/local/Cellar/dnsimple/0.3.0/bin/dnsimple", InstallMethodHomebrew},
 		{"install script", "/Users/me/.dnsimple/bin/dnsimple", InstallMethodScript},
 		{"install script linux", "/home/user/.dnsimple/bin/dnsimple", InstallMethodScript},
+		{"powershell install", "C:/Users/me/.dnsimple/bin/dnsimple.exe", InstallMethodPowerShell},
 		{"unknown path", "/usr/local/bin/dnsimple", InstallMethodUnknown},
 		{"empty path", "", InstallMethodUnknown},
 	}
@@ -49,7 +50,8 @@ func TestUpgradeCommand(t *testing.T) {
 	}{
 		{InstallMethodHomebrew, "brew upgrade dnsimple"},
 		{InstallMethodScript, "curl -fsSL https://dnsimple-cli.netlify.app/install.sh | sh"},
-		{InstallMethodGo, "go install github.com/dnsimple/dnsimple-cli/cmd/dnsimple@latest"},
+		{InstallMethodPowerShell, "powershell -ExecutionPolicy Bypass -Command \"irm https://dnsimple-cli.netlify.app/install.ps1 | iex\""},
+		{InstallMethodGo, "go install github.com/dnsimple/cli/cmd/dnsimple@latest"},
 		{InstallMethodUnknown, ""},
 	}
 

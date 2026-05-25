@@ -1,6 +1,7 @@
 package cli
 
 import (
+	_ "embed"
 	"fmt"
 	"io"
 	"strings"
@@ -9,44 +10,45 @@ import (
 	"github.com/spf13/pflag"
 )
 
+//go:embed ai_context.md
+var aiContext string
+
+const aiAliasTargetAnnotation = "dnsimple.ai/alias-target"
+
 func newAICmd() *cobra.Command {
+	var full bool
+
 	cmd := &cobra.Command{
 		Use:   "ai",
-		Short: "Print AI-friendly context about this CLI",
-		Long: `Print a structured description of all commands, flags, and workflows
-that an AI agent can use to understand and operate this CLI.
+		Short: "Show how to use dnsimple (useful for AI agents and LLMs).",
+		Long: `Print a structured reference of all commands and common workflows. Formatted
+for AI agents and LLMs to understand this CLI and perform automated tasks.
 
-Usage with AI tools:
+By default, per-command flag tables are omitted to keep token usage low; only
+required flags are listed. Pass --full to include the complete flag tables.
+Agents can also run any command with --help to discover its flags on demand.
 
-  Pipe directly into an AI prompt:
-    dnsimple ai | pbcopy
-
-  Use as a bootstrapping step in an AI agent:
-    context=$(dnsimple ai)`,
+Paste the output into an AI prompt, or load it as a bootstrapping step for an
+agent.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			printAIContext(cmd.OutOrStdout(), cmd.Root())
+			printAIContext(cmd.OutOrStdout(), cmd.Root(), full)
 			return nil
 		},
 	}
 
+	cmd.Flags().BoolVar(&full, "full", false, "Include the full flag table for each command")
+
 	return cmd
 }
 
-func printAIContext(w io.Writer, root *cobra.Command) {
-	fmt.Fprint(w, preamble)
-	printGlobalFlags(w, root)
-	fmt.Fprint(w, outputSection)
-	fmt.Fprintln(w, "## Commands")
-	fmt.Fprintln(w)
-	printCommandTree(w, root, "dnsimple")
-	fmt.Fprint(w, workflowExamples)
+func printAIContext(w io.Writer, root *cobra.Command, full bool) {
+	flags := strings.TrimRight(renderGlobalFlags(root), "\n")
+	tree := strings.TrimRight(renderCommandTree(root, "dnsimple", full), "\n")
+	fmt.Fprintf(w, aiContext, flags, tree)
 }
 
-func printGlobalFlags(w io.Writer, root *cobra.Command) {
-	fmt.Fprintln(w, "## Global Flags")
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "These flags work with any command:")
-	fmt.Fprintln(w)
+func renderGlobalFlags(root *cobra.Command) string {
+	var b strings.Builder
 	root.PersistentFlags().VisitAll(func(f *pflag.Flag) {
 		if f.Hidden {
 			return
@@ -59,48 +61,48 @@ func printGlobalFlags(w io.Writer, root *cobra.Command) {
 		if f.DefValue != "" && f.DefValue != "false" && f.DefValue != "0" {
 			def = fmt.Sprintf(" (default: %s)", f.DefValue)
 		}
-		fmt.Fprintf(w, "- `%s`: %s%s\n", name, f.Usage, def)
+		fmt.Fprintf(&b, "- `%s`: %s%s\n", name, f.Usage, def)
 	})
-	fmt.Fprintln(w)
+	return b.String()
 }
 
-func printCommandTree(w io.Writer, cmd *cobra.Command, prefix string) {
+func renderCommandTree(cmd *cobra.Command, prefix string, full bool) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "All commands below are invoked as `%s <command>`.\n", prefix)
+	if !full {
+		fmt.Fprintf(&b, "Each command below lists its summary and any required flags. For the full flag table, run `%s <command> --help`, or re-run `%s ai --full` for the complete reference.\n", prefix, prefix)
+	} else {
+		fmt.Fprintln(&b, "Full command flag tables are included for commands that define local flags.")
+	}
+	fmt.Fprintln(&b)
+	writeCommandTree(&b, cmd, "", prefix, full)
+	return b.String()
+}
+
+func writeCommandTree(w io.Writer, cmd *cobra.Command, parentPath string, rootName string, full bool) {
 	for _, sub := range cmd.Commands() {
-		if sub.Hidden || sub.Name() == "help" || sub.Name() == "ai" || sub.Name() == "completion" {
+		if skipAICommand(sub) {
 			continue
 		}
 
-		fullCmd := prefix + " " + sub.Name()
+		commandPath := joinCommandPath(parentPath, sub.Name())
 
-		if !sub.HasSubCommands() || sub.Runnable() {
-			printLeafCommand(w, sub, fullCmd)
+		if target := sub.Annotations[aiAliasTargetAnnotation]; target != "" {
+			writeAliasCommand(w, commandPath, trimCommandPrefix(target, rootName))
+			continue
 		}
 
-		if sub.HasSubCommands() {
-			if !sub.Runnable() {
-				fmt.Fprintf(w, "### %s\n\n", fullCmd)
-				if sub.Short != "" {
-					fmt.Fprintf(w, "%s\n\n", sub.Short)
-				}
-				if len(sub.Aliases) > 0 {
-					fmt.Fprintf(w, "Aliases: %s\n\n", strings.Join(sub.Aliases, ", "))
-				}
-			}
-			printCommandTree(w, sub, fullCmd)
+		if sub.HasSubCommands() && !sub.Runnable() {
+			writeCommandGroup(w, sub, commandPath, rootName, full)
+			continue
 		}
+
+		writeStandaloneCommand(w, sub, commandPath, full)
 	}
 }
 
-func printLeafCommand(w io.Writer, cmd *cobra.Command, fullCmd string) {
-	usage := fullCmd
-	if cmd.Use != "" {
-		parts := strings.SplitN(cmd.Use, " ", 2)
-		if len(parts) > 1 {
-			usage = fullCmd + " " + parts[1]
-		}
-	}
-
-	fmt.Fprintf(w, "#### `%s`\n\n", usage)
+func writeCommandGroup(w io.Writer, cmd *cobra.Command, commandPath string, rootName string, full bool) {
+	fmt.Fprintf(w, "### %s\n\n", commandPath)
 	if cmd.Short != "" {
 		fmt.Fprintf(w, "%s\n\n", cmd.Short)
 	}
@@ -108,37 +110,152 @@ func printLeafCommand(w io.Writer, cmd *cobra.Command, fullCmd string) {
 		fmt.Fprintf(w, "Aliases: %s\n\n", strings.Join(cmd.Aliases, ", "))
 	}
 
+	for _, sub := range cmd.Commands() {
+		if skipAICommand(sub) {
+			continue
+		}
+		if sub.HasSubCommands() && !sub.Runnable() {
+			continue
+		}
+		writeLeafCommand(w, sub, full)
+	}
+	fmt.Fprintln(w)
+
+	for _, sub := range cmd.Commands() {
+		if skipAICommand(sub) {
+			continue
+		}
+		subPath := joinCommandPath(commandPath, sub.Name())
+		if target := sub.Annotations[aiAliasTargetAnnotation]; target != "" {
+			writeAliasCommand(w, subPath, trimCommandPrefix(target, rootName))
+			continue
+		}
+		if sub.HasSubCommands() && !sub.Runnable() {
+			writeCommandGroup(w, sub, subPath, rootName, full)
+		}
+	}
+}
+
+func writeStandaloneCommand(w io.Writer, cmd *cobra.Command, commandPath string, full bool) {
+	fmt.Fprintf(w, "### %s\n\n", commandPath)
+	if cmd.Short != "" {
+		fmt.Fprintf(w, "%s\n\n", cmd.Short)
+	}
+	if len(cmd.Aliases) > 0 {
+		fmt.Fprintf(w, "Aliases: %s\n\n", strings.Join(cmd.Aliases, ", "))
+	}
+	if full {
+		writeLeafFlagsFull(w, cmd, "")
+	} else {
+		writeLeafRequiredFlags(w, cmd)
+	}
+}
+
+func writeAliasCommand(w io.Writer, commandPath string, target string) {
+	fmt.Fprintf(w, "### %s (alias for `%s`)\n\n", commandPath, target)
+}
+
+func writeLeafCommand(w io.Writer, cmd *cobra.Command, full bool) {
+	usage := leafUsage(cmd)
+	fmt.Fprintf(w, "- `%s`", usage)
+	if cmd.Short != "" {
+		fmt.Fprintf(w, ": %s", cmd.Short)
+	}
+	if len(cmd.Aliases) > 0 {
+		fmt.Fprintf(w, " (aliases: %s)", strings.Join(cmd.Aliases, ", "))
+	}
+
+	if full {
+		fmt.Fprintln(w)
+		writeLeafFlagsFull(w, cmd, "  ")
+		return
+	}
+
+	required := requiredFlagNames(cmd)
+	if len(required) > 0 {
+		fmt.Fprintf(w, ". Required flags: %s", strings.Join(required, ", "))
+	}
+	fmt.Fprintln(w)
+}
+
+func leafUsage(cmd *cobra.Command) string {
+	usage := cmd.Name()
+	if cmd.Use != "" {
+		parts := strings.SplitN(cmd.Use, " ", 2)
+		if len(parts) > 1 {
+			usage = cmd.Name() + " " + parts[1]
+		}
+	}
+	return usage
+}
+
+func joinCommandPath(parentPath string, name string) string {
+	if parentPath == "" {
+		return name
+	}
+	return parentPath + " " + name
+}
+
+func trimCommandPrefix(commandPath string, rootName string) string {
+	return strings.TrimPrefix(commandPath, rootName+" ")
+}
+
+func skipAICommand(cmd *cobra.Command) bool {
+	return cmd.Hidden || cmd.Name() == "help" || cmd.Name() == "ai" || cmd.Name() == "completion"
+}
+
+func requiredFlagNames(cmd *cobra.Command) []string {
+	var required []string
+	cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
+		if f.Hidden {
+			return
+		}
+		if isFlagRequired(cmd, f.Name) {
+			required = append(required, "`--"+f.Name+"`")
+		}
+	})
+	return required
+}
+
+func writeLeafFlagsFull(w io.Writer, cmd *cobra.Command, indent string) {
 	hasFlags := false
 	cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
 		if !f.Hidden {
 			hasFlags = true
 		}
 	})
-
-	if hasFlags {
-		fmt.Fprintln(w, "Flags:")
-		fmt.Fprintln(w)
-		cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
-			if f.Hidden {
-				return
-			}
-			name := "--" + f.Name
-			if f.Shorthand != "" {
-				name = "-" + f.Shorthand + ", " + name
-			}
-
-			annotations := ""
-			if isFlagRequired(cmd, f.Name) {
-				annotations = " **(required)**"
-			}
-			def := ""
-			if f.DefValue != "" && f.DefValue != "false" && f.DefValue != "0" && f.DefValue != "[]" {
-				def = fmt.Sprintf(" (default: %s)", f.DefValue)
-			}
-			fmt.Fprintf(w, "- `%s`: %s%s%s\n", name, f.Usage, def, annotations)
-		})
-		fmt.Fprintln(w)
+	if !hasFlags {
+		return
 	}
+
+	fmt.Fprintf(w, "%sFlags:\n", indent)
+	cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
+		if f.Hidden {
+			return
+		}
+		name := "--" + f.Name
+		if f.Shorthand != "" {
+			name = "-" + f.Shorthand + ", " + name
+		}
+
+		annotations := ""
+		if isFlagRequired(cmd, f.Name) {
+			annotations = " **(required)**"
+		}
+		def := ""
+		if f.DefValue != "" && f.DefValue != "false" && f.DefValue != "0" && f.DefValue != "[]" {
+			def = fmt.Sprintf(" (default: %s)", f.DefValue)
+		}
+		fmt.Fprintf(w, "%s- `%s`: %s%s%s\n", indent, name, f.Usage, def, annotations)
+	})
+}
+
+func writeLeafRequiredFlags(w io.Writer, cmd *cobra.Command) {
+	required := requiredFlagNames(cmd)
+	if len(required) == 0 {
+		return
+	}
+	fmt.Fprintf(w, "Required flags: %s\n\n", strings.Join(required, ", "))
 }
 
 func isFlagRequired(cmd *cobra.Command, name string) bool {
@@ -149,91 +266,3 @@ func isFlagRequired(cmd *cobra.Command, name string) bool {
 	_, ok := annotations[cobra.BashCompOneRequiredFlag]
 	return ok
 }
-
-const preamble = `# DNSimple CLI — AI Context
-
-You are interacting with the DNSimple CLI (` + "`dnsimple`" + `), a command-line tool for managing domains, DNS records, certificates, and other DNSimple services via the DNSimple API v2.
-
-## Authentication
-
-The CLI requires a DNSimple API token. The user must authenticate before you can use the CLI.
-
-If the CLI is not authenticated, ask the user to run ` + "`dnsimple auth login`" + ` themselves. Do NOT pass tokens via ` + "`--token`" + ` or environment variables — never handle API tokens directly.
-
-You can check whether the CLI is already authenticated by running ` + "`dnsimple auth status`" + `.
-
-The CLI supports multiple stored authentication *contexts* (kubectl-style). Use ` + "`dnsimple auth list`" + ` to see them; the active one is marked with ` + "`*`" + `. To run a single command against a different stored context without changing the active one, pass ` + "`--context <name>`" + ` — this is the safe option for parallel agents because it does not mutate shared on-disk state.
-
-To use the sandbox environment for testing, add the ` + "`--sandbox`" + ` flag (or select a sandbox context with ` + "`--context`" + `).
-
-Most commands require an account ID. The CLI resolves it automatically from the active context, but you can override it with ` + "`-a <account-id>`" + ` or ` + "`--account <account-id>`" + `.
-
-`
-
-const outputSection = `## Output Formats
-
-- **Table** (default): Human-readable tabular output
-- **JSON**: Machine-readable output with ` + "`--json`" + `
-- **Custom**: Go template formatting with ` + "`--format <template>`" + `
-
-When scripting or parsing output programmatically, always use ` + "`--json`" + `.
-
-`
-
-const workflowExamples = `## Common Workflows
-
-### List all DNS records for a zone
-
-` + "```" + `
-dnsimple zones records list example.com --all --json
-` + "```" + `
-
-### Create an A record
-
-` + "```" + `
-dnsimple zones records create example.com --type A --name www --content 1.2.3.4 --ttl 3600
-` + "```" + `
-
-### Update an existing record
-
-` + "```" + `
-dnsimple zones records update example.com 12345 --content 5.6.7.8
-` + "```" + `
-
-### Delete a record
-
-` + "```" + `
-dnsimple zones records delete example.com 12345
-` + "```" + `
-
-### Check domain availability and register
-
-` + "```" + `
-dnsimple registrar check example.com
-dnsimple registrar prices example.com
-dnsimple registrar register example.com --registrant-id 1234
-` + "```" + `
-
-### Manage Let's Encrypt certificates
-
-` + "```" + `
-dnsimple certificates letsencrypt purchase example.com
-dnsimple certificates letsencrypt issue example.com 98765
-` + "```" + `
-
-### Apply a one-click service
-
-` + "```" + `
-dnsimple services list --json
-dnsimple services apply github-pages example.com
-` + "```" + `
-
-## Tips
-
-- Use ` + "`--all`" + ` on list commands to fetch every page of results automatically.
-- Use ` + "`--json`" + ` when you need to parse output or chain commands.
-- Use ` + "`--yes`" + ` on destructive commands in scripts and CI to skip confirmation prompts.
-- The ` + "`zones`" + ` and ` + "`zones records`" + ` commands are the primary way to manage DNS. The top-level ` + "`records`" + ` command is a shortcut alias.
-- Domain names (e.g. example.com) are used as zone identifiers — you don't need zone IDs.
-- Record IDs are numeric. Use ` + "`zones records list`" + ` with ` + "`--json`" + ` to find them.
-`

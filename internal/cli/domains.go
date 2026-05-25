@@ -7,8 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-cli/internal/pagination"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -81,9 +80,8 @@ func (d *domainItem) TemplateData() any {
 
 func newDomainsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "domains",
-		Short:   "Manage domains",
-		Aliases: []string{"domain"},
+		Use:   "domains",
+		Short: "Manage domains",
 	}
 
 	cmd.AddCommand(newDomainsListCmd(f))
@@ -99,10 +97,8 @@ func newDomainsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newDomainsListCmd(f *cmdutil.Factory) *cobra.Command {
-	var nameLike string
-	var page, perPage int
-	var sort string
-	var all bool
+	var nameLike, sort string
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -126,42 +122,29 @@ func newDomainsListCmd(f *cmdutil.Factory) *cobra.Command {
 				opts.Sort = &sort
 			}
 
-			if all {
-				items, err := pagination.All(func(p int) ([]dnsimple.Domain, *dnsimple.Pagination, error) {
-					opts.Page = &p
+			return runList(cmd, f, lf, "domains",
+				func(page, perPage int) ([]dnsimple.Domain, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
 					resp, err := c.Domains.ListDomains(context.Background(), accountID, opts)
 					if err != nil {
 						return nil, nil, err
 					}
 					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Domain, pg *dnsimple.Pagination) *domainList {
+					return &domainList{Data: items, Pagination: pg}
 				})
-				if err != nil {
-					return err
-				}
-				return f.Printer(cmd).Print(&domainList{Data: items})
-			}
-
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
-
-			resp, err := c.Domains.ListDomains(context.Background(), accountID, opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).Print(&domainList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 
 	cmd.Flags().StringVar(&nameLike, "name-like", "", "Filter domains by name (partial match)")
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
 	cmd.Flags().StringVar(&sort, "sort", "", "Sort order (e.g., name:asc, expiration:desc)")
-	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
+	lf.register(cmd)
 
 	return cmd
 }

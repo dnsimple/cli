@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-cli/internal/pagination"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -91,9 +90,8 @@ func (r *recordItem) TemplateData() any {
 
 func newZonesRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "records",
-		Short:   "Manage zone records",
-		Aliases: []string{"record"},
+		Use:   "records",
+		Short: "Manage zone records",
 	}
 
 	cmd.AddCommand(newRecordsListCmd(f))
@@ -108,8 +106,7 @@ func newZonesRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 
 func newRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
 	var name, nameLike, recordType, sort string
-	var page, perPage int
-	var all bool
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list <zone>",
@@ -140,44 +137,31 @@ func newRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
 				opts.Sort = &sort
 			}
 
-			if all {
-				items, err := pagination.All(func(p int) ([]dnsimple.ZoneRecord, *dnsimple.Pagination, error) {
-					opts.Page = &p
+			return runList(cmd, f, lf, "records",
+				func(page, perPage int) ([]dnsimple.ZoneRecord, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
 					resp, err := c.Zones.ListRecords(context.Background(), accountID, args[0], opts)
 					if err != nil {
 						return nil, nil, err
 					}
 					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.ZoneRecord, pg *dnsimple.Pagination) *recordList {
+					return &recordList{Data: items, Pagination: pg}
 				})
-				if err != nil {
-					return err
-				}
-				return f.Printer(cmd).Print(&recordList{Data: items})
-			}
-
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
-
-			resp, err := c.Zones.ListRecords(context.Background(), accountID, args[0], opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).Print(&recordList{Data: resp.Data, Pagination: resp.Pagination})
 		},
 	}
 
 	cmd.Flags().StringVar(&name, "name", "", "Filter by exact name")
 	cmd.Flags().StringVar(&nameLike, "name-like", "", "Filter by name (partial match)")
 	cmd.Flags().StringVar(&recordType, "type", "", "Filter by record type (A, AAAA, CNAME, MX, TXT, etc.)")
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
 	cmd.Flags().StringVar(&sort, "sort", "", "Sort order")
-	cmd.Flags().BoolVar(&all, "all", false, "Fetch all pages")
+	lf.register(cmd)
 
 	return cmd
 }

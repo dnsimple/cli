@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/client"
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-cli/internal/config"
+	"github.com/dnsimple/cli/internal/client"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/config"
 	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -92,7 +92,7 @@ type authContextList struct {
 }
 
 func (a *authContextList) TableHeaders() []string {
-	return []string{"", "NAME", "ENVIRONMENT", "ACCOUNT", "USER"}
+	return []string{"", "NAME", "ENV", "ACCOUNT", "USER"}
 }
 
 func (a *authContextList) TableRows() [][]string {
@@ -165,7 +165,10 @@ environment ('production' or 'sandbox'), with the account ID appended on collisi
 Get your token from:
 
   Production: https://dnsimple.com/user
-  Sandbox:    https://sandbox.dnsimple.com/user`,
+  Sandbox:    https://sandbox.dnsimple.com/user
+
+See https://support.dnsimple.com/articles/api-access-token/ for instructions on
+generating an API token.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := f.Config()
 			if err != nil {
@@ -242,6 +245,7 @@ func readLoginToken(cmd *cobra.Command, withToken bool) (string, error) {
 		return token, nil
 	}
 
+	fmt.Fprintln(cmd.ErrOrStderr(), "Follow the instructions at https://support.dnsimple.com/articles/api-access-token/ to generate an API token.")
 	fmt.Fprint(cmd.ErrOrStderr(), "Paste your API token: ")
 
 	if f, ok := cmd.InOrStdin().(*os.File); ok && term.IsTerminal(int(f.Fd())) {
@@ -376,7 +380,7 @@ func upsertLoginContext(creds *config.Credentials, host, token, accountID, user,
 }
 
 // pickAutoContextName picks the auto-derived context name following the
-// algorithm in dnsimple/dnsimple-cli#28:
+// algorithm in dnsimple/cli#28:
 //
 //  1. Bare environment name (production or sandbox)
 //  2. <env>-<account_id>
@@ -643,8 +647,12 @@ func promptForContextSelection(in io.Reader, errOut io.Writer, creds *config.Cre
 		if ctx.Name == creds.ActiveContext {
 			marker = "*"
 		}
-		fmt.Fprintf(errOut, "  %s [%d] %-20s %-12s %s (%s)\n",
-			marker, i+1, ctx.Name, config.EnvironmentName(ctx.Host), ctx.User, ctx.AccountID)
+		fmt.Fprintf(errOut, "  %s [%d] %-20s env: %s, account: %s",
+			marker, i+1, ctx.Name, config.EnvironmentName(ctx.Host), ctx.AccountID)
+		if ctx.User != "" {
+			fmt.Fprintf(errOut, ", user: %s", ctx.User)
+		}
+		fmt.Fprintln(errOut)
 	}
 	fmt.Fprintln(errOut, "")
 	fmt.Fprint(errOut, "Select context number: ")

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -113,7 +113,7 @@ func newAnalyticsCmd(f *cmdutil.Factory) *cobra.Command {
 
 func newAnalyticsQueryCmd(f *cmdutil.Factory) *cobra.Command {
 	var startDate, endDate, groupings, sort string
-	var page, perPage int
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "query",
@@ -151,23 +151,24 @@ func newAnalyticsQueryCmd(f *cmdutil.Factory) *cobra.Command {
 			if sort != "" {
 				opts.Sort = &sort
 			}
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
 
-			resp, err := c.DnsAnalytics.Query(context.Background(), accountID, opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).Print(&analyticsOutput{
-				Data:       resp.Data,
-				Pagination: resp.Pagination,
-				Groupings:  effectiveGroupings,
-			})
+			return runList(cmd, f, lf, "analytics rows",
+				func(page, perPage int) ([]dnsimple.DnsAnalytics, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.DnsAnalytics.Query(context.Background(), accountID, opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.DnsAnalytics, pg *dnsimple.Pagination) *analyticsOutput {
+					return &analyticsOutput{Data: items, Pagination: pg, Groupings: effectiveGroupings}
+				})
 		},
 	}
 
@@ -175,8 +176,7 @@ func newAnalyticsQueryCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&endDate, "end-date", "", "End date (ISO8601)")
 	cmd.Flags().StringVar(&groupings, "groupings", "", "Group by (comma-separated). Supported: zone_name, date")
 	cmd.Flags().StringVar(&sort, "sort", "", "Sort order")
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
+	lf.register(cmd)
 
 	return cmd
 }

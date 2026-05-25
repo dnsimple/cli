@@ -3,7 +3,7 @@ package cli
 import (
 	"context"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -73,7 +73,7 @@ func newBillingChargesCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer(cmd).Print(&chargeList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).PrintList(&chargeList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "charges"))
 		},
 	}
 

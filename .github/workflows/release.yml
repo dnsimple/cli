@@ -31,7 +31,7 @@ jobs:
 
       - name: Mint homebrew-tap token
         id: tap_token
-        uses: actions/create-github-app-token@v3.0.0
+        uses: actions/create-github-app-token@v3.2.0
         with:
           app-id: ${{ secrets.HOMEBREW_TAP_APP_ID }}
           private-key: ${{ secrets.HOMEBREW_TAP_APP_PRIVATE_KEY }}
@@ -39,7 +39,7 @@ jobs:
           repositories: homebrew-tap
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v7.0.0
+        uses: goreleaser/goreleaser-action@v7.2.1
         with:
           version: "~> v2"
           args: release --clean --release-notes /tmp/release-notes.md
@@ -47,20 +47,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ steps.tap_token.outputs.token }}
 
-      - name: Publish to homebrew-tap
+      - name: Publish public release assets to homebrew-tap
         env:
           GH_TOKEN: ${{ steps.tap_token.outputs.token }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
           dist="dist"
 
-          # Create the release
           gh release create "${tag}" \
             --repo dnsimple/homebrew-tap \
             --title "${tag}" \
             --notes-file /tmp/release-notes.md
 
-          # Upload all release assets
           gh release upload "${tag}" \
             --repo dnsimple/homebrew-tap \
             "${dist}"/*.tar.gz "${dist}"/*.zip "${dist}"/checksums.txt

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -107,8 +107,8 @@ func newDelegationChangeCmd(f *cmdutil.Factory) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&nameServers, "ns", nil, "Name servers (comma-separated)")
-	_ = cmd.MarkFlagRequired("ns")
+	cmd.Flags().StringSliceVar(&nameServers, "name-servers", nil, "Name servers (comma-separated)")
+	_ = cmd.MarkFlagRequired("name-servers")
 
 	return cmd
 }

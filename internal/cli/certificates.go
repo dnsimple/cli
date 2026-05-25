@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
@@ -151,7 +151,7 @@ func newCertificatesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "certificates",
 		Short:   "Manage SSL/TLS certificates",
-		Aliases: []string{"certs", "cert"},
+		Aliases: []string{"certs"},
 	}
 
 	cmd.AddCommand(newCertsListCmd(f))
@@ -164,8 +164,8 @@ func newCertificatesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newCertsListCmd(f *cmdutil.Factory) *cobra.Command {
-	var page, perPage int
 	var sort string
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list <domain>",
@@ -183,28 +183,32 @@ func newCertsListCmd(f *cmdutil.Factory) *cobra.Command {
 			}
 
 			opts := &dnsimple.ListOptions{}
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
 			if sort != "" {
 				opts.Sort = &sort
 			}
 
-			resp, err := c.Certificates.ListCertificates(context.Background(), accountID, args[0], opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).Print(&certList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "certificates",
+				func(page, perPage int) ([]dnsimple.Certificate, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Certificates.ListCertificates(context.Background(), accountID, args[0], opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Certificate, pg *dnsimple.Pagination) *certList {
+					return &certList{Data: items, Pagination: pg}
+				})
 		},
 	}
 
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
 	cmd.Flags().StringVar(&sort, "sort", "", "Sort order")
+	lf.register(cmd)
 
 	return cmd
 }

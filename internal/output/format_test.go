@@ -89,3 +89,103 @@ func TestPrinterPrintTableEmptyHeaders(t *testing.T) {
 
 	assert.Zero(t, buf.Len())
 }
+
+func listData() *stubFormattable {
+	return &stubFormattable{
+		headers: []string{"NAME"},
+		rows:    [][]string{{"alpha"}, {"beta"}},
+		json:    map[string]string{"name": "alpha"},
+	}
+}
+
+func TestPrinterPrintListShowsHintOnTable(t *testing.T) {
+	var out, errOut bytes.Buffer
+	p := &Printer{Writer: &out, ErrWriter: &errOut, Format: FormatTable}
+
+	err := p.PrintList(listData(), &PageInfo{
+		Noun: "records", Shown: 30, CurrentPage: 1, TotalPages: 5, TotalEntries: 142, CanFetchAll: true,
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Contains(t, errOut.String(), "Showing 30 of 142 records (page 1 of 5)")
+	assert.Contains(t, errOut.String(), "--all")
+	assert.Contains(t, out.String(), "alpha")
+}
+
+func TestPrinterPrintListHintOmitsAllFlagWhenUnsupported(t *testing.T) {
+	var out, errOut bytes.Buffer
+	p := &Printer{Writer: &out, ErrWriter: &errOut, Format: FormatTable}
+
+	err := p.PrintList(listData(), &PageInfo{
+		Noun: "certificates", Shown: 30, CurrentPage: 1, TotalPages: 5, TotalEntries: 142, CanFetchAll: false, CanPaginate: true,
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Contains(t, errOut.String(), "Showing 30 of 142 certificates (page 1 of 5)")
+	assert.NotContains(t, errOut.String(), "--all")
+	assert.Contains(t, errOut.String(), "--page")
+}
+
+func TestPrinterPrintListNoNavAdviceWhenNoPaginationFlags(t *testing.T) {
+	var out, errOut bytes.Buffer
+	p := &Printer{Writer: &out, ErrWriter: &errOut, Format: FormatTable}
+
+	// Command exposes neither --all nor --page: show the summary but never
+	// advise a flag that does not exist on the command.
+	err := p.PrintList(listData(), &PageInfo{
+		Noun: "services", Shown: 30, CurrentPage: 1, TotalPages: 2, TotalEntries: 41,
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Contains(t, errOut.String(), "Showing 30 of 41 services (page 1 of 2)")
+	assert.NotContains(t, errOut.String(), "--page")
+	assert.NotContains(t, errOut.String(), "--all")
+}
+
+func TestPrinterPrintListNoHintOnSinglePage(t *testing.T) {
+	var out, errOut bytes.Buffer
+	p := &Printer{Writer: &out, ErrWriter: &errOut, Format: FormatTable}
+
+	err := p.PrintList(listData(), &PageInfo{
+		Noun: "records", Shown: 2, CurrentPage: 1, TotalPages: 1, TotalEntries: 2,
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Zero(t, errOut.Len())
+	assert.Contains(t, out.String(), "alpha")
+}
+
+func TestPrinterPrintListNoHintWhenInfoNil(t *testing.T) {
+	var out, errOut bytes.Buffer
+	p := &Printer{Writer: &out, ErrWriter: &errOut, Format: FormatTable}
+
+	err := p.PrintList(listData(), nil)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Zero(t, errOut.Len())
+}
+
+func TestPrinterPrintListNoHintForJSON(t *testing.T) {
+	var out, errOut bytes.Buffer
+	p := &Printer{Writer: &out, ErrWriter: &errOut, Format: FormatJSON}
+
+	err := p.PrintList(listData(), &PageInfo{
+		Noun: "records", Shown: 30, CurrentPage: 1, TotalPages: 5, TotalEntries: 142, CanFetchAll: true,
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Zero(t, errOut.Len())
+	assert.Contains(t, out.String(), "alpha")
+}

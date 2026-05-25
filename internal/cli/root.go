@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-cli/internal/update"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/update"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -21,6 +21,7 @@ func buildRootCmd(f *cmdutil.Factory) *cobra.Command {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 	}
+	rootCmd.SetUsageTemplate(rootUsageTemplate)
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVarP(&f.Flags.Account, "account", "a", "", "Account ID to operate on")
@@ -49,8 +50,11 @@ func buildRootCmd(f *cmdutil.Factory) *cobra.Command {
 	rootCmd.AddCommand(newVanityNameServersCmd(f))
 	rootCmd.AddCommand(newBillingCmd(f))
 	rootCmd.AddCommand(newAnalyticsCmd(f))
+	rootCmd.AddCommand(newResearchCmd(f))
 	rootCmd.AddCommand(newCompletionCmd())
 	rootCmd.AddCommand(newAICmd())
+
+	useDeclaredFlagOrder(rootCmd)
 
 	return rootCmd
 }
@@ -92,6 +96,39 @@ func Execute(version string, args []string) int {
 	return exitCode
 }
 
+const rootUsageTemplate = `Usage:{{if .Runnable}}
+  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
+
+Aliases:
+  {{.NameAndAliases}}{{end}}{{if .HasExample}}
+
+Examples:
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}{{if eq (len .Groups) 0}}
+
+Available Commands:{{range $cmds}}{{if (or (eq (len .Groups) 0) (eq .GroupID ""))}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
+
+{{.Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (eq .Name "help")))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
+
+Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+Flags:
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+
+Global Flags:
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
+
+Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+  {{rpad .CommandPath .NamePadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+
+Learn more:
+  Use ` + "`" + `{{.CommandPath}} <command> <subcommand> --help` + "`" + ` for more information about a command.
+  Learn about using dnsimple with an AI agent or LLM using ` + "`" + `dnsimple ai` + "`" + `.{{end}}
+`
+
 // containsFlag returns true if any of the given flags appear in args.
 func containsFlag(args []string, flags ...string) bool {
 	for _, arg := range args {
@@ -102,4 +139,13 @@ func containsFlag(args []string, flags ...string) bool {
 		}
 	}
 	return false
+}
+
+func useDeclaredFlagOrder(cmd *cobra.Command) {
+	cmd.Flags().SortFlags = false
+	cmd.LocalFlags().SortFlags = false
+
+	for _, child := range cmd.Commands() {
+		useDeclaredFlagOrder(child)
+	}
 }
