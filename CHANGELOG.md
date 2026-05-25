@@ -2,6 +2,12 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Added
+
+- List commands now show a `Showing X of Y` pagination hint and expose `--all`/`--page`/`--per-page` consistently, making it obvious when results span multiple pages and how to retrieve the rest. (dnsimple/cli#51)
+
 ## 0.8.0 - 2026-05-14
 
 ### Changed
