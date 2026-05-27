@@ -155,20 +155,29 @@ func newAuthLoginCmd(f *cmdutil.Factory) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "login",
-		Short: "Authenticate with a DNSimple API token",
-		Long: `Authenticate with DNSimple by providing an API token and store it as a named context.
+		Short: "Authenticate with DNSimple",
+		Long: `Authenticate with DNSimple and store the resulting credential as a named context.
+
+On a terminal, this command opens your browser to the DNSimple authorization
+page and completes the login automatically once you approve. No copy-pasting
+of tokens is needed on the happy path.
 
 The new context becomes the active one. To create a sandbox context, pass --sandbox.
 To choose a context name, pass --name; otherwise the name is derived from the
 environment ('production' or 'sandbox'), with the account ID appended on collision.
 
-Get your token from:
+Headless / non-interactive use:
 
-  Production: https://dnsimple.com/user
-  Sandbox:    https://sandbox.dnsimple.com/user
+  - Pass --with-token to pipe a pre-issued API token on stdin:
+      echo "$TOKEN" | dnsimple auth login --with-token
+  - When stdin is not a terminal (CI, redirected input), the command reads
+    the token from stdin without requiring --with-token.
 
-See https://support.dnsimple.com/articles/api-access-token/ for instructions on
-generating an API token.`,
+If the browser cannot be launched (e.g. no display server), the authorize URL
+is printed to stderr and the command keeps listening for the callback.
+
+See https://support.dnsimple.com/articles/api-access-token/ if you need to
+generate an API token manually for use with --with-token.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := f.Config()
 			if err != nil {
@@ -176,7 +185,7 @@ generating an API token.`,
 			}
 			host := config.HostForSandbox(cfg.Sandbox)
 
-			token, err := readLoginToken(cmd, withToken)
+			token, err := acquireToken(cmd, cfg, withToken)
 			if err != nil {
 				return err
 			}
