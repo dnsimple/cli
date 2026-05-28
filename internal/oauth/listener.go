@@ -148,7 +148,7 @@ func (l *loopback) handleCallback(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errCode != "":
 		renderError(w, errCode, errDesc)
-		l.deliver(callbackResult{err: &AuthError{Code: errCode, Description: errDesc}})
+		l.deliver(callbackResult{err: newAuthError(errCode, errDesc)})
 	case code == "":
 		renderError(w, "invalid_callback", "The authorization response did not include a code.")
 		l.deliver(callbackResult{err: fmt.Errorf("oauth: callback missing code")})

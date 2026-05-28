@@ -208,7 +208,7 @@ func (c *Client) exchangeCode(ctx context.Context, code, verifier, redirectURI s
 	if resp.StatusCode >= 400 {
 		var er errorResponse
 		if json.Unmarshal(respBody, &er) == nil && er.Error != "" {
-			return "", &AuthError{Code: er.Error, Description: er.ErrorDescription}
+			return "", newAuthError(er.Error, er.ErrorDescription)
 		}
 		return "", fmt.Errorf("token endpoint returned HTTP %d", resp.StatusCode)
 	}
