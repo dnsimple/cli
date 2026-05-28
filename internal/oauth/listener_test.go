@@ -145,6 +145,23 @@ func TestLoopbackTimesOutWhenNoCallback(t *testing.T) {
 	assert.True(t, errors.Is(err, context.DeadlineExceeded))
 }
 
+// TestLoopbackConfiguresHTTPServerTimeouts pins the slowloris-defense
+// configuration on the embedded http.Server. If a future refactor drops
+// any of these timeouts, a stalled local connection can hold the
+// listener open and block Shutdown until the outer 5-minute flow
+// deadline fires.
+func TestLoopbackConfiguresHTTPServerTimeouts(t *testing.T) {
+	lb, err := startLoopback("expected-state")
+	if !assert.NoError(t, err) {
+		return
+	}
+	defer lb.close()
+
+	assert.Greater(t, lb.server.ReadHeaderTimeout, time.Duration(0), "ReadHeaderTimeout must be set")
+	assert.Greater(t, lb.server.ReadTimeout, time.Duration(0), "ReadTimeout must be set")
+	assert.Greater(t, lb.server.WriteTimeout, time.Duration(0), "WriteTimeout must be set")
+}
+
 func TestLoopbackIgnoresNonCallbackPaths(t *testing.T) {
 	lb, err := startLoopback("expected-state")
 	if !assert.NoError(t, err) {

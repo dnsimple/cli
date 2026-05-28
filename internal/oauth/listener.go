@@ -6,6 +6,20 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
+)
+
+// Loopback server timeouts. The loopback only ever serves one fast GET
+// from the local browser, so the limits are deliberately tight: a stalled
+// connection (security scanner, slowloris-style local probe, browser
+// pre-fetcher that opens but never sends) would otherwise pin the
+// listener until the outer 5-minute flow deadline fires, and would block
+// Shutdown indefinitely on close.
+const (
+	loopbackReadHeaderTimeout = 5 * time.Second
+	loopbackReadTimeout       = 10 * time.Second
+	loopbackWriteTimeout      = 10 * time.Second
+	loopbackShutdownTimeout   = 5 * time.Second
 )
 
 // callbackResult is the outcome of the OAuth redirect: either a code + state
@@ -64,7 +78,12 @@ func startLoopback(expectedState string) (*loopback, error) {
 	// is a CLI listener; just 404.
 	mux.HandleFunc("/", http.NotFound)
 
-	lb.server = &http.Server{Handler: mux}
+	lb.server = &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: loopbackReadHeaderTimeout,
+		ReadTimeout:       loopbackReadTimeout,
+		WriteTimeout:      loopbackWriteTimeout,
+	}
 	go func() {
 		// Serve returns http.ErrServerClosed on shutdown, which is the
 		// normal exit path. Any other error means the listener died while
@@ -87,9 +106,15 @@ func (l *loopback) await(ctx context.Context) (string, string, error) {
 
 // close shuts down the listener. Safe to call multiple times.
 func (l *loopback) close() {
-	// Shutdown with background context: we already either got the result
-	// or we are tearing down on a timeout from the caller's context.
-	_ = l.server.Shutdown(context.Background())
+	// Bounded shutdown deadline so a hung in-flight handler cannot pin
+	// the CLI after the OAuth flow has otherwise completed (e.g. a local
+	// connection that never sends bytes -- the request-level read
+	// timeouts cover the read side, but Shutdown still waits for those
+	// timeouts to fire and we don't want to inherit their full duration
+	// when we already have what we need).
+	ctx, cancel := context.WithTimeout(context.Background(), loopbackShutdownTimeout)
+	defer cancel()
+	_ = l.server.Shutdown(ctx)
 }
 
 // handleCallback parses the OAuth redirect query, renders a small HTML
