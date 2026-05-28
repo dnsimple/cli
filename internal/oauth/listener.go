@@ -107,13 +107,23 @@ func (l *loopback) handleCallback(w http.ResponseWriter, r *http.Request) {
 	code := q.Get("code")
 	state := q.Get("state")
 
+	// Validate state before branching on anything else, including the
+	// `error` response shape. Otherwise a forged callback (e.g. an
+	// <img src> on a page the user is also viewing) can deliver an
+	// attacker-chosen ?error=... result to the in-flight login without
+	// holding a valid state token -- exactly the attack the state
+	// parameter exists to defend against (RFC 6749 §10.12, OAuth 2.0
+	// Security BCP §4.7).
+	if state != l.expectedState {
+		renderError(w, "state_mismatch", "The login flow could not be verified. Please run `dnsimple auth login` again.")
+		l.deliver(callbackResult{err: ErrStateMismatch})
+		return
+	}
+
 	switch {
 	case errCode != "":
 		renderError(w, errCode, errDesc)
 		l.deliver(callbackResult{err: &AuthError{Code: errCode, Description: errDesc}})
-	case state != l.expectedState:
-		renderError(w, "state_mismatch", "The login flow could not be verified. Please run `dnsimple auth login` again.")
-		l.deliver(callbackResult{err: ErrStateMismatch})
 	case code == "":
 		renderError(w, "invalid_callback", "The authorization response did not include a code.")
 		l.deliver(callbackResult{err: fmt.Errorf("oauth: callback missing code")})

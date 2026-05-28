@@ -90,6 +90,48 @@ func TestLoopbackRejectsStateMismatch(t *testing.T) {
 	assert.ErrorIs(t, err, ErrStateMismatch)
 }
 
+// TestLoopbackRejectsForgedErrorWithoutState pins the fix for the CSRF
+// vulnerability where a forged ?error=... callback (with no state, or a
+// wrong state) was accepted because the error branch ran before the
+// state check. State must be validated first, even on the error path.
+func TestLoopbackRejectsForgedErrorWithoutState(t *testing.T) {
+	cases := []struct {
+		name  string
+		query string
+	}{
+		{name: "no state", query: "?error=access_denied&error_description=spoof"},
+		{name: "wrong state", query: "?error=access_denied&error_description=spoof&state=forged"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			lb, err := startLoopback("expected-state")
+			if !assert.NoError(t, err) {
+				return
+			}
+			defer lb.close()
+
+			go func() {
+				resp, err := http.Get(lb.redirectURL + tc.query)
+				if err == nil {
+					io.Copy(io.Discard, resp.Body)
+					resp.Body.Close()
+				}
+			}()
+
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			_, _, err = lb.await(ctx)
+			assert.ErrorIs(t, err, ErrStateMismatch)
+
+			// And specifically, the AuthError path must NOT be reached
+			// for these forged inputs.
+			var ae *AuthError
+			assert.False(t, errors.As(err, &ae), "forged error must not surface as AuthError")
+		})
+	}
+}
+
 func TestLoopbackTimesOutWhenNoCallback(t *testing.T) {
 	lb, err := startLoopback("expected-state")
 	if !assert.NoError(t, err) {
