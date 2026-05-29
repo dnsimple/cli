@@ -132,6 +132,30 @@ func TestLoopbackRejectsForgedErrorWithoutState(t *testing.T) {
 	}
 }
 
+// TestLoopbackSurfacesServeErrors verifies that a Serve failure (other
+// than the normal ErrServerClosed) is delivered through the result
+// channel instead of being silently dropped, so callers see the real
+// cause rather than timing out at the outer 5-minute deadline.
+func TestLoopbackSurfacesServeErrors(t *testing.T) {
+	lb, err := startLoopback("expected-state")
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	// Close the listener out from under Serve. Serve's Accept loop
+	// returns the wrapped "use of closed network connection" error,
+	// which is NOT http.ErrServerClosed.
+	_ = lb.listener.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	_, _, err = lb.await(ctx)
+	if !assert.Error(t, err) {
+		return
+	}
+	assert.Contains(t, err.Error(), "loopback listener died")
+}
+
 func TestLoopbackTimesOutWhenNoCallback(t *testing.T) {
 	lb, err := startLoopback("expected-state")
 	if !assert.NoError(t, err) {

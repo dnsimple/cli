@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -86,9 +87,15 @@ func startLoopback(expectedState string) (*loopback, error) {
 	}
 	go func() {
 		// Serve returns http.ErrServerClosed on shutdown, which is the
-		// normal exit path. Any other error means the listener died while
-		// we were waiting for a callback.
-		_ = lb.server.Serve(listener)
+		// normal exit path. Anything else means the listener died before
+		// we got a callback (e.g., FD exhaustion, the listener was
+		// closed externally) -- surface that via the result channel so
+		// await fails fast instead of timing out at the outer deadline.
+		// deliver() is single-shot, so if a real callback was already
+		// delivered this is a no-op.
+		if err := lb.server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			lb.deliver(callbackResult{err: fmt.Errorf("oauth: loopback listener died: %w", err)})
+		}
 	}()
 
 	return lb, nil
