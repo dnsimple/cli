@@ -194,7 +194,20 @@ func (c *Client) exchangeCode(ctx context.Context, code, verifier, redirectURI s
 		httpClient = http.DefaultClient
 	}
 
-	resp, err := httpClient.Do(req)
+	// Disable redirect following for the token POST. A 307 or 308 here
+	// would have Go re-send the body to the redirect target, and the
+	// body carries the authorization code and PKCE verifier -- enough
+	// to complete the token exchange elsewhere. RFC 6749 §10.5 calls
+	// this out; gh and the AWS CLI handle it the same way.
+	//
+	// Clone the caller's client so callers that legitimately want
+	// redirects on other requests are unaffected.
+	cloned := *httpClient
+	cloned.CheckRedirect = func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
+	resp, err := cloned.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("token endpoint: %w", err)
 	}
@@ -203,6 +216,15 @@ func (c *Client) exchangeCode(ctx context.Context, code, verifier, redirectURI s
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("read token response: %w", err)
+	}
+
+	// 3xx is only reachable because we disabled redirect-following above.
+	// Surface it with the Location so a misconfigured endpoint produces a
+	// useful diagnostic instead of falling into the generic "missing
+	// access_token" branch.
+	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+		return "", fmt.Errorf("token endpoint returned an unexpected redirect (HTTP %d to %q); refusing to replay credentials",
+			resp.StatusCode, resp.Header.Get("Location"))
 	}
 
 	if resp.StatusCode >= 400 {

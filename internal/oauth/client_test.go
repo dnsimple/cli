@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -227,6 +228,46 @@ func TestClientLoginPrintsURLWhenBrowserCannotBeOpened(t *testing.T) {
 	assert.Equal(t, "the-token", token)
 	assert.Contains(t, stderr.String(), "Could not open a browser")
 	assert.Contains(t, stderr.String(), "https://example.test/oauth/authorize")
+}
+
+// TestClientLoginRefusesTokenEndpointRedirect pins the defense against a
+// 307/308 from the token endpoint replaying the POST body -- containing
+// the code and PKCE verifier -- to a redirect target. The redirect
+// target server here intentionally records every request so the test
+// can assert it is never reached.
+func TestClientLoginRefusesTokenEndpointRedirect(t *testing.T) {
+	var redirectTargetHits int32
+	redirectTarget := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&redirectTargetHits, 1)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"access_token":"would-have-been-leaked","token_type":"bearer"}`)
+	}))
+	defer redirectTarget.Close()
+
+	tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 307 preserves method + body on resend; this is the exact case
+		// the CheckRedirect guard protects against.
+		http.Redirect(w, r, redirectTarget.URL, http.StatusTemporaryRedirect)
+	}))
+	defer tokenServer.Close()
+
+	c := &Client{
+		ClientID:      "client-abc",
+		AuthorizeBase: "https://example.test/oauth/authorize",
+		TokenURL:      tokenServer.URL,
+		BrowserOpener: openerFollowingAuthorize(t, "fake-code", nil),
+		Stderr:        io.Discard,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := c.Login(ctx)
+	if !assert.Error(t, err) {
+		return
+	}
+	assert.Contains(t, err.Error(), "unexpected redirect")
+	assert.Equal(t, int32(0), atomic.LoadInt32(&redirectTargetHits),
+		"redirect target must not receive the POST body")
 }
 
 func TestClientLoginTimesOutWhenNoCallback(t *testing.T) {
