@@ -39,7 +39,7 @@ func defaultLoginViaOAuth(ctx context.Context, cfg *config.Config, errOut io.Wri
 	c := &oauth.Client{
 		ClientID:      clientID,
 		AuthorizeBase: config.AuthorizeURL(cfg.Sandbox),
-		TokenURL:      config.OAuthTokenURL(cfg.Sandbox),
+		TokenURL:      config.OAuthTokenURL(cfg.BaseURL),
 		BrowserOpener: browser.OpenURL,
 		Stderr:        errOut,
 	}

@@ -49,9 +49,12 @@ func AuthorizeURL(sandbox bool) string {
 	return "https://dnsimple.com/oauth/authorize"
 }
 
-// OAuthTokenURL returns the OAuth token endpoint for the given environment.
-// The token endpoint shares the API host (api.dnsimple.com), so it is
-// derived from BaseURLForHost.
-func OAuthTokenURL(sandbox bool) string {
-	return BaseURLForHost(HostForSandbox(sandbox)) + "/v2/oauth/access_token"
+// OAuthTokenURL returns the OAuth token endpoint relative to the given
+// API base URL. The base URL is passed in directly (rather than
+// re-derived from a `sandbox` bool) so it stays in sync with whatever
+// the rest of the API client is using: if a future BaseURL override
+// ships (env var, enterprise host, integration-test seam), OAuth
+// follows it automatically. Pass cfg.BaseURL.
+func OAuthTokenURL(baseURL string) string {
+	return baseURL + "/v2/oauth/access_token"
 }
