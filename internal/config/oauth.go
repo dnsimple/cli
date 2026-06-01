@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 // OAuth client identifiers for the first-party DNSimple CLI application.
 //
@@ -17,25 +20,38 @@ const (
 	oauthClientIDSandbox    = ""
 )
 
-// oauthClientIDEnvVar is the per-invocation override consulted before the
-// embedded constants. Useful when developing against a local dnsimple-app
-// checkout where the CLI app has been bootstrapped with a different ID.
-const oauthClientIDEnvVar = "DNSIMPLE_OAUTH_CLIENT_ID"
+// Per-environment overrides consulted before the embedded constants.
+// Useful when developing against a local dnsimple-app checkout where the
+// CLI app has been bootstrapped with a different ID, or when alternating
+// between sandbox and production in one shell session: a single shared
+// override would route the wrong client ID into one of the two flows and
+// produce an opaque `invalid_client` error.
+const (
+	oauthClientIDEnvVarProduction = "DNSIMPLE_OAUTH_CLIENT_ID_PRODUCTION"
+	oauthClientIDEnvVarSandbox    = "DNSIMPLE_OAUTH_CLIENT_ID_SANDBOX"
+)
 
 // OAuthClientID returns the OAuth client identifier to use for the given
-// environment. The DNSIMPLE_OAUTH_CLIENT_ID environment variable takes
-// precedence over the embedded constants when set.
+// environment. The matching environment variable
+// (DNSIMPLE_OAUTH_CLIENT_ID_PRODUCTION or _SANDBOX) takes precedence over
+// the embedded constant. Leading/trailing whitespace on the env value is
+// stripped before the empty check so a stray newline from a
+// command-substitution export (e.g. `export ...=$(<file)`) does not
+// silently propagate into client_id and yield a cryptic browser error.
 //
 // An empty return value means "OAuth is not provisioned for this build /
 // environment yet": callers should fall back to the manual token paste flow.
 func OAuthClientID(sandbox bool) string {
-	if v := os.Getenv(oauthClientIDEnvVar); v != "" {
+	envvar := oauthClientIDEnvVarProduction
+	embedded := oauthClientIDProduction
+	if sandbox {
+		envvar = oauthClientIDEnvVarSandbox
+		embedded = oauthClientIDSandbox
+	}
+	if v := strings.TrimSpace(os.Getenv(envvar)); v != "" {
 		return v
 	}
-	if sandbox {
-		return oauthClientIDSandbox
-	}
-	return oauthClientIDProduction
+	return embedded
 }
 
 // AuthorizeURL returns the OAuth authorize endpoint for the given

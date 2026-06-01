@@ -29,13 +29,41 @@ func TestAuthorizeURLPicksHostForEnvironment(t *testing.T) {
 }
 
 func TestOAuthClientIDFallsBackToEmbeddedConstants(t *testing.T) {
-	t.Setenv("DNSIMPLE_OAUTH_CLIENT_ID", "")
+	t.Setenv("DNSIMPLE_OAUTH_CLIENT_ID_PRODUCTION", "")
+	t.Setenv("DNSIMPLE_OAUTH_CLIENT_ID_SANDBOX", "")
 	assert.Equal(t, oauthClientIDProduction, OAuthClientID(false))
 	assert.Equal(t, oauthClientIDSandbox, OAuthClientID(true))
 }
 
-func TestOAuthClientIDEnvOverrideTakesPrecedence(t *testing.T) {
-	t.Setenv("DNSIMPLE_OAUTH_CLIENT_ID", "override-id")
-	assert.Equal(t, "override-id", OAuthClientID(false))
-	assert.Equal(t, "override-id", OAuthClientID(true))
+func TestOAuthClientIDPerEnvironmentOverridesAreScoped(t *testing.T) {
+	t.Setenv("DNSIMPLE_OAUTH_CLIENT_ID_PRODUCTION", "prod-id")
+	t.Setenv("DNSIMPLE_OAUTH_CLIENT_ID_SANDBOX", "sbx-id")
+	assert.Equal(t, "prod-id", OAuthClientID(false))
+	assert.Equal(t, "sbx-id", OAuthClientID(true))
+}
+
+// TestOAuthClientIDDoesNotCrossEnvironments guards the split: setting one
+// env var must not leak into the other environment. A developer
+// alternating between prod and sandbox in one shell session would
+// otherwise hit dnsimple.com with a sandbox-only ID and see
+// invalid_client.
+func TestOAuthClientIDDoesNotCrossEnvironments(t *testing.T) {
+	t.Setenv("DNSIMPLE_OAUTH_CLIENT_ID_SANDBOX", "sbx-only")
+	t.Setenv("DNSIMPLE_OAUTH_CLIENT_ID_PRODUCTION", "")
+	assert.Equal(t, oauthClientIDProduction, OAuthClientID(false))
+	assert.Equal(t, "sbx-only", OAuthClientID(true))
+}
+
+func TestOAuthClientIDTrimsWhitespaceFromOverride(t *testing.T) {
+	t.Setenv("DNSIMPLE_OAUTH_CLIENT_ID_PRODUCTION", "  prod-id  \n")
+	assert.Equal(t, "prod-id", OAuthClientID(false))
+}
+
+// TestOAuthClientIDIgnoresWhitespaceOnlyOverride guards the case where an
+// operator's command-substitution sets the var to whitespace only -- the
+// flow must treat it as unset and fall back to the embedded constant,
+// not propagate the spaces into client_id.
+func TestOAuthClientIDIgnoresWhitespaceOnlyOverride(t *testing.T) {
+	t.Setenv("DNSIMPLE_OAUTH_CLIENT_ID_PRODUCTION", "   \n  ")
+	assert.Equal(t, oauthClientIDProduction, OAuthClientID(false))
 }
