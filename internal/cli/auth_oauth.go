@@ -5,13 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/cli/browser"
 	"github.com/dnsimple/cli/internal/config"
 	"github.com/dnsimple/cli/internal/oauth"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 // loginViaOAuth runs the interactive OAuth browser flow and returns an
@@ -20,12 +18,13 @@ import (
 // var directly to skip the listener / browser / token exchange.
 var loginViaOAuth = defaultLoginViaOAuth
 
-// isStdinTTY reports whether the command's stdin is a real terminal. Tests
-// override it directly so they can drive the OAuth branch without faking a
-// PTY. The default mirrors the check used inside readLoginToken.
+// isStdinTTY reports whether the command's stdin is a real terminal.
+// Tests override it directly so they can drive the OAuth branch without
+// faking a PTY. The underlying check delegates to isInteractiveInput
+// (see confirm.go) so the OAuth branch stays in lockstep with how
+// destructive-action prompts decide interactivity.
 var isStdinTTY = func(cmd *cobra.Command) bool {
-	f, ok := cmd.InOrStdin().(*os.File)
-	return ok && term.IsTerminal(int(f.Fd()))
+	return isInteractiveInput(cmd.InOrStdin())
 }
 
 // defaultLoginViaOAuth is the production implementation of the OAuth flow.
