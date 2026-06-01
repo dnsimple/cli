@@ -270,6 +270,58 @@ func TestClientLoginRefusesTokenEndpointRedirect(t *testing.T) {
 		"redirect target must not receive the POST body")
 }
 
+func TestClientLoginRejectsNonBearerTokenType(t *testing.T) {
+	tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"access_token":"x","token_type":"mac","scope":null,"account_id":981}`)
+	}))
+	defer tokenServer.Close()
+
+	c := &Client{
+		ClientID:      "client-abc",
+		AuthorizeBase: "https://example.test/oauth/authorize",
+		TokenURL:      tokenServer.URL,
+		BrowserOpener: openerFollowingAuthorize(t, "fake-code", nil),
+		Stderr:        io.Discard,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := c.Login(ctx)
+	if !assert.Error(t, err) {
+		return
+	}
+	assert.Contains(t, err.Error(), "unsupported token_type")
+	assert.Contains(t, err.Error(), "mac")
+}
+
+// TestClientLoginAcceptsBearerCaseInsensitively pins the case-insensitive
+// match required by RFC 6749 §5.1 ("the token type is a string ...
+// case insensitive").
+func TestClientLoginAcceptsBearerCaseInsensitively(t *testing.T) {
+	tokenServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"access_token":"the-token","token_type":"Bearer","scope":null,"account_id":981}`)
+	}))
+	defer tokenServer.Close()
+
+	c := &Client{
+		ClientID:      "client-abc",
+		AuthorizeBase: "https://example.test/oauth/authorize",
+		TokenURL:      tokenServer.URL,
+		BrowserOpener: openerFollowingAuthorize(t, "fake-code", nil),
+		Stderr:        io.Discard,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	token, err := c.Login(ctx)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, "the-token", token)
+}
+
 func TestClientLoginTimesOutWhenNoCallback(t *testing.T) {
 	c := &Client{
 		ClientID:      "client-abc",

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -241,6 +242,14 @@ func (c *Client) exchangeCode(ctx context.Context, code, verifier, redirectURI s
 	}
 	if tok.AccessToken == "" {
 		return "", fmt.Errorf("token response did not include an access_token")
+	}
+	// token_type is REQUIRED per RFC 6749 §5.1 and tells the client how
+	// to use the token. The DNSimple API only accepts the access token
+	// as a Bearer credential, so a non-bearer response would be silently
+	// accepted today but rejected by every subsequent API call with an
+	// opaque 401. Match case-insensitively per the spec.
+	if !strings.EqualFold(tok.TokenType, "bearer") {
+		return "", fmt.Errorf("token response contained unsupported token_type %q", tok.TokenType)
 	}
 	return tok.AccessToken, nil
 }
