@@ -64,7 +64,7 @@ func (a *authStatusOutput) TemplateData() any {
 func newAuthCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "auth",
-		Short: "Authenticate with DNSimple",
+		Short: "Manage authentication contexts",
 	}
 
 	cmd.AddCommand(newAuthLoginCmd(f))
