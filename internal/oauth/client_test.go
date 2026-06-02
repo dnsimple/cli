@@ -322,6 +322,34 @@ func TestClientLoginAcceptsBearerCaseInsensitively(t *testing.T) {
 	assert.Equal(t, "the-token", token)
 }
 
+// TestClientLoginPropagatesContextCancellation pins that a cancelled
+// parent context produces a context.Canceled error, NOT the "timed out"
+// message used for deadline expiry. Callers can errors.Is on the
+// result to decide whether to surface the cancellation or treat it as
+// a transient failure.
+func TestClientLoginPropagatesContextCancellation(t *testing.T) {
+	c := &Client{
+		ClientID:      "client-abc",
+		AuthorizeBase: "https://example.test/oauth/authorize",
+		TokenURL:      "https://example.test/v2/oauth/access_token",
+		// BrowserOpener that never delivers a callback; the deadline is
+		// generous so the cancellation, not the timeout, is the trigger.
+		BrowserOpener: func(string) error { return nil },
+		Stderr:        io.Discard,
+		Deadline:      30 * time.Second,
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel before Login even runs
+	_, err := c.Login(ctx)
+	if !assert.Error(t, err) {
+		return
+	}
+	assert.NotContains(t, err.Error(), "timed out",
+		"cancellation must not be reported as a timeout")
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
 func TestClientLoginTimesOutWhenNoCallback(t *testing.T) {
 	c := &Client{
 		ClientID:      "client-abc",

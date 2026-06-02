@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -108,9 +109,12 @@ func (c *Client) Login(ctx context.Context) (string, error) {
 
 	code, _, err := lb.await(ctx)
 	if err != nil {
-		// Surface a clear deadline message instead of "context deadline
-		// exceeded" to the user.
-		if ctx.Err() != nil {
+		// Disambiguate the two ways the context can be done: deadline
+		// (we ran out of time) vs cancellation (the caller bailed via
+		// Ctrl+C or an external signal). The deadline branch produces a
+		// friendly per-flow message; cancellation propagates verbatim
+		// so callers can errors.Is(..., context.Canceled).
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return "", fmt.Errorf("timed out waiting for authorization after %s", deadline)
 		}
 		return "", err
