@@ -107,7 +107,7 @@ func (c *Client) Login(ctx context.Context) (string, error) {
 		fmt.Fprintln(stderr, "Waiting for the authorization to complete in the browser.")
 	}
 
-	code, _, err := lb.await(ctx)
+	code, returnedState, err := lb.await(ctx)
 	if err != nil {
 		// Disambiguate the two ways the context can be done: deadline
 		// (we ran out of time) vs cancellation (the caller bailed via
@@ -118,6 +118,15 @@ func (c *Client) Login(ctx context.Context) (string, error) {
 			return "", fmt.Errorf("timed out waiting for authorization after %s", deadline)
 		}
 		return "", err
+	}
+
+	// Defense in depth. The listener already validated state before
+	// pushing the result, but if a future refactor weakens that check
+	// this last-line guard keeps Login safe. A timing leak on state is
+	// not interesting (single-use, short-lived, not a credential), so
+	// plain string equality is sufficient.
+	if returnedState != state {
+		return "", ErrStateMismatch
 	}
 
 	token, err := c.exchangeCode(ctx, code, verifier, lb.redirectURL)
