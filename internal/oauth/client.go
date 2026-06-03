@@ -129,7 +129,7 @@ func (c *Client) Login(ctx context.Context) (string, error) {
 		return "", ErrStateMismatch
 	}
 
-	token, err := c.exchangeCode(ctx, code, verifier, lb.redirectURL)
+	token, err := c.exchangeCode(ctx, code, verifier, state, lb.redirectURL)
 	if err != nil {
 		return "", err
 	}
@@ -162,6 +162,7 @@ type tokenRequest struct {
 	Code         string `json:"code"`
 	CodeVerifier string `json:"code_verifier"`
 	RedirectURI  string `json:"redirect_uri"`
+	State        string `json:"state"`
 }
 
 // tokenResponse is the success-path JSON from /v2/oauth/access_token. The
@@ -184,13 +185,14 @@ type errorResponse struct {
 // exchangeCode trades the authorization code + PKCE verifier for an access
 // token. DNSimple's token endpoint accepts JSON, not form-encoded, which is
 // why we hand-roll the request rather than using golang.org/x/oauth2.
-func (c *Client) exchangeCode(ctx context.Context, code, verifier, redirectURI string) (string, error) {
+func (c *Client) exchangeCode(ctx context.Context, code, verifier, state, redirectURI string) (string, error) {
 	body, err := json.Marshal(tokenRequest{
 		GrantType:    "authorization_code",
 		ClientID:     c.ClientID,
 		Code:         code,
 		CodeVerifier: verifier,
 		RedirectURI:  redirectURI,
+		State:        state,
 	})
 	if err != nil {
 		return "", fmt.Errorf("encode token request: %w", err)
