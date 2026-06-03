@@ -54,11 +54,24 @@ func OAuthClientID(sandbox bool) string {
 	return embedded
 }
 
+// oauthAuthorizeURLEnvVar overrides the authorize endpoint. It exists for
+// local development against a dnsimple-app checkout, where the authorize
+// flow runs on http://localhost:3000 rather than the production or sandbox
+// hosts. Unset in normal use.
+const oauthAuthorizeURLEnvVar = "DNSIMPLE_OAUTH_AUTHORIZE_URL"
+
 // AuthorizeURL returns the OAuth authorize endpoint for the given
 // environment. The authorize endpoint lives on the application host
 // (dnsimple.com / sandbox.dnsimple.com), not the API host, which is why
 // it has its own helper rather than being derived from BaseURLForHost.
+//
+// DNSIMPLE_OAUTH_AUTHORIZE_URL, when set, takes precedence over both
+// environments for local development. Leading/trailing whitespace is
+// stripped before the empty check, matching OAuthClientID.
 func AuthorizeURL(sandbox bool) string {
+	if v := strings.TrimSpace(os.Getenv(oauthAuthorizeURLEnvVar)); v != "" {
+		return v
+	}
 	if sandbox {
 		return "https://sandbox.dnsimple.com/oauth/authorize"
 	}

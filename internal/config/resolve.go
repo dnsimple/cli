@@ -49,8 +49,10 @@ type ResolveOptions struct {
 	// DefaultAccount is the cfg.DefaultAccount value (from config file).
 	DefaultAccount string
 
-	// BaseURLOverride is a test-only override that short-circuits host-based
-	// BaseURL derivation. Production code never sets this.
+	// BaseURLOverride short-circuits host-based BaseURL derivation. Tests set
+	// it directly; at runtime it is left empty and the DNSIMPLE_BASE_URL
+	// environment variable supplies the same override (see Resolve) for local
+	// development against a dnsimple-app checkout.
 	BaseURLOverride string
 }
 
@@ -131,8 +133,18 @@ func Resolve(creds *Credentials, opts ResolveOptions) (*ResolvedContext, error) 
 		return nil, errors.New("not authenticated. Run 'dnsimple auth login' to authenticate")
 	}
 
-	if opts.BaseURLOverride != "" {
-		rc.BaseURL = opts.BaseURLOverride
+	// BaseURL override: an explicit opts.BaseURLOverride (set by tests) wins;
+	// otherwise DNSIMPLE_BASE_URL backs the same field, mirroring how
+	// DNSIMPLE_TOKEN / DNSIMPLE_ACCOUNT back their opts fields above. The env
+	// path is for local development against a dnsimple-app checkout (e.g.
+	// http://api.dnsimple.localhost:3000); it also moves the OAuth token
+	// endpoint, which is derived from BaseURL.
+	baseURLOverride := opts.BaseURLOverride
+	if baseURLOverride == "" {
+		baseURLOverride = strings.TrimSpace(os.Getenv(baseURLEnvVar))
+	}
+	if baseURLOverride != "" {
+		rc.BaseURL = baseURLOverride
 	} else {
 		rc.BaseURL = BaseURLForHost(rc.Host)
 	}

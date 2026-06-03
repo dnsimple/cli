@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -14,6 +15,12 @@ const (
 	configDirName         = "dnsimple"
 	configFileName        = "config"
 	credentialsFileName   = "credentials"
+
+	// baseURLEnvVar overrides the API base URL for local development against
+	// a dnsimple-app checkout. Consulted by both Load/SetSandbox (the
+	// pre-auth `auth login` path) and Resolve (authenticated commands) so the
+	// override moves every API call, including the OAuth token endpoint.
+	baseURLEnvVar = "DNSIMPLE_BASE_URL"
 )
 
 // Config holds the CLI configuration.
@@ -78,11 +85,7 @@ func Load() (*Config, error) {
 		PerPage:        v.GetInt("per_page"),
 	}
 
-	if cfg.Sandbox {
-		cfg.BaseURL = sandboxBaseURL
-	} else {
-		cfg.BaseURL = defaultBaseURL
-	}
+	cfg.BaseURL = baseURLForSandbox(cfg.Sandbox)
 
 	return cfg, nil
 }
@@ -90,11 +93,22 @@ func Load() (*Config, error) {
 // SetSandbox overrides the sandbox setting (from --sandbox flag).
 func (c *Config) SetSandbox(sandbox bool) {
 	c.Sandbox = sandbox
-	if sandbox {
-		c.BaseURL = sandboxBaseURL
-	} else {
-		c.BaseURL = defaultBaseURL
+	c.BaseURL = baseURLForSandbox(sandbox)
+}
+
+// baseURLForSandbox returns the API base URL for the given environment,
+// honoring DNSIMPLE_BASE_URL when set. The env override wins over the
+// production/sandbox default, mirroring the precedence in Resolve so the
+// `auth login` flow (which builds a Config, not a ResolvedContext, because no
+// token exists yet) targets the same local host as authenticated commands.
+func baseURLForSandbox(sandbox bool) string {
+	if v := strings.TrimSpace(os.Getenv(baseURLEnvVar)); v != "" {
+		return v
 	}
+	if sandbox {
+		return sandboxBaseURL
+	}
+	return defaultBaseURL
 }
 
 // Save writes the current configuration to disk.
