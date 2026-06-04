@@ -45,20 +45,11 @@ func defaultLoginViaOAuth(ctx context.Context, cfg *config.Config, errOut io.Wri
 	return c.Login(ctx)
 }
 
-// acquireToken obtains the access token for a fresh `auth login`. It
-// dispatches between three paths:
-//
-//  1. --with-token: read the token as a single line from stdin (existing
-//     path, used for piping a pre-issued token).
-//  2. Stdin is not a TTY (CI, redirected input): read the token from
-//     stdin, the same shape as --with-token but without requiring users
-//     to remember the flag.
-//  3. Stdin is a TTY: run the interactive OAuth browser flow.
-//
-// When the OAuth flow is not provisioned (empty client ID for the target
-// environment in this build), the function falls back to the paste prompt
-// with a one-line notice so users on builds shipped before the server-side
-// rollout still get today's behaviour.
+// acquireToken obtains the access token for a fresh `auth login`. With
+// --with-token or non-TTY stdin it reads the token from stdin; on a TTY it
+// runs the interactive OAuth browser flow. A browser-login failure is
+// reported and returned, with no fall back to a token prompt: the error tells
+// the user to retry or pass --with-token.
 func acquireToken(cmd *cobra.Command, cfg *config.Config, withToken bool) (string, error) {
 	switch {
 	case withToken:
@@ -68,10 +59,14 @@ func acquireToken(cmd *cobra.Command, cfg *config.Config, withToken bool) (strin
 	}
 
 	token, err := loginViaOAuth(context.Background(), cfg, cmd.ErrOrStderr())
-	if errors.Is(err, oauth.ErrNotProvisioned) {
-		fmt.Fprintln(cmd.ErrOrStderr(),
-			"Interactive browser login is not yet available in this build. Falling back to API token paste.")
-		return readLoginToken(cmd, false)
+	switch {
+	case err == nil:
+		return token, nil
+	case errors.Is(err, context.Canceled):
+		return "", err
+	case errors.Is(err, oauth.ErrNotProvisioned):
+		return "", errors.New("interactive browser login is not available in this build\n\nRun `dnsimple auth login --with-token` to authenticate with an API token instead")
+	default:
+		return "", fmt.Errorf("browser login failed: %w\n\nRetry `dnsimple auth login`, or run `dnsimple auth login --with-token` to authenticate with an API token instead", err)
 	}
-	return token, err
 }

@@ -82,40 +82,90 @@ func TestAcquireTokenTTYRunsOAuth(t *testing.T) {
 	assert.True(t, capturedSandbox, "OAuth flow should receive cfg.Sandbox=true")
 }
 
-func TestAcquireTokenFallsBackToPasteOnErrNotProvisioned(t *testing.T) {
+func TestAcquireTokenErrorsOnErrNotProvisioned(t *testing.T) {
 	forceTTY(t, true)
 	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
 		return "", oauth.ErrNotProvisioned
 	})
 
 	cmd := &cobra.Command{}
-	cmd.SetIn(strings.NewReader("tok-paste\n"))
-	var stderr bytes.Buffer
-	cmd.SetErr(&stderr)
-
-	got, err := acquireToken(cmd, &config.Config{}, false)
-	if !assert.NoError(t, err) {
-		return
-	}
-	assert.Equal(t, "tok-paste", got)
-	assert.Contains(t, stderr.String(), "not yet available")
-}
-
-func TestAcquireTokenPropagatesOAuthErrors(t *testing.T) {
-	forceTTY(t, true)
-	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
-		return "", fmt.Errorf("oauth: kapow")
-	})
-
-	cmd := &cobra.Command{}
-	cmd.SetIn(strings.NewReader(""))
+	cmd.SetIn(strings.NewReader("would-be-pasted\n")) // must not be consumed
 	cmd.SetErr(io.Discard)
 
 	_, err := acquireToken(cmd, &config.Config{}, false)
 	if !assert.Error(t, err) {
 		return
 	}
-	assert.Contains(t, err.Error(), "kapow")
+	assert.Contains(t, err.Error(), "not available in this build")
+	assert.Contains(t, err.Error(), "--with-token")
+}
+
+func TestAcquireTokenErrorsOnTransientOAuthError(t *testing.T) {
+	forceTTY(t, true)
+	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
+		return "", fmt.Errorf("network: connection refused")
+	})
+
+	cmd := &cobra.Command{}
+	cmd.SetIn(strings.NewReader("would-be-pasted\n")) // must not be consumed
+	cmd.SetErr(io.Discard)
+
+	_, err := acquireToken(cmd, &config.Config{}, false)
+	if !assert.Error(t, err) {
+		return
+	}
+	assert.Contains(t, err.Error(), "browser login failed")
+	assert.Contains(t, err.Error(), "connection refused")
+	assert.Contains(t, err.Error(), "--with-token")
+}
+
+// TestAcquireTokenAbortsOnAccessDenied pins that a user who explicitly
+// denied consent in the browser is NOT pestered with a paste prompt.
+func TestAcquireTokenAbortsOnAccessDenied(t *testing.T) {
+	forceTTY(t, true)
+	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
+		return "", &oauth.AuthError{Code: "access_denied", Description: "user cancelled"}
+	})
+
+	cmd := &cobra.Command{}
+	cmd.SetIn(strings.NewReader("would-be-pasted\n"))
+	cmd.SetErr(io.Discard)
+
+	_, err := acquireToken(cmd, &config.Config{}, false)
+	if !assert.Error(t, err) {
+		return
+	}
+	var ae *oauth.AuthError
+	assert.ErrorAs(t, err, &ae)
+	assert.Equal(t, "access_denied", ae.Code)
+}
+
+func TestAcquireTokenAbortsOnStateMismatch(t *testing.T) {
+	forceTTY(t, true)
+	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
+		return "", oauth.ErrStateMismatch
+	})
+
+	cmd := &cobra.Command{}
+	cmd.SetIn(strings.NewReader("would-be-pasted\n"))
+	cmd.SetErr(io.Discard)
+
+	_, err := acquireToken(cmd, &config.Config{}, false)
+	assert.ErrorIs(t, err, oauth.ErrStateMismatch)
+}
+
+func TestAcquireTokenAbortsOnContextCancellation(t *testing.T) {
+	forceTTY(t, true)
+	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
+		return "", context.Canceled
+	})
+
+	cmd := &cobra.Command{}
+	cmd.SetIn(strings.NewReader("would-be-pasted\n"))
+	cmd.SetErr(io.Discard)
+
+	_, err := acquireToken(cmd, &config.Config{}, false)
+	assert.ErrorIs(t, err, context.Canceled)
 }
 
 // --- end-to-end: auth login via OAuth ---
@@ -159,15 +209,15 @@ func TestAuthLoginViaOAuthEndToEnd(t *testing.T) {
 	assert.Contains(t, stderr.String(), "Created context")
 }
 
-func TestAuthLoginViaOAuthOnRollOutFallsBackToPaste(t *testing.T) {
+func TestAuthLoginViaOAuthOnRollOutErrors(t *testing.T) {
 	isolateConfigHomeForCLI(t)
 	forceTTY(t, true)
 
 	server := newWhoamiServer(t, `{"data":{"user":{"id":1,"email":"alice@example.com"},"account":{"id":981,"email":"acct@example.com"}}}`)
 	defer server.Close()
 
-	// Simulate the rollout window: OAuth is "not provisioned" so the
-	// command must fall back to today's paste prompt without erroring out.
+	// Rollout window: OAuth is "not provisioned". The command reports the
+	// failure and exits instead of falling back to a paste prompt.
 	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
 		return "", oauth.ErrNotProvisioned
 	})
@@ -175,18 +225,16 @@ func TestAuthLoginViaOAuthOnRollOutFallsBackToPaste(t *testing.T) {
 	f := cmdutil.NewFactory("test")
 	cmd := buildLoginCmdWithBaseURL(t, f, server.URL)
 
-	var stderr bytes.Buffer
-	cmd.SetIn(strings.NewReader("tok-paste\n"))
-	cmd.SetErr(&stderr)
+	cmd.SetIn(strings.NewReader("tok-paste\n")) // must not be consumed
+	cmd.SetErr(io.Discard)
 	cmd.SetOut(io.Discard)
 
-	if err := cmd.RunE(cmd, nil); !assert.NoError(t, err) {
+	err := cmd.RunE(cmd, nil)
+	if !assert.Error(t, err) {
 		return
 	}
+	assert.Contains(t, err.Error(), "--with-token")
 
 	creds, _ := config.LoadCredentials()
-	if assert.Len(t, creds.Contexts, 1) {
-		assert.Equal(t, "tok-paste", creds.Contexts[0].Token)
-	}
-	assert.Contains(t, stderr.String(), "not yet available")
+	assert.Empty(t, creds.Contexts, "no context should be stored when browser login fails")
 }
