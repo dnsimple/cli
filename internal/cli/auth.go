@@ -214,7 +214,7 @@ generate an API token manually for use with --with-token.`,
 				return err
 			}
 
-			ctx, action, err := upsertLoginContext(creds, host, token, accountID, user, nameFlag)
+			ctx, _, err := upsertLoginContext(creds, host, token, accountID, user, nameFlag)
 			if err != nil {
 				return err
 			}
@@ -224,8 +224,18 @@ generate an API token manually for use with --with-token.`,
 				return err
 			}
 
-			fmt.Fprintf(cmd.ErrOrStderr(), "%s context %q (%s, account %s) and set as active\n",
-				action, ctx.Name, config.EnvironmentName(host), ctx.AccountID)
+			stderr := cmd.ErrOrStderr()
+			if user != "" {
+				fmt.Fprintf(stderr, "Success! You're now logged in to DNSimple as %s.\n", user)
+			} else {
+				fmt.Fprintln(stderr, "Success! You're now logged in to DNSimple.")
+			}
+
+			location := config.EnvironmentName(host)
+			if ctx.AccountID != "" {
+				location = fmt.Sprintf("%s, account %s", location, ctx.AccountID)
+			}
+			fmt.Fprintf(stderr, "Context %q (%s) is now active.\n", ctx.Name, location)
 			return nil
 		},
 	}
@@ -336,8 +346,7 @@ func resolveLoginAccount(c *dnsimple.Client, whoami *dnsimple.WhoamiResponse, in
 //   - same (host, token) anywhere → refresh that context (re-login).
 //   - otherwise → create with an auto-derived name.
 //
-// The returned action is "Created" or "Refreshed" for use in the success
-// message.
+// The returned action is "Created" or "Refreshed".
 func upsertLoginContext(creds *config.Credentials, host, token, accountID, user, explicitName string) (*config.Context, string, error) {
 	if explicitName != "" {
 		existing := creds.Find(explicitName)

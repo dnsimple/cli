@@ -206,7 +206,8 @@ func TestAuthLoginViaOAuthEndToEnd(t *testing.T) {
 		assert.Equal(t, "alice@example.com", ctx.User)
 	}
 	assert.Equal(t, "production", creds.ActiveContext)
-	assert.Contains(t, stderr.String(), "Created context")
+	assert.Contains(t, stderr.String(), "You're now logged in to DNSimple as alice@example.com")
+	assert.Contains(t, stderr.String(), "is now active")
 }
 
 func TestAuthLoginViaOAuthOnRollOutErrors(t *testing.T) {
