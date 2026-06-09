@@ -57,9 +57,7 @@ func acquireToken(cmd *cobra.Command, cfg *config.Config, withToken, useOAuth bo
 	switch {
 	case withToken:
 		return readLoginToken(cmd, true)
-	case !isStdinTTY(cmd):
-		return readLoginToken(cmd, false)
-	case !useOAuth:
+	case !isStdinTTY(cmd) || !useOAuth:
 		return readLoginToken(cmd, false)
 	}
 
