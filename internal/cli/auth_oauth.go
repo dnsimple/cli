@@ -73,3 +73,20 @@ func acquireToken(cmd *cobra.Command, cfg *config.Config, withToken, useOAuth bo
 		return "", fmt.Errorf("browser login failed: %w\n\nRetry `dnsimple auth login`, or run `dnsimple auth login --with-token` to authenticate with an API token instead", err)
 	}
 }
+
+// warnIfWebIgnored notes that an explicit --web was not honored, mirroring the
+// precedence in acquireToken: --with-token wins, and the browser flow needs an
+// interactive terminal. It keys off the actual flag value (not just whether it
+// was set) so `--web=false` stays silent, and it ignores the persistent
+// oauth_login toggle, which is meant to fall back to the prompt without noise.
+func warnIfWebIgnored(cmd *cobra.Command, web, withToken bool) {
+	if !web {
+		return
+	}
+	switch {
+	case withToken:
+		fmt.Fprintln(cmd.ErrOrStderr(), "Warning: --web is ignored when --with-token is set.")
+	case !isStdinTTY(cmd):
+		fmt.Fprintln(cmd.ErrOrStderr(), "Warning: browser login (--web) needs an interactive terminal; reading the token from stdin instead.")
+	}
+}

@@ -190,6 +190,7 @@ generate an API token manually.`,
 			host := config.HostForSandbox(cfg.Sandbox)
 
 			useOAuth := web || cfg.OAuthLogin
+			warnIfWebIgnored(cmd, web, withToken)
 			token, err := acquireToken(cmd, cfg, withToken, useOAuth)
 			if err != nil {
 				return err

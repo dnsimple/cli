@@ -189,6 +189,38 @@ func TestAcquireTokenAbortsOnContextCancellation(t *testing.T) {
 	assert.ErrorIs(t, err, context.Canceled)
 }
 
+// --- warnIfWebIgnored ---
+
+func TestWarnIfWebIgnored(t *testing.T) {
+	warnOutput := func(t *testing.T, web, withToken bool) string {
+		t.Helper()
+		cmd := &cobra.Command{}
+		var errb bytes.Buffer
+		cmd.SetErr(&errb)
+		warnIfWebIgnored(cmd, web, withToken)
+		return errb.String()
+	}
+
+	t.Run("with-token wins over --web", func(t *testing.T) {
+		assert.Contains(t, warnOutput(t, true, true), "--with-token")
+	})
+
+	t.Run("non-TTY needs a terminal", func(t *testing.T) {
+		forceTTY(t, false)
+		assert.Contains(t, warnOutput(t, true, false), "interactive terminal")
+	})
+
+	t.Run("no --web is silent", func(t *testing.T) {
+		forceTTY(t, false)
+		assert.Empty(t, warnOutput(t, false, false))
+	})
+
+	t.Run("--web on a TTY is silent", func(t *testing.T) {
+		forceTTY(t, true)
+		assert.Empty(t, warnOutput(t, true, false))
+	})
+}
+
 // --- end-to-end: auth login via OAuth ---
 
 func TestAuthLoginViaOAuthEndToEnd(t *testing.T) {
