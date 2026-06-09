@@ -16,8 +16,8 @@ const (
 )
 
 // Per-environment overrides consulted before the embedded constants.
-// Useful when developing against a local dnsimple-app checkout where the
-// CLI app has been bootstrapped with a different ID, or when alternating
+// Useful when developing against a local API server where the CLI app has
+// been bootstrapped with a different ID, or when alternating
 // between sandbox and production in one shell session: a single shared
 // override would route the wrong client ID into one of the two flows and
 // produce an opaque `invalid_client` error.
@@ -50,7 +50,7 @@ func OAuthClientID(sandbox bool) string {
 }
 
 // oauthAuthorizeURLEnvVar overrides the authorize endpoint. It exists for
-// local development against a dnsimple-app checkout, where the authorize
+// local development against a local API server, where the authorize
 // flow runs on http://localhost:3000 rather than the production or sandbox
 // hosts. Unset in normal use.
 const oauthAuthorizeURLEnvVar = "DNSIMPLE_OAUTH_AUTHORIZE_URL"

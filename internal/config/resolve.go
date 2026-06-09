@@ -52,7 +52,7 @@ type ResolveOptions struct {
 	// BaseURLOverride short-circuits host-based BaseURL derivation. Tests set
 	// it directly; at runtime it is left empty and the DNSIMPLE_BASE_URL
 	// environment variable supplies the same override (see Resolve) for local
-	// development against a dnsimple-app checkout.
+	// development against a local API server.
 	BaseURLOverride string
 }
 
@@ -136,7 +136,7 @@ func Resolve(creds *Credentials, opts ResolveOptions) (*ResolvedContext, error) 
 	// BaseURL override: an explicit opts.BaseURLOverride (set by tests) wins;
 	// otherwise DNSIMPLE_BASE_URL backs the same field, mirroring how
 	// DNSIMPLE_TOKEN / DNSIMPLE_ACCOUNT back their opts fields above. The env
-	// path is for local development against a dnsimple-app checkout (e.g.
+	// path is for local development against a local API server (e.g.
 	// http://api.dnsimple.localhost:3000); it also moves the OAuth token
 	// endpoint, which is derived from BaseURL.
 	baseURLOverride := opts.BaseURLOverride

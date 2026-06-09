@@ -17,7 +17,7 @@ const (
 	credentialsFileName   = "credentials"
 
 	// baseURLEnvVar overrides the API base URL for local development against
-	// a dnsimple-app checkout. Consulted by both Load/SetSandbox (the
+	// a local API server. Consulted by both Load/SetSandbox (the
 	// pre-auth `auth login` path) and Resolve (authenticated commands) so the
 	// override moves every API call, including the OAuth token endpoint.
 	baseURLEnvVar = "DNSIMPLE_BASE_URL"
