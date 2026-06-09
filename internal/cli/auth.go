@@ -151,6 +151,7 @@ This command does not contact the DNSimple API and works without a valid token.`
 
 func newAuthLoginCmd(f *cmdutil.Factory) *cobra.Command {
 	var withToken bool
+	var web bool
 	var nameFlag string
 
 	cmd := &cobra.Command{
@@ -158,9 +159,11 @@ func newAuthLoginCmd(f *cmdutil.Factory) *cobra.Command {
 		Short: "Authenticate with DNSimple",
 		Long: `Authenticate with DNSimple and store the resulting credential as a named context.
 
-On a terminal, this command opens your browser to the DNSimple authorization
-page and completes the login automatically once you approve. No copy-pasting
-of tokens is needed on the happy path.
+On a terminal, this command prompts you to paste an API token. Pass --web to
+authenticate in your browser instead: it opens the DNSimple authorization page
+and completes the login automatically once you approve, with no token to copy.
+Browser login can also be turned on persistently by setting 'oauth_login: true'
+in the config file (or DNSIMPLE_OAUTH_LOGIN=1).
 
 The new context becomes the active one. To create a sandbox context, pass --sandbox.
 To choose a context name, pass --name; otherwise the name is derived from the
@@ -173,11 +176,12 @@ Headless / non-interactive use:
   - When stdin is not a terminal (CI, redirected input), the command reads
     the token from stdin without requiring --with-token.
 
-If the browser cannot be launched (e.g. no display server), the authorize URL
-is printed to stderr and the command keeps listening for the callback.
+With --web, if the browser cannot be launched (e.g. no display server), the
+authorize URL is printed to stderr and the command keeps listening for the
+callback.
 
 See https://support.dnsimple.com/articles/api-access-token/ if you need to
-generate an API token manually for use with --with-token.`,
+generate an API token manually.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := f.Config()
 			if err != nil {
@@ -185,7 +189,8 @@ generate an API token manually for use with --with-token.`,
 			}
 			host := config.HostForSandbox(cfg.Sandbox)
 
-			token, err := acquireToken(cmd, cfg, withToken)
+			useOAuth := web || cfg.OAuthLogin
+			token, err := acquireToken(cmd, cfg, withToken, useOAuth)
 			if err != nil {
 				return err
 			}
@@ -241,6 +246,7 @@ generate an API token manually for use with --with-token.`,
 	}
 
 	cmd.Flags().BoolVar(&withToken, "with-token", false, "Read token from stdin")
+	cmd.Flags().BoolVar(&web, "web", false, "Authenticate in a browser instead of pasting a token")
 	cmd.Flags().StringVar(&nameFlag, "name", "", "Name for the new context (auto-derived if omitted)")
 
 	return cmd

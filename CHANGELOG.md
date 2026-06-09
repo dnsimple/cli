@@ -2,6 +2,12 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Added
+
+- `auth login` can authenticate in the browser via an interactive OAuth flow. The feature is dark-launched and off by default: opt in per command with `--web`, or persistently by setting `oauth_login: true` in the config file (or `DNSIMPLE_OAUTH_LOGIN=1`). Without it, `auth login` keeps prompting for a pasted API token.
+
 ## 0.9.0 - 2026-05-25
 
 ### Added

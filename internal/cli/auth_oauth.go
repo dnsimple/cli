@@ -46,15 +46,20 @@ func defaultLoginViaOAuth(ctx context.Context, cfg *config.Config, errOut io.Wri
 }
 
 // acquireToken obtains the access token for a fresh `auth login`. With
-// --with-token or non-TTY stdin it reads the token from stdin; on a TTY it
-// runs the interactive OAuth browser flow. A browser-login failure is
-// reported and returned, with no fall back to a token prompt: the error tells
-// the user to retry or pass --with-token.
-func acquireToken(cmd *cobra.Command, cfg *config.Config, withToken bool) (string, error) {
+// --with-token or non-TTY stdin it reads the token from stdin. On a TTY the
+// behaviour depends on useOAuth: when set (the --web flag or the oauth_login
+// config) it runs the interactive OAuth browser flow; otherwise it prompts
+// for a pasted API token. The browser flow is dark-launched, so useOAuth is
+// false by default. A browser-login failure is reported and returned, with no
+// fall back to a token prompt: the error tells the user to retry or pass
+// --with-token.
+func acquireToken(cmd *cobra.Command, cfg *config.Config, withToken, useOAuth bool) (string, error) {
 	switch {
 	case withToken:
 		return readLoginToken(cmd, true)
 	case !isStdinTTY(cmd):
+		return readLoginToken(cmd, false)
+	case !useOAuth:
 		return readLoginToken(cmd, false)
 	}
 

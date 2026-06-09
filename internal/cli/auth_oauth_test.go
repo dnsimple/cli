@@ -41,7 +41,7 @@ func TestAcquireTokenWithTokenFlagReadsFromStdin(t *testing.T) {
 	cmd.SetIn(strings.NewReader("tok-from-stdin\n"))
 	cmd.SetErr(io.Discard)
 
-	got, err := acquireToken(cmd, &config.Config{}, true)
+	got, err := acquireToken(cmd, &config.Config{}, true, false)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -54,7 +54,7 @@ func TestAcquireTokenNonTTYReadsFromStdin(t *testing.T) {
 	cmd.SetIn(strings.NewReader("tok-piped\n"))
 	cmd.SetErr(io.Discard)
 
-	got, err := acquireToken(cmd, &config.Config{}, false)
+	got, err := acquireToken(cmd, &config.Config{}, false, false)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -74,12 +74,33 @@ func TestAcquireTokenTTYRunsOAuth(t *testing.T) {
 	cmd.SetIn(strings.NewReader("")) // OAuth path must not consume stdin
 	cmd.SetErr(io.Discard)
 
-	got, err := acquireToken(cmd, &config.Config{Sandbox: true}, false)
+	got, err := acquireToken(cmd, &config.Config{Sandbox: true}, false, true)
 	if !assert.NoError(t, err) {
 		return
 	}
 	assert.Equal(t, "tok-from-oauth", got)
 	assert.True(t, capturedSandbox, "OAuth flow should receive cfg.Sandbox=true")
+}
+
+// TestAcquireTokenTTYWithoutOAuthPromptsForToken pins the dark-launch default:
+// on a TTY with OAuth disabled, the command reads a pasted token and never
+// starts the browser flow.
+func TestAcquireTokenTTYWithoutOAuthPromptsForToken(t *testing.T) {
+	forceTTY(t, true)
+	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
+		t.Fatal("OAuth flow must not run when useOAuth is false")
+		return "", nil
+	})
+
+	cmd := &cobra.Command{}
+	cmd.SetIn(strings.NewReader("tok-paste\n"))
+	cmd.SetErr(io.Discard)
+
+	got, err := acquireToken(cmd, &config.Config{}, false, false)
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, "tok-paste", got)
 }
 
 func TestAcquireTokenErrorsOnErrNotProvisioned(t *testing.T) {
@@ -92,7 +113,7 @@ func TestAcquireTokenErrorsOnErrNotProvisioned(t *testing.T) {
 	cmd.SetIn(strings.NewReader("would-be-pasted\n")) // must not be consumed
 	cmd.SetErr(io.Discard)
 
-	_, err := acquireToken(cmd, &config.Config{}, false)
+	_, err := acquireToken(cmd, &config.Config{}, false, true)
 	if !assert.Error(t, err) {
 		return
 	}
@@ -110,7 +131,7 @@ func TestAcquireTokenErrorsOnTransientOAuthError(t *testing.T) {
 	cmd.SetIn(strings.NewReader("would-be-pasted\n")) // must not be consumed
 	cmd.SetErr(io.Discard)
 
-	_, err := acquireToken(cmd, &config.Config{}, false)
+	_, err := acquireToken(cmd, &config.Config{}, false, true)
 	if !assert.Error(t, err) {
 		return
 	}
@@ -131,7 +152,7 @@ func TestAcquireTokenAbortsOnAccessDenied(t *testing.T) {
 	cmd.SetIn(strings.NewReader("would-be-pasted\n"))
 	cmd.SetErr(io.Discard)
 
-	_, err := acquireToken(cmd, &config.Config{}, false)
+	_, err := acquireToken(cmd, &config.Config{}, false, true)
 	if !assert.Error(t, err) {
 		return
 	}
@@ -150,7 +171,7 @@ func TestAcquireTokenAbortsOnStateMismatch(t *testing.T) {
 	cmd.SetIn(strings.NewReader("would-be-pasted\n"))
 	cmd.SetErr(io.Discard)
 
-	_, err := acquireToken(cmd, &config.Config{}, false)
+	_, err := acquireToken(cmd, &config.Config{}, false, true)
 	assert.ErrorIs(t, err, oauth.ErrStateMismatch)
 }
 
@@ -164,7 +185,7 @@ func TestAcquireTokenAbortsOnContextCancellation(t *testing.T) {
 	cmd.SetIn(strings.NewReader("would-be-pasted\n"))
 	cmd.SetErr(io.Discard)
 
-	_, err := acquireToken(cmd, &config.Config{}, false)
+	_, err := acquireToken(cmd, &config.Config{}, false, true)
 	assert.ErrorIs(t, err, context.Canceled)
 }
 
@@ -183,6 +204,9 @@ func TestAuthLoginViaOAuthEndToEnd(t *testing.T) {
 
 	f := cmdutil.NewFactory("test")
 	cmd := buildLoginCmdWithBaseURL(t, f, server.URL)
+	if !assert.NoError(t, cmd.Flags().Set("web", "true")) { // opt into the browser flow
+		return
+	}
 
 	var stderr bytes.Buffer
 	cmd.SetIn(strings.NewReader("")) // OAuth path should not consume stdin
@@ -210,21 +234,61 @@ func TestAuthLoginViaOAuthEndToEnd(t *testing.T) {
 	assert.Contains(t, stderr.String(), "is now active")
 }
 
-func TestAuthLoginViaOAuthOnRollOutErrors(t *testing.T) {
+// TestAuthLoginDefaultPromptsForToken pins the dark-launch default: with the
+// browser flow off (no --web, oauth_login unset), `auth login` on a TTY reads
+// a pasted token and stores a context. The OAuth flow must not run.
+func TestAuthLoginDefaultPromptsForToken(t *testing.T) {
 	isolateConfigHomeForCLI(t)
 	forceTTY(t, true)
 
 	server := newWhoamiServer(t, `{"data":{"user":{"id":1,"email":"alice@example.com"},"account":{"id":981,"email":"acct@example.com"}}}`)
 	defer server.Close()
 
-	// Rollout window: OAuth is "not provisioned". The command reports the
-	// failure and exits instead of falling back to a paste prompt.
+	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
+		t.Fatal("OAuth flow must not run without --web / oauth_login")
+		return "", nil
+	})
+
+	f := cmdutil.NewFactory("test")
+	cmd := buildLoginCmdWithBaseURL(t, f, server.URL)
+
+	cmd.SetIn(strings.NewReader("tok-paste\n"))
+	cmd.SetErr(io.Discard)
+	cmd.SetOut(io.Discard)
+
+	if err := cmd.RunE(cmd, nil); !assert.NoError(t, err) {
+		return
+	}
+
+	creds, err := config.LoadCredentials()
+	if !assert.NoError(t, err) {
+		return
+	}
+	if assert.Len(t, creds.Contexts, 1) {
+		assert.Equal(t, "tok-paste", creds.Contexts[0].Token, "stored token should come from the paste prompt")
+	}
+	assert.Equal(t, "production", creds.ActiveContext)
+}
+
+// TestAuthLoginViaOAuthNotProvisionedErrors pins that once the browser flow is
+// opted into (--web) but the build is not provisioned, the command reports the
+// failure and exits instead of falling back to a paste prompt.
+func TestAuthLoginViaOAuthNotProvisionedErrors(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+	forceTTY(t, true)
+
+	server := newWhoamiServer(t, `{"data":{"user":{"id":1,"email":"alice@example.com"},"account":{"id":981,"email":"acct@example.com"}}}`)
+	defer server.Close()
+
 	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
 		return "", oauth.ErrNotProvisioned
 	})
 
 	f := cmdutil.NewFactory("test")
 	cmd := buildLoginCmdWithBaseURL(t, f, server.URL)
+	if !assert.NoError(t, cmd.Flags().Set("web", "true")) {
+		return
+	}
 
 	cmd.SetIn(strings.NewReader("tok-paste\n")) // must not be consumed
 	cmd.SetErr(io.Discard)
