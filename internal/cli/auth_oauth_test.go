@@ -234,6 +234,44 @@ func TestAuthLoginViaOAuthEndToEnd(t *testing.T) {
 	assert.Contains(t, stderr.String(), "is now active")
 }
 
+// TestAuthLoginViaOAuthConfigToggle pins the persistent opt-in: with
+// oauth_login enabled in config (cfg.OAuthLogin) and no --web flag, `auth
+// login` on a TTY runs the browser flow. This exercises the cfg.OAuthLogin
+// operand of `useOAuth := web || cfg.OAuthLogin`, which the --web tests do not.
+func TestAuthLoginViaOAuthConfigToggle(t *testing.T) {
+	isolateConfigHomeForCLI(t)
+	forceTTY(t, true)
+
+	server := newWhoamiServer(t, `{"data":{"user":{"id":1,"email":"alice@example.com"},"account":{"id":981,"email":"acct@example.com"}}}`)
+	defer server.Close()
+
+	stubLoginViaOAuth(t, func(context.Context, *config.Config, io.Writer) (string, error) {
+		return "tok-cfg-toggle", nil
+	})
+
+	f := cmdutil.NewFactory("test")
+	cfg := &config.Config{BaseURL: server.URL, OAuthLogin: true}
+	f.Config = func() (*config.Config, error) { return cfg, nil }
+	cmd := newAuthLoginCmd(f)
+
+	cmd.SetIn(strings.NewReader("would-be-pasted\n")) // OAuth path must not consume stdin
+	cmd.SetErr(io.Discard)
+	cmd.SetOut(io.Discard)
+
+	if err := cmd.RunE(cmd, nil); !assert.NoError(t, err) {
+		return
+	}
+
+	creds, err := config.LoadCredentials()
+	if !assert.NoError(t, err) {
+		return
+	}
+	if assert.Len(t, creds.Contexts, 1) {
+		assert.Equal(t, "tok-cfg-toggle", creds.Contexts[0].Token, "stored token should come from the OAuth flow enabled by oauth_login")
+	}
+	assert.Equal(t, "production", creds.ActiveContext)
+}
+
 // TestAuthLoginDefaultPromptsForToken pins the dark-launch default: with the
 // browser flow off (no --web, oauth_login unset), `auth login` on a TTY reads
 // a pasted token and stores a context. The OAuth flow must not run.
