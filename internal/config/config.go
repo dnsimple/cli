@@ -39,11 +39,8 @@ type Config struct {
 	// PerPage is the default number of items per page for list commands.
 	PerPage int
 
-	// OAuthLogin enables the interactive browser-based OAuth flow for
-	// `auth login` on a terminal. It is dark-launched: the default is false,
-	// so `auth login` prompts for a pasted API token until the feature is
-	// rolled out by flipping the default (or per-user via this setting / the
-	// --web flag). Reads the DNSIMPLE_OAUTH_LOGIN env var via viper.
+	// OAuthLogin opts `auth login` into the interactive browser flow; off by
+	// default during the dark-launch rollout (see --web / DNSIMPLE_OAUTH_LOGIN).
 	OAuthLogin bool
 }
 
