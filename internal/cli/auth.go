@@ -64,7 +64,7 @@ func (a *authStatusOutput) TemplateData() any {
 func newAuthCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "auth",
-		Short: "Authenticate with DNSimple",
+		Short: "Manage authentication contexts",
 	}
 
 	cmd.AddCommand(newAuthLoginCmd(f))
@@ -151,24 +151,37 @@ This command does not contact the DNSimple API and works without a valid token.`
 
 func newAuthLoginCmd(f *cmdutil.Factory) *cobra.Command {
 	var withToken bool
+	var web bool
 	var nameFlag string
 
 	cmd := &cobra.Command{
 		Use:   "login",
-		Short: "Authenticate with a DNSimple API token",
-		Long: `Authenticate with DNSimple by providing an API token and store it as a named context.
+		Short: "Authenticate with DNSimple",
+		Long: `Authenticate with DNSimple and store the resulting credential as a named context.
+
+On a terminal, this command prompts you to paste an API token. Pass --web to
+authenticate in your browser instead: it opens the DNSimple authorization page
+and completes the login automatically once you approve, with no token to copy.
+Browser login can also be turned on persistently by setting 'oauth_login: true'
+in the config file (or DNSIMPLE_OAUTH_LOGIN=1).
 
 The new context becomes the active one. To create a sandbox context, pass --sandbox.
 To choose a context name, pass --name; otherwise the name is derived from the
 environment ('production' or 'sandbox'), with the account ID appended on collision.
 
-Get your token from:
+Headless / non-interactive use:
 
-  Production: https://dnsimple.com/user
-  Sandbox:    https://sandbox.dnsimple.com/user
+  - Pass --with-token to pipe a pre-issued API token on stdin:
+      echo "$TOKEN" | dnsimple auth login --with-token
+  - When stdin is not a terminal (CI, redirected input), the command reads
+    the token from stdin without requiring --with-token.
 
-See https://support.dnsimple.com/articles/api-access-token/ for instructions on
-generating an API token.`,
+With --web, if the browser cannot be launched (e.g. no display server), the
+authorize URL is printed to stderr and the command keeps listening for the
+callback.
+
+See https://support.dnsimple.com/articles/api-access-token/ if you need to
+generate an API token manually.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := f.Config()
 			if err != nil {
@@ -176,7 +189,9 @@ generating an API token.`,
 			}
 			host := config.HostForSandbox(cfg.Sandbox)
 
-			token, err := readLoginToken(cmd, withToken)
+			useOAuth := web || cfg.OAuthLogin
+			warnIfWebIgnored(cmd, web, withToken)
+			token, err := acquireToken(cmd, cfg, withToken, useOAuth)
 			if err != nil {
 				return err
 			}
@@ -205,7 +220,7 @@ generating an API token.`,
 				return err
 			}
 
-			ctx, action, err := upsertLoginContext(creds, host, token, accountID, user, nameFlag)
+			ctx, _, err := upsertLoginContext(creds, host, token, accountID, user, nameFlag)
 			if err != nil {
 				return err
 			}
@@ -215,13 +230,24 @@ generating an API token.`,
 				return err
 			}
 
-			fmt.Fprintf(cmd.ErrOrStderr(), "%s context %q (%s, account %s) and set as active\n",
-				action, ctx.Name, config.EnvironmentName(host), ctx.AccountID)
+			stderr := cmd.ErrOrStderr()
+			if user != "" {
+				fmt.Fprintf(stderr, "Success! You're now logged in to DNSimple as %s.\n", user)
+			} else {
+				fmt.Fprintln(stderr, "Success! You're now logged in to DNSimple.")
+			}
+
+			location := config.EnvironmentName(host)
+			if ctx.AccountID != "" {
+				location = fmt.Sprintf("%s, account %s", location, ctx.AccountID)
+			}
+			fmt.Fprintf(stderr, "Context %q (%s) is now active.\n", ctx.Name, location)
 			return nil
 		},
 	}
 
 	cmd.Flags().BoolVar(&withToken, "with-token", false, "Read token from stdin")
+	cmd.Flags().BoolVar(&web, "web", false, "Authenticate in a browser instead of pasting a token")
 	cmd.Flags().StringVar(&nameFlag, "name", "", "Name for the new context (auto-derived if omitted)")
 
 	return cmd
@@ -327,8 +353,7 @@ func resolveLoginAccount(c *dnsimple.Client, whoami *dnsimple.WhoamiResponse, in
 //   - same (host, token) anywhere → refresh that context (re-login).
 //   - otherwise → create with an auto-derived name.
 //
-// The returned action is "Created" or "Refreshed" for use in the success
-// message.
+// The returned action is "Created" or "Refreshed".
 func upsertLoginContext(creds *config.Credentials, host, token, accountID, user, explicitName string) (*config.Context, string, error) {
 	if explicitName != "" {
 		existing := creds.Find(explicitName)

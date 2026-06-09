@@ -26,6 +26,7 @@ func TestLoadDefaults(t *testing.T) {
 	assert.Equal(t, defaultBaseURL, cfg.BaseURL)
 	assert.Empty(t, cfg.DefaultAccount)
 	assert.Equal(t, defaultPerPage, cfg.PerPage)
+	assert.False(t, cfg.OAuthLogin)
 }
 
 func TestLoadFromEnvironment(t *testing.T) {
@@ -33,6 +34,7 @@ func TestLoadFromEnvironment(t *testing.T) {
 	t.Setenv("DNSIMPLE_SANDBOX", "true")
 	t.Setenv("DNSIMPLE_DEFAULT_ACCOUNT", "1010")
 	t.Setenv("DNSIMPLE_PER_PAGE", "75")
+	t.Setenv("DNSIMPLE_OAUTH_LOGIN", "true")
 
 	cfg, err := Load()
 	if !assert.NoError(t, err) {
@@ -43,6 +45,7 @@ func TestLoadFromEnvironment(t *testing.T) {
 	assert.Equal(t, sandboxBaseURL, cfg.BaseURL)
 	assert.Equal(t, "1010", cfg.DefaultAccount)
 	assert.Equal(t, 75, cfg.PerPage)
+	assert.True(t, cfg.OAuthLogin)
 }
 
 func TestSaveAndReload(t *testing.T) {
@@ -56,6 +59,7 @@ func TestSaveAndReload(t *testing.T) {
 	cfg.SetSandbox(true)
 	cfg.DefaultAccount = "2020"
 	cfg.PerPage = 99
+	cfg.OAuthLogin = true
 
 	if !assert.NoError(t, cfg.Save()) {
 		return
@@ -70,6 +74,7 @@ func TestSaveAndReload(t *testing.T) {
 	assert.Equal(t, sandboxBaseURL, reloaded.BaseURL)
 	assert.Equal(t, "2020", reloaded.DefaultAccount)
 	assert.Equal(t, 99, reloaded.PerPage)
+	assert.True(t, reloaded.OAuthLogin)
 }
 
 func TestSetSandboxUpdatesBaseURL(t *testing.T) {
