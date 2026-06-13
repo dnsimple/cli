@@ -2,6 +2,12 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Changed
+
+- `auth login` now defaults to the interactive browser login (OAuth) on a terminal; `--web` is no longer required and is deprecated. To authenticate with an API token instead, pass `--with-token` and paste it when prompted. The `oauth_login` config setting and `DNSIMPLE_OAUTH_LOGIN` environment variable that gated the dark launch have been removed.
+
 ## 0.9.1 - 2026-06-10
 
 ### Added

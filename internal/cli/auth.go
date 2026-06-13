@@ -159,11 +159,9 @@ func newAuthLoginCmd(f *cmdutil.Factory) *cobra.Command {
 		Short: "Authenticate with DNSimple",
 		Long: `Authenticate with DNSimple and store the resulting credential as a named context.
 
-On a terminal, this command prompts you to paste an API token. Pass --web to
-authenticate in your browser instead: it opens the DNSimple authorization page
-and completes the login automatically once you approve, with no token to copy.
-Browser login can also be turned on persistently by setting 'oauth_login: true'
-in the config file (or DNSIMPLE_OAUTH_LOGIN=1).
+On a terminal, this opens the DNSimple authorization page in your browser and
+completes the login automatically once you approve, with no token to copy. Pass
+--with-token to paste an API token instead.
 
 The new context becomes the active one. To create a sandbox context, pass --sandbox.
 To choose a context name, pass --name; otherwise the name is derived from the
@@ -176,9 +174,8 @@ Headless / non-interactive use:
   - When stdin is not a terminal (CI, redirected input), the command reads
     the token from stdin without requiring --with-token.
 
-With --web, if the browser cannot be launched (e.g. no display server), the
-authorize URL is printed to stderr and the command keeps listening for the
-callback.
+If the browser cannot be launched (e.g. no display server), the authorize URL is
+printed to stderr and the command keeps listening for the callback.
 
 See https://support.dnsimple.com/articles/api-access-token/ if you need to
 generate an API token manually.`,
@@ -189,9 +186,7 @@ generate an API token manually.`,
 			}
 			host := config.HostForSandbox(cfg.Sandbox)
 
-			useOAuth := web || cfg.OAuthLogin
-			warnIfWebIgnored(cmd, web, withToken)
-			token, err := acquireToken(cmd, cfg, withToken, useOAuth)
+			token, err := acquireToken(cmd, cfg, withToken)
 			if err != nil {
 				return err
 			}
@@ -246,35 +241,28 @@ generate an API token manually.`,
 		},
 	}
 
-	cmd.Flags().BoolVar(&withToken, "with-token", false, "Read token from stdin")
+	cmd.Flags().BoolVar(&withToken, "with-token", false, "Authenticate with an API token instead of the browser")
 	cmd.Flags().BoolVar(&web, "web", false, "Authenticate in a browser instead of pasting a token")
+	// Browser login is now the default, so --web is a no-op kept for
+	// compatibility; cobra hides it from help and warns when it is used.
+	_ = cmd.Flags().MarkDeprecated("web", "browser login is now the default; the flag is no longer needed")
 	cmd.Flags().StringVar(&nameFlag, "name", "", "Name for the new context (auto-derived if omitted)")
 
 	return cmd
 }
 
-// readLoginToken reads a token from the command's stdin and trims whitespace.
+// readLoginToken reads an API token from the command's stdin and trims
+// whitespace.
 //
-// With --with-token, input is read as a single line (the typical piping case)
-// and is not masked.
-//
-// Interactive (no --with-token), when stdin is a real TTY, the input is read
-// with terminal echo disabled so the token is not displayed. When stdin is
-// not a real TTY (tests, redirected input), the function falls back to a
-// plain line scan so behaviour stays predictable.
-func readLoginToken(cmd *cobra.Command, withToken bool) (string, error) {
-	if withToken {
-		token, err := scanLine(cmd.InOrStdin())
-		if err != nil || token == "" {
-			return "", fmt.Errorf("no token provided on stdin")
-		}
-		return token, nil
-	}
-
-	fmt.Fprintln(cmd.ErrOrStderr(), "Follow the instructions at https://support.dnsimple.com/articles/api-access-token/ to generate an API token.")
-	fmt.Fprint(cmd.ErrOrStderr(), "Paste your API token: ")
-
+// When stdin is a real TTY, it prints a prompt and reads with terminal echo
+// disabled so the token is not displayed. When stdin is not a real TTY (piped
+// input, CI, tests), it reads a single line without prompting so behaviour
+// stays predictable for scripting.
+func readLoginToken(cmd *cobra.Command) (string, error) {
 	if f, ok := cmd.InOrStdin().(*os.File); ok && term.IsTerminal(int(f.Fd())) {
+		fmt.Fprintln(cmd.ErrOrStderr(), "Follow the instructions at https://support.dnsimple.com/articles/api-access-token/ to generate an API token.")
+		fmt.Fprint(cmd.ErrOrStderr(), "Paste your API token: ")
+
 		raw, err := term.ReadPassword(int(f.Fd()))
 		// ReadPassword leaves the cursor on the prompt line; emit a newline
 		// so subsequent output starts cleanly.
@@ -291,7 +279,7 @@ func readLoginToken(cmd *cobra.Command, withToken bool) (string, error) {
 
 	token, err := scanLine(cmd.InOrStdin())
 	if err != nil || token == "" {
-		return "", fmt.Errorf("no token provided")
+		return "", fmt.Errorf("no token provided on stdin")
 	}
 	return token, nil
 }

@@ -75,18 +75,18 @@ dnsimple [command] [flags]
 The CLI supports two authentication modes that can be combined freely.
 
 > [!NOTE]
-> By default `auth login` authenticates with an API token (classic or scoped), which you paste when prompted. An interactive browser login (OAuth) is being rolled out and is off by default for now. Opt in per command with `--web`, or persistently by setting `oauth_login: true` in the config file (or `DNSIMPLE_OAUTH_LOGIN=1`).
+> By default `auth login` authenticates in your browser via an interactive OAuth flow: it opens the DNSimple authorization page and completes the login automatically once you approve, with no token to copy. To authenticate with an API token (classic or scoped) instead, pass `--with-token` and paste it when prompted.
 
 #### Stateful: stored contexts
 
 Authenticate once and the CLI remembers a named *context* (token, account, environment) on disk. Multiple contexts can coexist and you select one as active:
 
 ```shell
-# Log in to production and store a context (prompts for an API token)
+# Log in to production and store a context (opens the browser to authenticate)
 dnsimple auth login
 
-# Authenticate in the browser instead of pasting a token
-dnsimple auth login --web
+# Authenticate with an API token instead of the browser
+dnsimple auth login --with-token
 
 # Log in to sandbox alongside it
 dnsimple auth login --sandbox

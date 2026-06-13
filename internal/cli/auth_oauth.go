@@ -45,17 +45,15 @@ func defaultLoginViaOAuth(ctx context.Context, cfg *config.Config, errOut io.Wri
 	return c.Login(ctx)
 }
 
-// acquireToken obtains the access token for a fresh `auth login`. It reads a
-// token from stdin for --with-token or non-TTY input; on a TTY it runs the
-// OAuth browser flow when useOAuth is set, otherwise it prompts for a pasted
-// token. A browser-login failure is returned as-is (no paste fallback); the
-// error tells the user to retry or pass --with-token.
-func acquireToken(cmd *cobra.Command, cfg *config.Config, withToken, useOAuth bool) (string, error) {
-	switch {
-	case withToken:
-		return readLoginToken(cmd, true)
-	case !isStdinTTY(cmd) || !useOAuth:
-		return readLoginToken(cmd, false)
+// acquireToken obtains the access token for a fresh `auth login`. On a terminal
+// it runs the interactive OAuth browser flow by default; pass --with-token to
+// paste an API token instead. When stdin is not a terminal (CI, redirected
+// input) it reads the token from stdin without requiring --with-token. A
+// browser-login failure is returned as-is (no paste fallback); the error tells
+// the user to retry or pass --with-token.
+func acquireToken(cmd *cobra.Command, cfg *config.Config, withToken bool) (string, error) {
+	if withToken || !isStdinTTY(cmd) {
+		return readLoginToken(cmd)
 	}
 
 	token, err := loginViaOAuth(context.Background(), cfg, cmd.ErrOrStderr())
@@ -68,22 +66,5 @@ func acquireToken(cmd *cobra.Command, cfg *config.Config, withToken, useOAuth bo
 		return "", errors.New("interactive browser login is not available in this build\n\nRun `dnsimple auth login --with-token` to authenticate with an API token instead")
 	default:
 		return "", fmt.Errorf("browser login failed: %w\n\nRetry `dnsimple auth login`, or run `dnsimple auth login --with-token` to authenticate with an API token instead", err)
-	}
-}
-
-// warnIfWebIgnored notes that an explicit --web was not honored, mirroring the
-// precedence in acquireToken: --with-token wins, and the browser flow needs an
-// interactive terminal. It keys off the actual flag value (not just whether it
-// was set) so `--web=false` stays silent, and it ignores the persistent
-// oauth_login toggle, which is meant to fall back to the prompt without noise.
-func warnIfWebIgnored(cmd *cobra.Command, web, withToken bool) {
-	if !web {
-		return
-	}
-	switch {
-	case withToken:
-		fmt.Fprintln(cmd.ErrOrStderr(), "Warning: --web is ignored when --with-token is set.")
-	case !isStdinTTY(cmd):
-		fmt.Fprintln(cmd.ErrOrStderr(), "Warning: browser login (--web) needs an interactive terminal; reading the token from stdin instead.")
 	}
 }
