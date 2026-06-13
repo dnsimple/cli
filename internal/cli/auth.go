@@ -151,7 +151,6 @@ This command does not contact the DNSimple API and works without a valid token.`
 
 func newAuthLoginCmd(f *cmdutil.Factory) *cobra.Command {
 	var withToken bool
-	var web bool
 	var nameFlag string
 
 	cmd := &cobra.Command{
@@ -242,7 +241,6 @@ generate an API token manually.`,
 	}
 
 	cmd.Flags().BoolVar(&withToken, "with-token", false, "Authenticate with an API token instead of the browser")
-	cmd.Flags().BoolVar(&web, "web", false, "Authenticate in a browser instead of pasting a token")
 	cmd.Flags().StringVar(&nameFlag, "name", "", "Name for the new context (auto-derived if omitted)")
 
 	return cmd

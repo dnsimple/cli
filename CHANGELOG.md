@@ -6,7 +6,7 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 
 ### Changed
 
-- `auth login` now defaults to the interactive browser login (OAuth) on a terminal, so `--web` is no longer required (the flag is still accepted for compatibility but has no effect). To authenticate with an API token instead, pass `--with-token` and paste it when prompted. The `oauth_login` config setting and `DNSIMPLE_OAUTH_LOGIN` environment variable that gated the dark launch have been removed.
+- `auth login` now defaults to the interactive browser login (OAuth) on a terminal. To authenticate with an API token instead, pass `--with-token` and paste it when prompted. The `--web` flag that opted into the browser flow, the `oauth_login` config setting, and the `DNSIMPLE_OAUTH_LOGIN` environment variable that gated the dark launch have all been removed.
 
 ## 0.9.1 - 2026-06-10
 
