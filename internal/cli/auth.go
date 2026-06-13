@@ -243,9 +243,6 @@ generate an API token manually.`,
 
 	cmd.Flags().BoolVar(&withToken, "with-token", false, "Authenticate with an API token instead of the browser")
 	cmd.Flags().BoolVar(&web, "web", false, "Authenticate in a browser instead of pasting a token")
-	// Browser login is now the default, so --web is a no-op kept for
-	// compatibility; cobra hides it from help and warns when it is used.
-	_ = cmd.Flags().MarkDeprecated("web", "browser login is now the default; the flag is no longer needed")
 	cmd.Flags().StringVar(&nameFlag, "name", "", "Name for the new context (auto-derived if omitted)")
 
 	return cmd
