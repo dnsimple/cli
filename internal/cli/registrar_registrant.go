@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -34,6 +34,8 @@ func (r *registrantChangeList) TableRows() [][]string {
 
 func (r *registrantChangeList) JSONData() any { return r }
 
+func (r *registrantChangeList) TemplateData() any { return r.Data }
+
 type registrantChangeOutput struct {
 	Data *dnsimple.RegistrantChange `json:"data"`
 }
@@ -57,6 +59,8 @@ func (r *registrantChangeOutput) TableRows() [][]string {
 
 func (r *registrantChangeOutput) JSONData() any { return r }
 
+func (r *registrantChangeOutput) TemplateData() any { return r.Data }
+
 func newRegistrarRegistrantChangeCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "registrant-change",
@@ -73,6 +77,7 @@ func newRegistrarRegistrantChangeCmd(f *cmdutil.Factory) *cobra.Command {
 
 func newRegistrantChangeListCmd(f *cmdutil.Factory) *cobra.Command {
 	var state, domainID, contactID string
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -98,18 +103,30 @@ func newRegistrantChangeListCmd(f *cmdutil.Factory) *cobra.Command {
 				opts.ContactId = &contactID
 			}
 
-			resp, err := c.Registrar.ListRegistrantChange(context.Background(), accountID, opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).Print(&registrantChangeList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "registrant changes",
+				func(page, perPage int) ([]dnsimple.RegistrantChange, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Registrar.ListRegistrantChange(context.Background(), accountID, opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.RegistrantChange, pg *dnsimple.Pagination) *registrantChangeList {
+					return &registrantChangeList{Data: items, Pagination: pg}
+				})
 		},
 	}
 
 	cmd.Flags().StringVar(&state, "state", "", "Filter by state")
 	cmd.Flags().StringVar(&domainID, "domain-id", "", "Filter by domain ID")
 	cmd.Flags().StringVar(&contactID, "contact-id", "", "Filter by contact ID")
+	lf.register(cmd)
 
 	return cmd
 }
@@ -183,7 +200,9 @@ func newRegistrantChangeCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newRegistrantChangeDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <change-id>",
 		Short: "Cancel a registrant change",
 		Args:  cobra.ExactArgs(1),
@@ -202,15 +221,21 @@ func newRegistrantChangeDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid change ID: %s", args[0])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Cancel registrant change %d?", changeID)); err != nil {
+				return err
+			}
+
 			_, err = c.Registrar.DeleteRegistrantChange(context.Background(), accountID, changeID)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Registrant change %d cancelled\n", changeID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Registrant change %d cancelled\n", changeID)
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

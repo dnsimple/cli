@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +31,10 @@ func (a *accountList) TableRows() [][]string {
 
 func (a *accountList) JSONData() any {
 	return a
+}
+
+func (a *accountList) TemplateData() any {
+	return a.Data
 }
 
 func newAccountsCmd(f *cmdutil.Factory) *cobra.Command {

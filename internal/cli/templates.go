@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -34,6 +34,8 @@ func (t *templateList) TableRows() [][]string {
 
 func (t *templateList) JSONData() any { return t }
 
+func (t *templateList) TemplateData() any { return t.Data }
+
 type templateItemOutput struct {
 	Data *dnsimple.Template `json:"data"`
 }
@@ -56,11 +58,12 @@ func (t *templateItemOutput) TableRows() [][]string {
 
 func (t *templateItemOutput) JSONData() any { return t }
 
+func (t *templateItemOutput) TemplateData() any { return t.Data }
+
 func newTemplatesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "templates",
-		Short:   "Manage DNS templates",
-		Aliases: []string{"template"},
+		Use:   "templates",
+		Short: "Manage DNS templates",
 	}
 
 	cmd.AddCommand(newTemplatesListCmd(f))
@@ -75,7 +78,9 @@ func newTemplatesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newTemplatesListCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List templates",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -88,14 +93,31 @@ func newTemplatesListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Templates.ListTemplates(context.Background(), accountID, nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&templateList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "templates",
+				func(page, perPage int) ([]dnsimple.Template, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Templates.ListTemplates(context.Background(), accountID, opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Template, pg *dnsimple.Pagination) *templateList {
+					return &templateList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newTemplatesGetCmd(f *cmdutil.Factory) *cobra.Command {
@@ -191,7 +213,9 @@ func newTemplatesUpdateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newTemplatesDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <template>",
 		Short: "Delete a template",
 		Args:  cobra.ExactArgs(1),
@@ -205,17 +229,23 @@ func newTemplatesDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete template %s?", args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Templates.DeleteTemplate(context.Background(), accountID, args[0])
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Template %s deleted\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Template %s deleted\n", args[0])
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }
 
 func newTemplatesApplyCmd(f *cmdutil.Factory) *cobra.Command {
@@ -238,9 +268,7 @@ func newTemplatesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Template %s applied to %s\n", args[0], args[1])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Template %s applied to %s\n", args[0], args[1])
 			return nil
 		},
 	}

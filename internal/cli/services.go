@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +35,8 @@ func (s *serviceList) TableRows() [][]string {
 
 func (s *serviceList) JSONData() any { return s }
 
+func (s *serviceList) TemplateData() any { return s.Data }
+
 type serviceItemOutput struct {
 	Data *dnsimple.Service `json:"data"`
 }
@@ -57,6 +59,8 @@ func (s *serviceItemOutput) TableRows() [][]string {
 
 func (s *serviceItemOutput) JSONData() any { return s }
 
+func (s *serviceItemOutput) TemplateData() any { return s.Data }
+
 func newServicesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "services",
@@ -73,7 +77,9 @@ func newServicesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newServicesListCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List available one-click services",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -82,14 +88,31 @@ func newServicesListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Services.ListServices(context.Background(), nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&serviceList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "services",
+				func(page, perPage int) ([]dnsimple.Service, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Services.ListServices(context.Background(), opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Service, pg *dnsimple.Pagination) *serviceList {
+					return &serviceList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newServicesGetCmd(f *cmdutil.Factory) *cobra.Command {
@@ -114,7 +137,9 @@ func newServicesGetCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newServicesAppliedCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "applied <domain>",
 		Short: "List services applied to a domain",
 		Args:  cobra.ExactArgs(1),
@@ -129,24 +154,46 @@ func newServicesAppliedCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Services.AppliedServices(context.Background(), accountID, args[0], nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&serviceList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "applied services",
+				func(page, perPage int) ([]dnsimple.Service, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Services.AppliedServices(context.Background(), accountID, args[0], opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Service, pg *dnsimple.Pagination) *serviceList {
+					return &serviceList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newServicesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 	var settings []string
 
 	cmd := &cobra.Command{
-		Use:   "apply <service> <domain>",
+		Use:   "apply <domain> <service>",
 		Short: "Apply a service to a domain",
-		Args:  cobra.ExactArgs(2),
+		Example: `  dnsimple services apply example.com github-pages
+  dnsimple services apply example.com heroku --settings app=my-heroku-app`,
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			domain := args[0]
+			service := args[1]
+
 			c, err := f.Client()
 			if err != nil {
 				return err
@@ -165,14 +212,12 @@ func newServicesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 				}
 			}
 
-			_, err = c.Services.ApplyService(context.Background(), accountID, args[0], args[1], s)
+			_, err = c.Services.ApplyService(context.Background(), accountID, service, domain, s)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Service %s applied to %s\n", args[0], args[1])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Service %s applied to %s\n", service, domain)
 			return nil
 		},
 	}
@@ -183,11 +228,18 @@ func newServicesApplyCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newServicesUnapplyCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
-		Use:   "unapply <service> <domain>",
+	var yes bool
+
+	cmd := &cobra.Command{
+		Use:   "unapply <domain> <service>",
 		Short: "Remove a service from a domain",
-		Args:  cobra.ExactArgs(2),
+		Example: `  dnsimple services unapply example.com github-pages
+  dnsimple services unapply example.com github-pages --yes`,
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			domain := args[0]
+			service := args[1]
+
 			c, err := f.Client()
 			if err != nil {
 				return err
@@ -198,15 +250,21 @@ func newServicesUnapplyCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			_, err = c.Services.UnapplyService(context.Background(), accountID, args[0], args[1])
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Remove service %s from %s?", service, domain)); err != nil {
+				return err
+			}
+
+			_, err = c.Services.UnapplyService(context.Background(), accountID, service, domain)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Service %s removed from %s\n", args[0], args[1])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Service %s removed from %s\n", service, domain)
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

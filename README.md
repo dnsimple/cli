@@ -2,38 +2,63 @@
 
 A command-line interface for the [DNSimple API v2](https://developer.dnsimple.com/v2/).
 
-## Requirements
-
-- Go 1.25+
-- An activated DNSimple account
-
 ## Installation
 
-### Using the install script
+### macOS and Linux
 
-```shell
-curl -fsSL https://dnsimple-cli.netlify.app/install.sh | sh
-```
-
-The install URL will eventually move to `https://dnsimple.com/install.sh`.
-
-### Using Homebrew
+#### Using Homebrew
 
 ```shell
 brew install dnsimple/tap/dnsimple
 ```
 
-### Using Go
+#### Using the install script
 
 ```shell
-go install github.com/dnsimple/dnsimple-cli/cmd/dnsimple@latest
+curl -fsSL http://cli-beta.dnsimple.com/install.sh | sh
 ```
 
-### From source
+The install URL will eventually move to `https://dnsimple.com/install.sh`.
+
+The install script downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
+
+### Windows
+
+#### Using the PowerShell install script
+
+```powershell
+irm "https://cli-beta.dnsimple.com/install.ps1" | iex
+```
+
+The installer downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
+
+#### Manual ZIP install
+
+1. Download the latest `dnsimple_<version>_windows_amd64.zip` or `dnsimple_<version>_windows_arm64.zip` from the [public release mirror](https://github.com/dnsimple/homebrew-tap/releases/latest) page.
+2. Extract `dnsimple.exe`.
+3. Move `dnsimple.exe` to a directory on your `PATH`, such as `%USERPROFILE%\bin`.
+4. Open a new terminal window and verify the installation:
+
+```powershell
+dnsimple version
+```
+
+> [!NOTE]
+> Homebrew is supported on macOS, Linux, and WSL. The `install.sh` script can also be used from WSL or Unix-like shells such as Git Bash, but it is not a native `powershell` or `cmd.exe` installer.
+
+### Cross-platform developer install
+
+#### Using Go
 
 ```shell
-git clone https://github.com/dnsimple/dnsimple-cli.git
-cd dnsimple-cli
+go install github.com/dnsimple/cli/cmd/dnsimple@latest
+```
+
+#### From source
+
+```shell
+git clone https://github.com/dnsimple/cli.git
+cd cli
 make build
 ```
 
@@ -47,25 +72,59 @@ dnsimple [command] [flags]
 
 ### Authentication
 
-Set your DNSimple API token:
+The CLI supports two authentication modes that can be combined freely.
+
+#### Stateful: stored contexts
+
+Authenticate once and the CLI remembers a named *context* (token, account, environment) on disk. Multiple contexts can coexist and you select one as active:
 
 ```shell
-export DNSIMPLE_TOKEN=your-token
-```
-
-Or pass it directly:
-
-```shell
-dnsimple --token your-token [command]
-```
-
-Or pass it interactively:
-
-```shell
+# Log in to production and store a context (opens the browser to authenticate)
 dnsimple auth login
 
-# Paste your API token: ...
+# Authenticate with an API token instead of the browser
+dnsimple auth login --with-token
+
+# Log in to sandbox alongside it
+dnsimple auth login --sandbox
+
+# List stored contexts (active is marked with *)
+dnsimple auth list
+
+# Switch the active context (by name or by account ID)
+dnsimple auth switch sandbox
+
+# Inspect the active context
+dnsimple auth status
+
+# Remove a stored context
+dnsimple auth logout --name sandbox
 ```
+
+The active context is used by every command unless overridden. Pass `--name` to `auth login` to choose a custom context name; otherwise it is derived from the environment (`production`, `sandbox`) with the account ID appended on collision.
+
+#### Stateless: per-invocation overrides
+
+For agents, scripts, and parallel shells where mutating shared on-disk state is undesirable, override the active context for a single command:
+
+```shell
+# Use a stored context by name without switching the active one
+dnsimple --context sandbox zones list
+
+# Override individual fields (token from env, sandbox environment)
+DNSIMPLE_TOKEN=$TOK dnsimple --sandbox zones list
+
+# Fully stateless invocation
+dnsimple --token $TOK --account 1010 --sandbox zones list
+```
+
+The override chain is field-by-field: each of `--token`, `--account`, `--sandbox`, and `--context` falls back to the matching environment variable and then to the active stored context. This means a script can supply only the parts that differ from the active context.
+
+### Destructive Commands
+
+Resource-level destructive commands such as `delete` and `unapply` now prompt for confirmation in interactive terminals. In scripts, CI, or other non-interactive use, pass `--yes` to confirm explicitly and proceed without prompting.
+
+Registered domains are a higher-risk case: `dnsimple domains delete` first checks the domain state, and deleting a registered domain requires an extra acknowledgment because the operation downgrades the domain to `hosted` and permanently loses registration metadata. In non-interactive use, pass both `--yes` and `--confirm-registered-domain`.
 
 ### Example Flow
 
@@ -110,17 +169,39 @@ dnsimple records delete example.com 12345
 
 `example.com` is both the domain name and the zone name. After creating the domain, use the same value with the `zones` and `records` commands.
 
+### Output Formats
+
+Commands default to a human-friendly table. Use `--json` for structured output or `--format` for custom Go templates.
+
+`--json` preserves the CLI wrapper shape, including top-level `data` and optional `pagination` keys. `--format` evaluates the template against the unwrapped resource itself:
+
+```shell
+# Single-resource commands expose the resource fields directly
+dnsimple domains get example.com --format '{{.Name}}'
+
+# List commands expose the list of resources directly
+dnsimple domains list --format '{{range .}}{{.Name}}{{printf "\n"}}{{end}}'
+```
+
+To discover available template fields, inspect the corresponding `--json` output and use the fields inside `data` as the underlying resource model.
+
 ### Sandbox Environment
 
 We highly recommend testing against our [sandbox environment](https://developer.dnsimple.com/sandbox/) before using our production environment. This will allow you to avoid real purchases, live charges on your credit card, and reduce the chance of your running up against rate limits.
 
-To use the sandbox environment:
+To use the sandbox environment, either store a sandbox context:
 
 ```shell
-export DNSIMPLE_BASE_URL=https://api.sandbox.dnsimple.com
+dnsimple auth login --sandbox
 ```
 
-You will need to ensure that you are using an access token created in the sandbox environment. Production tokens will *not* work in the sandbox environment.
+Or pass `--sandbox` per invocation:
+
+```shell
+dnsimple --sandbox zones list
+```
+
+You will need a token created in the sandbox environment. Production tokens will *not* work in the sandbox environment.
 
 ## Documentation
 

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +31,13 @@ func (d *delegationOutput) TableRows() [][]string {
 }
 
 func (d *delegationOutput) JSONData() any { return d }
+
+func (d *delegationOutput) TemplateData() any {
+	if d.Data == nil {
+		return nil
+	}
+	return *d.Data
+}
 
 func newRegistrarDelegationCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -94,16 +101,14 @@ func newDelegationChangeCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Delegation updated for %s: %s\n", args[0], strings.Join(nameServers, ", "))
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Delegation updated for %s: %s\n", args[0], strings.Join(nameServers, ", "))
 			_ = resp
 			return nil
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&nameServers, "ns", nil, "Name servers (comma-separated)")
-	_ = cmd.MarkFlagRequired("ns")
+	cmd.Flags().StringSliceVar(&nameServers, "name-servers", nil, "Name servers (comma-separated)")
+	_ = cmd.MarkFlagRequired("name-servers")
 
 	return cmd
 }

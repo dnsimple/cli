@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -30,26 +30,35 @@ func (d *domainCheckOutput) TableRows() [][]string {
 
 func (d *domainCheckOutput) JSONData() any { return d }
 
+func (d *domainCheckOutput) TemplateData() any { return d.Data }
+
 // domainPriceOutput adapts DomainPrice for output.
 type domainPriceOutput struct {
 	Data *dnsimple.DomainPrice `json:"data"`
 }
 
 func (d *domainPriceOutput) TableHeaders() []string {
-	return []string{"DOMAIN", "PREMIUM", "REGISTRATION", "RENEWAL", "TRANSFER"}
+	return []string{"DOMAIN", "PREMIUM", "REGISTRATION", "RENEWAL", "TRANSFER", "TRUSTEE"}
 }
 
 func (d *domainPriceOutput) TableRows() [][]string {
+	trustee := "-"
+	if d.Data.TrusteePrice != nil {
+		trustee = fmt.Sprintf("%.2f", *d.Data.TrusteePrice)
+	}
 	return [][]string{{
 		d.Data.Domain,
 		strconv.FormatBool(d.Data.Premium),
 		fmt.Sprintf("%.2f", d.Data.RegistrationPrice),
 		fmt.Sprintf("%.2f", d.Data.RenewalPrice),
 		fmt.Sprintf("%.2f", d.Data.TransferPrice),
+		trustee,
 	}}
 }
 
 func (d *domainPriceOutput) JSONData() any { return d }
+
+func (d *domainPriceOutput) TemplateData() any { return d.Data }
 
 // domainRegistrationOutput adapts DomainRegistration for output.
 type domainRegistrationOutput struct {
@@ -69,11 +78,14 @@ func (d *domainRegistrationOutput) TableRows() [][]string {
 		{"State", r.State},
 		{"Auto Renew", strconv.FormatBool(r.AutoRenew)},
 		{"WHOIS Privacy", strconv.FormatBool(r.WhoisPrivacy)},
+		{"Trustee", strconv.FormatBool(r.Trustee)},
 		{"Period", strconv.Itoa(r.Period)},
 	}
 }
 
 func (d *domainRegistrationOutput) JSONData() any { return d }
+
+func (d *domainRegistrationOutput) TemplateData() any { return d.Data }
 
 // domainRenewalOutput adapts DomainRenewal for output.
 type domainRenewalOutput struct {
@@ -96,6 +108,8 @@ func (d *domainRenewalOutput) TableRows() [][]string {
 
 func (d *domainRenewalOutput) JSONData() any { return d }
 
+func (d *domainRenewalOutput) TemplateData() any { return d.Data }
+
 // domainTransferOutput adapts DomainTransfer for output.
 type domainTransferOutput struct {
 	Data *dnsimple.DomainTransfer `json:"data"`
@@ -114,10 +128,13 @@ func (d *domainTransferOutput) TableRows() [][]string {
 		{"State", t.State},
 		{"Auto Renew", strconv.FormatBool(t.AutoRenew)},
 		{"WHOIS Privacy", strconv.FormatBool(t.WhoisPrivacy)},
+		{"Trustee", strconv.FormatBool(t.Trustee)},
 	}
 }
 
 func (d *domainTransferOutput) JSONData() any { return d }
+
+func (d *domainTransferOutput) TemplateData() any { return d.Data }
 
 func newRegistrarCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -195,7 +212,7 @@ func newRegistrarPricesCmd(f *cmdutil.Factory) *cobra.Command {
 
 func newRegistrarRegisterCmd(f *cmdutil.Factory) *cobra.Command {
 	var registrantID int
-	var autoRenew, whoisPrivacy bool
+	var autoRenew, whoisPrivacy, trusteeService bool
 	var premiumPrice string
 	var extendedAttributes []string
 
@@ -218,6 +235,7 @@ func newRegistrarRegisterCmd(f *cmdutil.Factory) *cobra.Command {
 				RegistrantID:       registrantID,
 				EnableAutoRenewal:  autoRenew,
 				EnableWhoisPrivacy: whoisPrivacy,
+				Trustee:            &trusteeService,
 				PremiumPrice:       premiumPrice,
 				ExtendedAttributes: parseExtendedAttributes(extendedAttributes),
 			}
@@ -234,6 +252,7 @@ func newRegistrarRegisterCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd.Flags().IntVar(&registrantID, "registrant-id", 0, "Contact ID to use as registrant")
 	cmd.Flags().BoolVar(&autoRenew, "auto-renew", true, "Enable auto-renewal")
 	cmd.Flags().BoolVar(&whoisPrivacy, "whois-privacy", false, "Enable WHOIS privacy")
+	cmd.Flags().BoolVar(&trusteeService, "trustee", false, "Enable trustee service (extra cost may apply)")
 	cmd.Flags().StringVar(&premiumPrice, "premium-price", "", "Confirm premium price")
 	cmd.Flags().StringArrayVar(&extendedAttributes, "extended-attribute", nil, "Extended attributes (key=value)")
 	_ = cmd.MarkFlagRequired("registrant-id")
@@ -244,7 +263,7 @@ func newRegistrarRegisterCmd(f *cmdutil.Factory) *cobra.Command {
 func newRegistrarTransferCmd(f *cmdutil.Factory) *cobra.Command {
 	var registrantID int
 	var authCode string
-	var autoRenew, whoisPrivacy bool
+	var autoRenew, whoisPrivacy, trusteeService bool
 	var premiumPrice string
 	var extendedAttributes []string
 
@@ -268,6 +287,7 @@ func newRegistrarTransferCmd(f *cmdutil.Factory) *cobra.Command {
 				AuthCode:           authCode,
 				EnableAutoRenewal:  autoRenew,
 				EnableWhoisPrivacy: whoisPrivacy,
+				Trustee:            &trusteeService,
 				PremiumPrice:       premiumPrice,
 				ExtendedAttributes: parseExtendedAttributes(extendedAttributes),
 			}
@@ -285,6 +305,7 @@ func newRegistrarTransferCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&authCode, "auth-code", "", "Authorization code from current registrar")
 	cmd.Flags().BoolVar(&autoRenew, "auto-renew", true, "Enable auto-renewal")
 	cmd.Flags().BoolVar(&whoisPrivacy, "whois-privacy", false, "Enable WHOIS privacy")
+	cmd.Flags().BoolVar(&trusteeService, "trustee", false, "Enable trustee service (extra cost may apply)")
 	cmd.Flags().StringVar(&premiumPrice, "premium-price", "", "Confirm premium price")
 	cmd.Flags().StringArrayVar(&extendedAttributes, "extended-attribute", nil, "Extended attributes (key=value)")
 	_ = cmd.MarkFlagRequired("registrant-id")
@@ -388,9 +409,7 @@ func newRegistrarTransferOutCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Transfer out authorized for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Transfer out authorized for %s\n", args[0])
 			return nil
 		},
 	}

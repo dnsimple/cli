@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -41,9 +41,7 @@ func newWhoisPrivacyEnableCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "WHOIS privacy enabled for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "WHOIS privacy enabled for %s\n", args[0])
 			return nil
 		},
 	}
@@ -70,9 +68,7 @@ func newWhoisPrivacyDisableCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "WHOIS privacy disabled for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "WHOIS privacy disabled for %s\n", args[0])
 			return nil
 		},
 	}

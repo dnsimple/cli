@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +15,7 @@ type tldList struct {
 }
 
 func (t *tldList) TableHeaders() []string {
-	return []string{"TLD", "TYPE", "REGISTRATION", "RENEWAL", "TRANSFER", "WHOIS PRIVACY"}
+	return []string{"TLD", "TYPE", "REGISTRATION", "RENEWAL", "TRANSFER", "WHOIS PRIVACY", "TRUSTEE"}
 }
 
 func (t *tldList) TableRows() [][]string {
@@ -28,12 +28,26 @@ func (t *tldList) TableRows() [][]string {
 			strconv.FormatBool(tld.RenewalEnabled),
 			strconv.FormatBool(tld.TransferEnabled),
 			strconv.FormatBool(tld.WhoisPrivacy),
+			tldTrusteeState(tld),
 		}
 	}
 	return rows
 }
 
+func tldTrusteeState(tld dnsimple.Tld) string {
+	switch {
+	case tld.TrusteeServiceRequired:
+		return "required"
+	case tld.TrusteeServiceEnabled:
+		return "optional"
+	default:
+		return "-"
+	}
+}
+
 func (t *tldList) JSONData() any { return t }
+
+func (t *tldList) TemplateData() any { return t.Data }
 
 type tldItemOutput struct {
 	Data *dnsimple.Tld `json:"data"`
@@ -55,10 +69,14 @@ func (t *tldItemOutput) TableRows() [][]string {
 		{"Auto Renew Only", strconv.FormatBool(tld.AutoRenewOnly)},
 		{"Min Registration", strconv.Itoa(tld.MinimumRegistration)},
 		{"DNSSEC Interface", tld.DnssecInterfaceType},
+		{"Trustee Supported", strconv.FormatBool(tld.TrusteeServiceEnabled)},
+		{"Trustee Required", strconv.FormatBool(tld.TrusteeServiceRequired)},
 	}
 }
 
 func (t *tldItemOutput) JSONData() any { return t }
+
+func (t *tldItemOutput) TemplateData() any { return t.Data }
 
 type tldExtendedAttributesList struct {
 	Data []dnsimple.TldExtendedAttribute `json:"data"`
@@ -82,6 +100,8 @@ func (t *tldExtendedAttributesList) TableRows() [][]string {
 
 func (t *tldExtendedAttributesList) JSONData() any { return t }
 
+func (t *tldExtendedAttributesList) TemplateData() any { return t.Data }
+
 func newTldsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tlds",
@@ -96,8 +116,8 @@ func newTldsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newTldsListCmd(f *cmdutil.Factory) *cobra.Command {
-	var page, perPage int
 	var sort string
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -109,28 +129,32 @@ func newTldsListCmd(f *cmdutil.Factory) *cobra.Command {
 			}
 
 			opts := &dnsimple.ListOptions{}
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
 			if sort != "" {
 				opts.Sort = &sort
 			}
 
-			resp, err := c.Tlds.ListTlds(context.Background(), opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).Print(&tldList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "TLDs",
+				func(page, perPage int) ([]dnsimple.Tld, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Tlds.ListTlds(context.Background(), opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Tld, pg *dnsimple.Pagination) *tldList {
+					return &tldList{Data: items, Pagination: pg}
+				})
 		},
 	}
 
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
 	cmd.Flags().StringVar(&sort, "sort", "", "Sort order")
+	lf.register(cmd)
 
 	return cmd
 }

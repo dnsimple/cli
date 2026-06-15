@@ -1,10 +1,12 @@
 package cmdutil
 
 import (
-	"github.com/dnsimple/dnsimple-cli/internal/client"
-	"github.com/dnsimple/dnsimple-cli/internal/config"
-	"github.com/dnsimple/dnsimple-cli/internal/output"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"errors"
+
+	"github.com/dnsimple/cli/internal/client"
+	"github.com/dnsimple/cli/internal/config"
+	"github.com/dnsimple/cli/internal/output"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -16,8 +18,12 @@ type Factory struct {
 	// Config returns the loaded configuration.
 	Config func() (*config.Config, error)
 
+	// Context returns the resolved authentication context for this invocation.
+	// Lazy and cached: the first call performs resolution; subsequent calls
+	// return the same value.
+	Context func() (*config.ResolvedContext, error)
+
 	// Client returns a configured DNSimple API client.
-	// It resolves the token and builds the client lazily.
 	Client func() (*dnsimple.Client, error)
 
 	// Printer returns the output printer configured with the current format settings.
@@ -33,19 +39,20 @@ type Factory struct {
 // GlobalFlags holds the values of global flags set on the root command.
 type GlobalFlags struct {
 	Account string
+	Context string
 	Token   string
 	Sandbox bool
 	JSON    bool
 	Format  string
 	NoColor bool
 	Debug   bool
-	Quiet   bool
 }
 
 // NewFactory creates a new Factory with lazy initialization.
 func NewFactory(version string) *Factory {
 	flags := &GlobalFlags{}
 	var cachedConfig *config.Config
+	var cachedContext *config.ResolvedContext
 	var cachedClient *dnsimple.Client
 
 	f := &Factory{
@@ -69,24 +76,47 @@ func NewFactory(version string) *Factory {
 		return cfg, nil
 	}
 
-	f.Client = func() (*dnsimple.Client, error) {
-		if cachedClient != nil {
-			return cachedClient, nil
+	f.Context = func() (*config.ResolvedContext, error) {
+		if cachedContext != nil {
+			return cachedContext, nil
 		}
 		cfg, err := f.Config()
 		if err != nil {
 			return nil, err
 		}
-		token, err := config.Token(cfg, flags.Token)
+		creds, err := config.LoadCredentials()
 		if err != nil {
 			return nil, err
 		}
-		c := client.NewClient(cfg, token, f.Version)
-		if flags.Debug {
-			c.Debug = true
+		rc, err := config.Resolve(creds, config.ResolveOptions{
+			Token:          flags.Token,
+			Account:        flags.Account,
+			ContextName:    flags.Context,
+			Sandbox:        cfg.Sandbox,
+			DefaultAccount: cfg.DefaultAccount,
+		})
+		if err != nil {
+			return nil, err
 		}
-		cachedClient = c
-		return c, nil
+		cachedContext = rc
+		return rc, nil
+	}
+
+	f.Client = func() (*dnsimple.Client, error) {
+		if cachedClient != nil {
+			return cachedClient, nil
+		}
+		rc, err := f.Context()
+		if err != nil {
+			return nil, err
+		}
+		cachedClient = client.New(client.Options{
+			BaseURL: rc.BaseURL,
+			Token:   rc.Token,
+			Version: f.Version,
+			Debug:   flags.Debug,
+		})
+		return cachedClient, nil
 	}
 
 	f.Printer = func(cmd *cobra.Command) *output.Printer {
@@ -100,11 +130,14 @@ func NewFactory(version string) *Factory {
 	}
 
 	f.AccountID = func() (string, error) {
-		cfg, err := f.Config()
+		rc, err := f.Context()
 		if err != nil {
 			return "", err
 		}
-		return config.AccountID(cfg, flags.Account)
+		if rc.AccountID == "" {
+			return "", errors.New("no account specified. Use --account flag, DNSIMPLE_ACCOUNT env var, or run 'dnsimple auth login'")
+		}
+		return rc.AccountID, nil
 	}
 
 	return f

@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -36,6 +36,8 @@ func (c *certList) TableRows() [][]string {
 }
 
 func (c *certList) JSONData() any { return c }
+
+func (c *certList) TemplateData() any { return c.Data }
 
 // certItem adapts a single Certificate for output.
 type certItem struct {
@@ -66,6 +68,8 @@ func (c *certItem) TableRows() [][]string {
 
 func (c *certItem) JSONData() any { return c }
 
+func (c *certItem) TemplateData() any { return c.Data }
+
 // certBundleOutput adapts CertificateBundle for output.
 type certBundleOutput struct {
 	Data *dnsimple.CertificateBundle `json:"data"`
@@ -94,6 +98,8 @@ func (c *certBundleOutput) TableRows() [][]string {
 
 func (c *certBundleOutput) JSONData() any { return c }
 
+func (c *certBundleOutput) TemplateData() any { return c.Data }
+
 // certPurchaseOutput adapts CertificatePurchase for output.
 type certPurchaseOutput struct {
 	Data *dnsimple.CertificatePurchase `json:"data"`
@@ -114,6 +120,8 @@ func (c *certPurchaseOutput) TableRows() [][]string {
 }
 
 func (c *certPurchaseOutput) JSONData() any { return c }
+
+func (c *certPurchaseOutput) TemplateData() any { return c.Data }
 
 // certRenewalOutput adapts CertificateRenewal for output.
 type certRenewalOutput struct {
@@ -137,11 +145,13 @@ func (c *certRenewalOutput) TableRows() [][]string {
 
 func (c *certRenewalOutput) JSONData() any { return c }
 
+func (c *certRenewalOutput) TemplateData() any { return c.Data }
+
 func newCertificatesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "certificates",
 		Short:   "Manage SSL/TLS certificates",
-		Aliases: []string{"certs", "cert"},
+		Aliases: []string{"certs"},
 	}
 
 	cmd.AddCommand(newCertsListCmd(f))
@@ -154,8 +164,8 @@ func newCertificatesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newCertsListCmd(f *cmdutil.Factory) *cobra.Command {
-	var page, perPage int
 	var sort string
+	lf := &listFlags{}
 
 	cmd := &cobra.Command{
 		Use:   "list <domain>",
@@ -173,28 +183,32 @@ func newCertsListCmd(f *cmdutil.Factory) *cobra.Command {
 			}
 
 			opts := &dnsimple.ListOptions{}
-			if page > 0 {
-				opts.Page = &page
-			}
-			if perPage > 0 {
-				opts.PerPage = &perPage
-			}
 			if sort != "" {
 				opts.Sort = &sort
 			}
 
-			resp, err := c.Certificates.ListCertificates(context.Background(), accountID, args[0], opts)
-			if err != nil {
-				return err
-			}
-
-			return f.Printer(cmd).Print(&certList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "certificates",
+				func(page, perPage int) ([]dnsimple.Certificate, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Certificates.ListCertificates(context.Background(), accountID, args[0], opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.Certificate, pg *dnsimple.Pagination) *certList {
+					return &certList{Data: items, Pagination: pg}
+				})
 		},
 	}
 
-	cmd.Flags().IntVar(&page, "page", 0, "Page number")
-	cmd.Flags().IntVar(&perPage, "per-page", 0, "Number of items per page")
 	cmd.Flags().StringVar(&sort, "sort", "", "Sort order")
+	lf.register(cmd)
 
 	return cmd
 }

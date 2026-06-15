@@ -1,0 +1,207 @@
+package config
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+)
+
+// ResolvedContext is the fully-resolved authentication context for a single
+// invocation of the CLI. It is the product of the resolution chain
+// (raw flags/env → --context → active context).
+type ResolvedContext struct {
+	// ContextName is the name of the stored context the resolution drew from,
+	// or empty if the invocation was satisfied entirely by raw overrides.
+	ContextName string
+
+	// BaseURL is the API URL to talk to.
+	BaseURL string
+
+	// Host is the canonical host name (e.g. api.dnsimple.com).
+	Host string
+
+	// Token is the API token to send.
+	Token string
+
+	// AccountID is the resolved account ID.
+	AccountID string
+
+	// User is the email or handle of the token owner, when known.
+	User string
+}
+
+// ResolveOptions captures the per-invocation overrides used during resolution.
+type ResolveOptions struct {
+	// Token is the value of --token (empty if not set).
+	Token string
+
+	// Account is the value of --account (empty if not set).
+	Account string
+
+	// ContextName is the value of --context (empty if not set).
+	ContextName string
+
+	// Sandbox is the effective sandbox selection after config/env/flag
+	// resolution.
+	Sandbox bool
+
+	// DefaultAccount is the cfg.DefaultAccount value (from config file).
+	DefaultAccount string
+
+	// BaseURLOverride short-circuits host-based BaseURL derivation. Tests set
+	// it directly; at runtime it is left empty and the DNSIMPLE_BASE_URL
+	// environment variable supplies the same override (see Resolve) for local
+	// development against a local API server.
+	BaseURLOverride string
+}
+
+// Resolve produces a ResolvedContext from the given credentials and options.
+//
+// Resolution order, applied per field:
+//
+//  1. Explicit raw override (--token / --account / --sandbox)
+//  2. Environment variable (DNSIMPLE_TOKEN / DNSIMPLE_ACCOUNT)
+//  3. Stored context selected by --context, --sandbox, or active_context
+//  4. cfg.DefaultAccount (account only, fallback when the resolved context
+//     does not already supply an account)
+//
+// Storage is only consulted if --context is set or if the raw overrides do
+// not supply enough to satisfy the invocation.
+func Resolve(creds *Credentials, opts ResolveOptions) (*ResolvedContext, error) {
+	rc := &ResolvedContext{}
+
+	// Gather raw token / account overrides up front.
+	rawToken := opts.Token
+	if rawToken == "" {
+		rawToken = os.Getenv("DNSIMPLE_TOKEN")
+	}
+	rawAccount := opts.Account
+	if rawAccount == "" {
+		rawAccount = os.Getenv("DNSIMPLE_ACCOUNT")
+	}
+
+	// Decide whether we need to consult stored credentials.
+	//
+	// - If --context is set, always pick it (the user explicitly asked).
+	// - If --token AND --account are both supplied raw, we can run fully
+	//   stateless without touching storage.
+	// - Otherwise, fall back to storage to fill the gaps.
+	needsContext := opts.ContextName != "" || rawToken == "" || rawAccount == ""
+
+	var ctx *Context
+	if needsContext {
+		var err error
+		ctx, err = pickContext(creds, opts)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if ctx != nil {
+		rc.ContextName = ctx.Name
+		rc.Token = ctx.Token
+		rc.AccountID = ctx.AccountID
+		rc.Host = ctx.Host
+		rc.User = ctx.User
+	}
+
+	// Apply raw overrides on top.
+	if rawToken != "" {
+		rc.Token = rawToken
+	}
+	if rawAccount != "" {
+		rc.AccountID = rawAccount
+	}
+	if rc.AccountID == "" && opts.DefaultAccount != "" {
+		rc.AccountID = opts.DefaultAccount
+	}
+
+	// --sandbox host override wins over the context-supplied host.
+	if opts.Sandbox {
+		rc.Host = SandboxHost
+	}
+	if rc.Host == "" {
+		rc.Host = ProductionHost
+	}
+
+	// A token is the minimum needed to talk to the API. The presence of an
+	// account is enforced by callers that actually need one (factory.AccountID
+	// in particular), so token-only commands such as `whoami` and
+	// `auth status` keep working even when no account is available yet.
+	if rc.Token == "" {
+		return nil, errors.New("not authenticated. Run 'dnsimple auth login' to authenticate")
+	}
+
+	// BaseURL override: an explicit opts.BaseURLOverride (set by tests) wins;
+	// otherwise DNSIMPLE_BASE_URL backs the same field, mirroring how
+	// DNSIMPLE_TOKEN / DNSIMPLE_ACCOUNT back their opts fields above. The env
+	// path is for local development against a local API server (e.g.
+	// http://api.dnsimple.localhost:3000); it also moves the OAuth token
+	// endpoint, which is derived from BaseURL.
+	baseURLOverride := opts.BaseURLOverride
+	if baseURLOverride == "" {
+		baseURLOverride = strings.TrimSpace(os.Getenv(baseURLEnvVar))
+	}
+	if baseURLOverride != "" {
+		rc.BaseURL = baseURLOverride
+	} else {
+		rc.BaseURL = BaseURLForHost(rc.Host)
+	}
+
+	return rc, nil
+}
+
+// pickContext returns the stored context to draw defaults from, applying the
+// --context, --sandbox, and active-context selection rules.
+func pickContext(creds *Credentials, opts ResolveOptions) (*Context, error) {
+	if opts.ContextName != "" {
+		ctx := creds.Find(opts.ContextName)
+		if ctx == nil {
+			return nil, fmt.Errorf("context %q not found", opts.ContextName)
+		}
+		if opts.Sandbox && ctx.Host != SandboxHost {
+			return nil, fmt.Errorf(
+				"context %q targets %s, but sandbox mode is enabled; unset --sandbox/DNSIMPLE_SANDBOX or choose a sandbox context",
+				opts.ContextName,
+				EnvironmentName(ctx.Host),
+			)
+		}
+		return ctx, nil
+	}
+
+	if opts.Sandbox {
+		// Constrain selection to sandbox contexts.
+		if active := creds.Active(); active != nil && active.Host == SandboxHost {
+			return active, nil
+		}
+		sandboxes := contextsByHost(creds, SandboxHost)
+		switch len(sandboxes) {
+		case 0:
+			return nil, nil
+		case 1:
+			return sandboxes[0], nil
+		default:
+			names := make([]string, len(sandboxes))
+			for i, s := range sandboxes {
+				names[i] = s.Name
+			}
+			return nil, fmt.Errorf(
+				"multiple sandbox contexts in storage (%s); pass --context <name> to choose one or use --token/--account for raw credentials",
+				strings.Join(names, ", "),
+			)
+		}
+	}
+
+	return creds.Active(), nil
+}
+
+func contextsByHost(creds *Credentials, host string) []*Context {
+	var out []*Context
+	for _, c := range creds.Contexts {
+		if c.Host == host {
+			out = append(out, c)
+		}
+	}
+	return out
+}

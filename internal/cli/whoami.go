@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +31,10 @@ func (w *whoamiOutput) TableRows() [][]string {
 }
 
 func (w *whoamiOutput) JSONData() any {
+	return w
+}
+
+func (w *whoamiOutput) TemplateData() any {
 	return w
 }
 

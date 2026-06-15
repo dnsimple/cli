@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/cmdutil"
 	"github.com/spf13/cobra"
 )
 
 func newVanityNameServersCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "vanity-name-servers",
+		Use:   "vanity-servers",
 		Short: "Manage vanity name servers",
 	}
 
@@ -40,9 +40,7 @@ func newVanityEnableCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Vanity name servers enabled for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Vanity name servers enabled for %s\n", args[0])
 			return nil
 		},
 	}
@@ -68,9 +66,7 @@ func newVanityDisableCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Vanity name servers disabled for %s\n", args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Vanity name servers disabled for %s\n", args[0])
 			return nil
 		},
 	}

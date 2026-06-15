@@ -11,7 +11,6 @@ func TestShouldCheck(t *testing.T) {
 	base := Opts{
 		CurrentVersion: "0.3.0",
 		IsTerminal:     true,
-		Quiet:          false,
 		Args:           []string{"domains", "list"},
 	}
 
@@ -35,12 +34,6 @@ func TestShouldCheck(t *testing.T) {
 	t.Run("non-terminal", func(t *testing.T) {
 		opts := base
 		opts.IsTerminal = false
-		assert.False(t, ShouldCheck(opts))
-	})
-
-	t.Run("quiet flag", func(t *testing.T) {
-		opts := base
-		opts.Quiet = true
 		assert.False(t, ShouldCheck(opts))
 	})
 

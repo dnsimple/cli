@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +35,8 @@ func (t *templateRecordList) TableRows() [][]string {
 
 func (t *templateRecordList) JSONData() any { return t }
 
+func (t *templateRecordList) TemplateData() any { return t.Data }
+
 type templateRecordItemOutput struct {
 	Data *dnsimple.TemplateRecord `json:"data"`
 }
@@ -60,6 +62,8 @@ func (t *templateRecordItemOutput) TableRows() [][]string {
 
 func (t *templateRecordItemOutput) JSONData() any { return t }
 
+func (t *templateRecordItemOutput) TemplateData() any { return t.Data }
+
 func newTemplatesRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "records",
@@ -75,7 +79,9 @@ func newTemplatesRecordsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newTemplateRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "list <template>",
 		Short: "List template records",
 		Args:  cobra.ExactArgs(1),
@@ -89,14 +95,31 @@ func newTemplateRecordsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Templates.ListTemplateRecords(context.Background(), accountID, args[0], nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&templateRecordList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "template records",
+				func(page, perPage int) ([]dnsimple.TemplateRecord, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Templates.ListTemplateRecords(context.Background(), accountID, args[0], opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.TemplateRecord, pg *dnsimple.Pagination) *templateRecordList {
+					return &templateRecordList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newTemplateRecordsGetCmd(f *cmdutil.Factory) *cobra.Command {
@@ -167,7 +190,9 @@ func newTemplateRecordsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newTemplateRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <template> <record-id>",
 		Short: "Delete a template record",
 		Args:  cobra.ExactArgs(2),
@@ -186,15 +211,21 @@ func newTemplateRecordsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid record ID: %s", args[1])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete template record %d from %s?", recordID, args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Templates.DeleteTemplateRecord(context.Background(), accountID, args[0], recordID)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Template record %d deleted\n", recordID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Template record %d deleted\n", recordID)
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

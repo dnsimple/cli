@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/stretchr/testify/assert"
 )
 

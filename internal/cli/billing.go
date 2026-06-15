@@ -3,8 +3,8 @@ package cli
 import (
 	"context"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +32,8 @@ func (c *chargeList) TableRows() [][]string {
 }
 
 func (c *chargeList) JSONData() any { return c }
+
+func (c *chargeList) TemplateData() any { return c.Data }
 
 func newBillingCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -71,7 +73,7 @@ func newBillingChargesCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			return f.Printer(cmd).Print(&chargeList{Data: resp.Data, Pagination: resp.Pagination})
+			return f.Printer(cmd).PrintList(&chargeList{Data: resp.Data, Pagination: resp.Pagination}, pageHint(cmd, resp.Pagination, len(resp.Data), "charges"))
 		},
 	}
 

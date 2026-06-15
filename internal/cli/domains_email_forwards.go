@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +35,8 @@ func (e *emailForwardList) TableRows() [][]string {
 
 func (e *emailForwardList) JSONData() any { return e }
 
+func (e *emailForwardList) TemplateData() any { return e.Data }
+
 // emailForwardItem adapts a single EmailForward for output.
 type emailForwardItem struct {
 	Data *dnsimple.EmailForward `json:"data"`
@@ -58,6 +60,8 @@ func (e *emailForwardItem) TableRows() [][]string {
 
 func (e *emailForwardItem) JSONData() any { return e }
 
+func (e *emailForwardItem) TemplateData() any { return e.Data }
+
 func newDomainsEmailForwardsCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "email-forwards",
@@ -73,7 +77,9 @@ func newDomainsEmailForwardsCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newEmailForwardsListCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "list <domain>",
 		Short: "List email forwards",
 		Args:  cobra.ExactArgs(1),
@@ -88,14 +94,31 @@ func newEmailForwardsListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Domains.ListEmailForwards(context.Background(), accountID, args[0], nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&emailForwardList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "email forwards",
+				func(page, perPage int) ([]dnsimple.EmailForward, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Domains.ListEmailForwards(context.Background(), accountID, args[0], opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.EmailForward, pg *dnsimple.Pagination) *emailForwardList {
+					return &emailForwardList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newEmailForwardsGetCmd(f *cmdutil.Factory) *cobra.Command {
@@ -170,7 +193,9 @@ func newEmailForwardsCreateCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newEmailForwardsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	var yes bool
+
+	cmd := &cobra.Command{
 		Use:   "delete <domain> <forward-id>",
 		Short: "Delete an email forward",
 		Args:  cobra.ExactArgs(2),
@@ -190,15 +215,21 @@ func newEmailForwardsDeleteCmd(f *cmdutil.Factory) *cobra.Command {
 				return fmt.Errorf("invalid forward ID: %s", args[1])
 			}
 
+			if err := confirmDestructiveAction(cmd, yes, fmt.Sprintf("Delete email forward %d from %s?", forwardID, args[0])); err != nil {
+				return err
+			}
+
 			_, err = c.Domains.DeleteEmailForward(context.Background(), accountID, args[0], forwardID)
 			if err != nil {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Email forward %d deleted from %s\n", forwardID, args[0])
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Email forward %d deleted from %s\n", forwardID, args[0])
 			return nil
 		},
 	}
+
+	addYesFlag(cmd, &yes)
+
+	return cmd
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/dnsimple/dnsimple-cli/internal/cmdutil"
-	"github.com/dnsimple/dnsimple-go/v8/dnsimple"
+	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/dnsimple-go/v9/dnsimple"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +35,8 @@ func (p *pushList) TableRows() [][]string {
 
 func (p *pushList) JSONData() any { return p }
 
+func (p *pushList) TemplateData() any { return p.Data }
+
 // pushItem adapts a single DomainPush for output.
 type pushItem struct {
 	Data *dnsimple.DomainPush `json:"data"`
@@ -58,6 +60,8 @@ func (p *pushItem) TableRows() [][]string {
 
 func (p *pushItem) JSONData() any { return p }
 
+func (p *pushItem) TemplateData() any { return p.Data }
+
 func newDomainsPushesCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pushes",
@@ -73,7 +77,9 @@ func newDomainsPushesCmd(f *cmdutil.Factory) *cobra.Command {
 }
 
 func newPushesListCmd(f *cmdutil.Factory) *cobra.Command {
-	return &cobra.Command{
+	lf := &listFlags{}
+
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List pending domain pushes",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -87,14 +93,31 @@ func newPushesListCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			resp, err := c.Domains.ListPushes(context.Background(), accountID, nil)
-			if err != nil {
-				return err
-			}
+			opts := &dnsimple.ListOptions{}
 
-			return f.Printer(cmd).Print(&pushList{Data: resp.Data, Pagination: resp.Pagination})
+			return runList(cmd, f, lf, "domain pushes",
+				func(page, perPage int) ([]dnsimple.DomainPush, *dnsimple.Pagination, error) {
+					if page > 0 {
+						opts.Page = &page
+					}
+					if perPage > 0 {
+						opts.PerPage = &perPage
+					}
+					resp, err := c.Domains.ListPushes(context.Background(), accountID, opts)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resp.Data, resp.Pagination, nil
+				},
+				func(items []dnsimple.DomainPush, pg *dnsimple.Pagination) *pushList {
+					return &pushList{Data: items, Pagination: pg}
+				})
 		},
 	}
+
+	lf.register(cmd)
+
+	return cmd
 }
 
 func newPushesInitiateCmd(f *cmdutil.Factory) *cobra.Command {
@@ -166,9 +189,7 @@ func newPushesAcceptCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Push %d accepted\n", pushID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Push %d accepted\n", pushID)
 			return nil
 		},
 	}
@@ -205,9 +226,7 @@ func newPushesRejectCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if !f.Flags.Quiet {
-				fmt.Fprintf(cmd.OutOrStdout(), "Push %d rejected\n", pushID)
-			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Push %d rejected\n", pushID)
 			return nil
 		},
 	}
