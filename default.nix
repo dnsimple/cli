@@ -21,10 +21,10 @@ buildGoModule {
 
   subPackages = [ "cmd/dnsimple" ];
 
-  meta = with lib; {
+  meta = {
     description = "Command-line interface for the DNSimple API";
     homepage = "https://github.com/dnsimple/cli";
-    license = licenses.mit;
+    license = lib.licenses.mit;
     maintainers = [ "DNSimple" ];
     mainProgram = "dnsimple";
   };
