@@ -22,7 +22,7 @@ buildGoModule {
 
   meta = with lib; {
     description = "Command-line interface for the DNSimple API";
-    homepage = "https://github.com/dnsimple/dnsimple-cli";
+    homepage = "https://github.com/dnsimple/cli";
     license = licenses.mit;
     maintainers = [ "DNSimple" ];
     mainProgram = "dnsimple";
