@@ -1,6 +1,7 @@
 {
-  lib,
-  buildGoModule,
+  pkgs ? import <nixpkgs> { },
+  lib ? pkgs.lib,
+  buildGoModule ? pkgs.buildGoModule,
   version ? "dev",
 }:
 
@@ -10,7 +11,7 @@ buildGoModule {
 
   src = lib.cleanSource ./.;
 
-  vendorHash = "sha256-4dOKR9BYsmL083eCBpZzXRPr3CHBYF4Kc+HMo6v9MU0=";
+  vendorHash = "sha256-9lVLlPokN+tIaKHgVhaCGzsnlpmjgLunBEoPhRZkrVU=";
 
   ldflags = [
     "-s"
