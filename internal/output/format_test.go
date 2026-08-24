@@ -78,6 +78,22 @@ func TestPrinterPrintTable(t *testing.T) {
 	}
 }
 
+func TestPrinterPrintListHintsStayPlainWithoutATerminal(t *testing.T) {
+	var out, errOut bytes.Buffer
+	p := &Printer{Writer: &out, ErrWriter: &errOut, Format: FormatTable}
+
+	err := p.PrintList(listData(), &PageInfo{
+		Noun: "records", Shown: 2, CurrentPage: 1, TotalPages: 3, TotalEntries: 6, CanFetchAll: true,
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.NotContains(t, errOut.String(), "\x1b[")
+	assert.Contains(t, errOut.String(), "Showing 2 of 6 records (page 1 of 3).")
+	assert.Contains(t, errOut.String(), "Pass --all to fetch every page")
+}
+
 func TestPrinterPrintTableStaysPlainWithoutATerminal(t *testing.T) {
 	var buf bytes.Buffer
 	p := &Printer{Writer: &buf, Format: FormatTable}

@@ -185,7 +185,7 @@ dnsimple domains list --format '{{range .}}{{.Name}}{{printf "\n"}}{{end}}'
 
 To discover available template fields, inspect the corresponding `--json` output and use the fields inside `data` as the underlying resource model.
 
-Table output puts the header row in bold when the standard output stream is a terminal. Pass `--no-color`, or set the `NO_COLOR` environment variable, to turn the colored output off. Redirected output is always plain.
+Table output puts the header row in bold, and the pagination hints that go with a multi-page list are faint. Pass `--no-color`, or set the `NO_COLOR` environment variable, to turn the colored output off. Redirected output is always plain.
 
 ### Sandbox Environment
 
