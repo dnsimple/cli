@@ -2,6 +2,12 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Changed
+
+- The new release notice now prints the release page URL for every installation method, colors the version numbers, and separates itself from the command output with a blank line above and below. `--no-color` and the `NO_COLOR` environment variable turn the color off. The `DNSIMPLE_NO_UPDATE_CHECK` environment variable, which turns the check off, is now documented in the README.
+
 ## 0.10.0 - 2026-06-15
 
 ### Changed

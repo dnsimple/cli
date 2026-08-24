@@ -88,7 +88,8 @@ func Execute(version string, args []string) int {
 	if updateCh != nil {
 		select {
 		case result := <-updateCh:
-			update.PrintNotice(os.Stderr, result)
+			useColor := !f.Flags.NoColor && os.Getenv("NO_COLOR") == ""
+			update.PrintNotice(os.Stderr, result, useColor)
 		case <-time.After(2 * time.Second):
 		}
 	}

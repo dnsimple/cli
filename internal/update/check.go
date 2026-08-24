@@ -41,6 +41,11 @@ type CheckResult struct {
 
 var versionRe = regexp.MustCompile(`/v?(\d+\.\d+\.\d+)$`)
 
+// ReleaseURL returns the public release page for the given version.
+func ReleaseURL(version string) string {
+	return fmt.Sprintf("%s/tag/v%s", DefaultReleaseURL, strings.TrimPrefix(version, "v"))
+}
+
 func statePath() (string, error) {
 	dir, err := config.Dir()
 	if err != nil {
