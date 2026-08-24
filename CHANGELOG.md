@@ -2,7 +2,7 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## Unreleased
+## 0.11.0 - 2026-08-24
 
 - Release artifacts are published only to `dnsimple/cli`, and the `dnsimple/homebrew-tap` release mirror is removed. The install scripts and the Homebrew formula now download from `dnsimple/cli`. (dnsimple/cli#69)
 - The new release notice now prints the release page URL for every installation method, colors the version numbers, and separates itself from the command output with blank lines. `--no-color` and the `NO_COLOR` environment variable turn the color off. (dnsimple/cli#70)
