@@ -45,6 +45,10 @@ type Printer struct {
 	Format    Format
 	Template  string
 	NoColor   bool
+
+	// width bounds the table output. It is 0 in production, where the width
+	// comes from the terminal.
+	width int
 }
 
 // NewPrinter creates a new Printer with the given format settings.

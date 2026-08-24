@@ -187,6 +187,8 @@ To discover available template fields, inspect the corresponding `--json` output
 
 Table output puts the header row in bold, and the pagination hints that go with a multi-page list are faint. Pass `--no-color`, or set the `NO_COLOR` environment variable, to turn the colored output off. Redirected output is always plain.
 
+A table is cut to the width of the terminal, and a value that does not fit ends with `...`. Redirected output is never cut, and `--json`, `--format`, and the single-resource `get` commands always return the full value.
+
 ### Sandbox Environment
 
 We highly recommend testing against our [sandbox environment](https://developer.dnsimple.com/sandbox/) before using our production environment. This will allow you to avoid real purchases, live charges on your credit card, and reduce the chance of your running up against rate limits.
