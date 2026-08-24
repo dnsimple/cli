@@ -37,10 +37,16 @@ func TestShouldCheck(t *testing.T) {
 		assert.False(t, ShouldCheck(opts))
 	})
 
-	t.Run("CI env var", func(t *testing.T) {
-		t.Setenv("CI", "true")
-		assert.False(t, ShouldCheck(base))
-	})
+	ciVars := []string{"CI", "BUILD_NUMBER", "RUN_ID"}
+	for _, name := range ciVars {
+		t.Run("CI env var "+name, func(t *testing.T) {
+			for _, other := range ciVars {
+				t.Setenv(other, "")
+			}
+			t.Setenv(name, "1")
+			assert.False(t, ShouldCheck(base))
+		})
+	}
 
 	t.Run("version flag", func(t *testing.T) {
 		opts := base

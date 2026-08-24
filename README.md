@@ -185,7 +185,7 @@ dnsimple domains list --format '{{range .}}{{.Name}}{{printf "\n"}}{{end}}'
 
 To discover available template fields, inspect the corresponding `--json` output and use the fields inside `data` as the underlying resource model.
 
-Pass `--no-color`, or set the `NO_COLOR` environment variable, to turn off the colored output.
+Table output puts the header row in bold when the standard output stream is a terminal. Pass `--no-color`, or set the `NO_COLOR` environment variable, to turn the colored output off. Redirected output is always plain.
 
 ### Sandbox Environment
 
@@ -209,7 +209,7 @@ You will need a token created in the sandbox environment. Production tokens will
 
 The CLI checks for a new release at most once every 24 hours and caches the result. When a new release exists, the CLI writes a short notice to the standard error stream after the command output. The notice names the current version, the new version, the command to upgrade your installation, and the release page.
 
-The check does not run when the standard error stream is not a terminal, when the `CI` environment variable is set, or when you run `--version`, `--help`, or `completion`.
+The check does not run when the standard output stream or the standard error stream is not a terminal, when one of the `CI`, `BUILD_NUMBER`, and `RUN_ID` environment variables is set, or when you run `--version`, `--help`, or `completion`.
 
 To turn the check off, set `DNSIMPLE_NO_UPDATE_CHECK`:
 

@@ -1,9 +1,13 @@
 package output
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/fatih/color"
 )
 
 func (p *Printer) printTable(data Formattable) error {
@@ -14,7 +18,8 @@ func (p *Printer) printTable(data Formattable) error {
 		return nil
 	}
 
-	w := tabwriter.NewWriter(p.Writer, 0, 0, 2, ' ', 0)
+	var buf bytes.Buffer
+	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 
 	// Print header
 	fmt.Fprintln(w, strings.Join(headers, "\t"))
@@ -24,5 +29,23 @@ func (p *Printer) printTable(data Formattable) error {
 		fmt.Fprintln(w, strings.Join(row, "\t"))
 	}
 
-	return w.Flush()
+	if err := w.Flush(); err != nil {
+		return err
+	}
+
+	if !ColorEnabled(p.Writer, p.NoColor) {
+		_, err := p.Writer.Write(buf.Bytes())
+		return err
+	}
+
+	// tabwriter sizes a column by the byte count of its cells, so the escape
+	// sequences go around the laid out header line instead of each header cell.
+	header, body, _ := strings.Cut(buf.String(), "\n")
+	bold := color.New(color.Bold)
+	bold.EnableColor()
+	if _, err := fmt.Fprintln(p.Writer, bold.Sprint(header)); err != nil {
+		return err
+	}
+	_, err := io.WriteString(p.Writer, body)
+	return err
 }

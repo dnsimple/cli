@@ -78,6 +78,21 @@ func TestPrinterPrintTable(t *testing.T) {
 	}
 }
 
+func TestPrinterPrintTableStaysPlainWithoutATerminal(t *testing.T) {
+	var buf bytes.Buffer
+	p := &Printer{Writer: &buf, Format: FormatTable}
+
+	err := p.Print(&stubFormattable{
+		headers: []string{"ID", "NAME"},
+		rows:    [][]string{{"1", "example.com"}},
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Equal(t, "ID  NAME\n1   example.com\n", buf.String())
+}
+
 func TestPrinterPrintTableEmptyHeaders(t *testing.T) {
 	var buf bytes.Buffer
 	p := &Printer{Writer: &buf, Format: FormatTable}

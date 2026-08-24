@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/dnsimple/cli/internal/cmdutil"
+	"github.com/dnsimple/cli/internal/output"
 	"github.com/dnsimple/cli/internal/update"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -71,7 +72,7 @@ func Execute(version string, args []string) int {
 	var updateCh <-chan *update.CheckResult
 	if update.ShouldCheck(update.Opts{
 		CurrentVersion: version,
-		IsTerminal:     term.IsTerminal(int(os.Stderr.Fd())),
+		IsTerminal:     term.IsTerminal(int(os.Stdout.Fd())) && term.IsTerminal(int(os.Stderr.Fd())),
 		Debug:          debug,
 		Args:           args,
 	}) {
@@ -88,8 +89,7 @@ func Execute(version string, args []string) int {
 	if updateCh != nil {
 		select {
 		case result := <-updateCh:
-			useColor := !f.Flags.NoColor && os.Getenv("NO_COLOR") == ""
-			update.PrintNotice(os.Stderr, result, useColor)
+			update.PrintNotice(os.Stderr, result, output.ColorEnabled(os.Stderr, f.Flags.NoColor))
 		case <-time.After(2 * time.Second):
 		}
 	}
