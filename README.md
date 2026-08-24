@@ -185,6 +185,8 @@ dnsimple domains list --format '{{range .}}{{.Name}}{{printf "\n"}}{{end}}'
 
 To discover available template fields, inspect the corresponding `--json` output and use the fields inside `data` as the underlying resource model.
 
+Pass `--no-color`, or set the `NO_COLOR` environment variable, to turn off the colored output.
+
 ### Sandbox Environment
 
 We highly recommend testing against our [sandbox environment](https://developer.dnsimple.com/sandbox/) before using our production environment. This will allow you to avoid real purchases, live charges on your credit card, and reduce the chance of your running up against rate limits.
@@ -202,6 +204,18 @@ dnsimple --sandbox zones list
 ```
 
 You will need a token created in the sandbox environment. Production tokens will *not* work in the sandbox environment.
+
+### Update Checks
+
+The CLI checks for a new release at most once every 24 hours and caches the result. When a new release exists, the CLI writes a short notice to the standard error stream after the command output. The notice names the current version, the new version, the command to upgrade your installation, and the release page.
+
+The check does not run when the standard error stream is not a terminal, when the `CI` environment variable is set, or when you run `--version`, `--help`, or `completion`.
+
+To turn the check off, set `DNSIMPLE_NO_UPDATE_CHECK`:
+
+```shell
+export DNSIMPLE_NO_UPDATE_CHECK=1
+```
 
 ## Documentation
 

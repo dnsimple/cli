@@ -63,18 +63,21 @@ func TestShouldCheck(t *testing.T) {
 
 func TestPrintNotice(t *testing.T) {
 	tests := []struct {
-		name     string
-		result   *CheckResult
-		contains []string
+		name        string
+		result      *CheckResult
+		contains    []string
+		notContains []string
 	}{
 		{
 			"nil result",
+			nil,
 			nil,
 			nil,
 		},
 		{
 			"no update",
 			&CheckResult{UpdateAvailable: false},
+			nil,
 			nil,
 		},
 		{
@@ -85,7 +88,8 @@ func TestPrintNotice(t *testing.T) {
 				UpdateAvailable: true,
 				InstallMethod:   InstallMethodHomebrew,
 			},
-			[]string{"0.3.0", "0.4.0", "brew upgrade dnsimple"},
+			[]string{"0.3.0", "0.4.0", "brew upgrade dnsimple", "releases/tag/v0.4.0"},
+			nil,
 		},
 		{
 			"install script",
@@ -95,7 +99,8 @@ func TestPrintNotice(t *testing.T) {
 				UpdateAvailable: true,
 				InstallMethod:   InstallMethodScript,
 			},
-			[]string{"0.3.0", "0.4.0", "curl -fsSL"},
+			[]string{"0.3.0", "0.4.0", "curl -fsSL", "releases/tag/v0.4.0"},
+			nil,
 		},
 		{
 			"go install",
@@ -105,7 +110,8 @@ func TestPrintNotice(t *testing.T) {
 				UpdateAvailable: true,
 				InstallMethod:   InstallMethodGo,
 			},
-			[]string{"0.3.0", "0.4.0", "go install"},
+			[]string{"0.3.0", "0.4.0", "go install", "releases/tag/v0.4.0"},
+			nil,
 		},
 		{
 			"unknown method",
@@ -115,14 +121,15 @@ func TestPrintNotice(t *testing.T) {
 				UpdateAvailable: true,
 				InstallMethod:   InstallMethodUnknown,
 			},
-			[]string{"0.3.0", "0.4.0", "Visit", "releases/latest"},
+			[]string{"0.3.0", "0.4.0", "releases/tag/v0.4.0"},
+			[]string{"To upgrade, run:"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			PrintNotice(&buf, tt.result)
+			PrintNotice(&buf, tt.result, false)
 
 			if tt.contains == nil {
 				assert.Empty(t, buf.String())
@@ -133,6 +140,30 @@ func TestPrintNotice(t *testing.T) {
 			for _, s := range tt.contains {
 				assert.Contains(t, output, s)
 			}
+			for _, s := range tt.notContains {
+				assert.NotContains(t, output, s)
+			}
 		})
 	}
+}
+
+func TestPrintNoticeColor(t *testing.T) {
+	result := &CheckResult{
+		CurrentVersion:  "0.3.0",
+		LatestVersion:   "0.4.0",
+		UpdateAvailable: true,
+		InstallMethod:   InstallMethodHomebrew,
+	}
+
+	t.Run("enabled", func(t *testing.T) {
+		var buf bytes.Buffer
+		PrintNotice(&buf, result, true)
+		assert.Contains(t, buf.String(), "\x1b[")
+	})
+
+	t.Run("disabled", func(t *testing.T) {
+		var buf bytes.Buffer
+		PrintNotice(&buf, result, false)
+		assert.NotContains(t, buf.String(), "\x1b[")
+	})
 }

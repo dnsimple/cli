@@ -112,3 +112,8 @@ func TestCompareVersions(t *testing.T) {
 		})
 	}
 }
+
+func TestReleaseURL(t *testing.T) {
+	assert.Equal(t, "https://github.com/dnsimple/cli/releases/tag/v0.4.0", ReleaseURL("0.4.0"))
+	assert.Equal(t, "https://github.com/dnsimple/cli/releases/tag/v0.4.0", ReleaseURL("v0.4.0"))
+}

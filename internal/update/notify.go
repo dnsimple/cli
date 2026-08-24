@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 // Opts configures the update check behavior.
@@ -142,17 +144,29 @@ func installMethodName(m InstallMethod) string {
 }
 
 // PrintNotice writes the update notification to the given writer.
-func PrintNotice(w io.Writer, result *CheckResult) {
+func PrintNotice(w io.Writer, result *CheckResult, useColor bool) {
 	if result == nil || !result.UpdateAvailable {
 		return
 	}
 
-	fmt.Fprintf(w, "\nA new version of the DNSimple CLI is available: %s → %s\n",
-		result.CurrentVersion, result.LatestVersion)
+	yellow := color.New(color.FgYellow)
+	cyan := color.New(color.FgCyan)
+	if useColor {
+		yellow.EnableColor()
+		cyan.EnableColor()
+	} else {
+		yellow.DisableColor()
+		cyan.DisableColor()
+	}
+
+	fmt.Fprintf(w, "\n\n%s %s → %s\n",
+		yellow.Sprint("A new release of dnsimple is available:"),
+		cyan.Sprint(result.CurrentVersion),
+		cyan.Sprint(result.LatestVersion))
 
 	if cmd := UpgradeCommand(result.InstallMethod); cmd != "" {
 		fmt.Fprintf(w, "To upgrade, run: %s\n", cmd)
-	} else {
-		fmt.Fprintf(w, "Visit %s/latest to upgrade.\n", DefaultReleaseURL)
 	}
+
+	fmt.Fprintf(w, "%s\n\n", yellow.Sprint(ReleaseURL(result.LatestVersion)))
 }
