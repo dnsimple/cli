@@ -20,7 +20,7 @@ curl -fsSL http://cli-beta.dnsimple.com/install.sh | sh
 
 The install URL will eventually move to `https://dnsimple.com/install.sh`.
 
-The install script downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
+The install script downloads release artifacts from the `dnsimple/cli` releases.
 
 ### Windows
 
@@ -30,11 +30,11 @@ The install script downloads release artifacts from the public `dnsimple/homebre
 irm "https://cli-beta.dnsimple.com/install.ps1" | iex
 ```
 
-The installer downloads release artifacts from the public `dnsimple/homebrew-tap` release mirror.
+The installer downloads release artifacts from the `dnsimple/cli` releases.
 
 #### Manual ZIP install
 
-1. Download the latest `dnsimple_<version>_windows_amd64.zip` or `dnsimple_<version>_windows_arm64.zip` from the [public release mirror](https://github.com/dnsimple/homebrew-tap/releases/latest) page.
+1. Download the latest `dnsimple_<version>_windows_amd64.zip` or `dnsimple_<version>_windows_arm64.zip` from the [latest release](https://github.com/dnsimple/cli/releases/latest) page.
 2. Extract `dnsimple.exe`.
 3. Move `dnsimple.exe` to a directory on your `PATH`, such as `%USERPROFILE%\bin`.
 4. Open a new terminal window and verify the installation:

@@ -2,6 +2,10 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+- Release artifacts are published only to `dnsimple/cli`. The `dnsimple/homebrew-tap` release mirror is removed, and the install scripts and the Homebrew formula now download from `dnsimple/cli`.
+
 ## 0.10.0 - 2026-06-15
 
 ### Changed
