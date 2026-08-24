@@ -17,7 +17,7 @@ import (
 
 const (
 	// DefaultReleaseURL is the base URL for release artifacts.
-	DefaultReleaseURL = "https://github.com/dnsimple/homebrew-tap/releases"
+	DefaultReleaseURL = "https://github.com/dnsimple/cli/releases"
 
 	// DefaultCheckInterval is how often the CLI checks for updates.
 	DefaultCheckInterval = 24 * time.Hour

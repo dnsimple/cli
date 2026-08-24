@@ -46,19 +46,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ steps.tap_token.outputs.token }}
-
-      - name: Publish public release assets to homebrew-tap
-        env:
-          GH_TOKEN: ${{ steps.tap_token.outputs.token }}
-        run: |
-          tag="${GITHUB_REF#refs/tags/}"
-          dist="dist"
-
-          gh release create "${tag}" \
-            --repo dnsimple/homebrew-tap \
-            --title "${tag}" \
-            --notes-file /tmp/release-notes.md
-
-          gh release upload "${tag}" \
-            --repo dnsimple/homebrew-tap \
-            "${dist}"/*.tar.gz "${dist}"/*.zip "${dist}"/checksums.txt
