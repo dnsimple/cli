@@ -118,13 +118,15 @@ func TestPrinterPrintTableKeepsTheLastColumn(t *testing.T) {
 
 	err := p.Print(&stubFormattable{
 		headers: []string{"FIELD", "VALUE"},
-		rows:    [][]string{{"Content", strings.Repeat("a", 60)}},
+		rows:    [][]string{{"System Record", strings.Repeat("a", 60)}},
 	})
 	if !assert.NoError(t, err) {
 		return
 	}
 
-	want := "FIELD    VALUE\nContent  " + strings.Repeat("a", 60) + "\n"
+	// The last column never shrinks, so cutting the FIELD labels would lose
+	// values without bringing the table inside the width.
+	want := "FIELD          VALUE\nSystem Record  " + strings.Repeat("a", 60) + "\n"
 	assert.Equal(t, want, buf.String())
 }
 
