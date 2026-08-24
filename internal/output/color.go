@@ -15,6 +15,20 @@ func IsTerminal(w io.Writer) bool {
 	return ok && term.IsTerminal(int(f.Fd()))
 }
 
+// terminalWidth returns the width of w in columns, or 0 when w has no width of
+// its own.
+func terminalWidth(w io.Writer) int {
+	f, ok := w.(*os.File)
+	if !ok {
+		return 0
+	}
+	width, _, err := term.GetSize(int(f.Fd()))
+	if err != nil {
+		return 0
+	}
+	return width
+}
+
 // ColorEnabled reports whether w accepts colored output. The noColor argument
 // carries the --no-color flag.
 func ColorEnabled(w io.Writer, noColor bool) bool {

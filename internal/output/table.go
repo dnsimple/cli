@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"text/tabwriter"
+	"unicode/utf8"
 
 	"github.com/fatih/color"
-	"golang.org/x/term"
 )
 
 const (
@@ -64,16 +63,7 @@ func (p *Printer) tableWidth() int {
 	if p.width > 0 {
 		return p.width
 	}
-
-	f, ok := p.Writer.(*os.File)
-	if !ok {
-		return 0
-	}
-	width, _, err := term.GetSize(int(f.Fd()))
-	if err != nil {
-		return 0
-	}
-	return width
+	return terminalWidth(p.Writer)
 }
 
 // fitColumns truncates the cells that make the table wider than limit. Only the
@@ -85,15 +75,17 @@ func fitColumns(headers []string, rows [][]string, limit int) [][]string {
 	}
 
 	widths := make([]int, len(headers))
-	floors := make([]int, len(headers))
 	for i, header := range headers {
-		widths[i] = runeLen(header)
+		widths[i] = utf8.RuneCountInString(header)
+	}
+	floors := make([]int, len(headers)-1)
+	for i := range floors {
 		floors[i] = max(widths[i], minColumnWidth)
 	}
 	for _, row := range rows {
 		for i, cell := range row {
 			if i < len(widths) {
-				widths[i] = max(widths[i], runeLen(cell))
+				widths[i] = max(widths[i], utf8.RuneCountInString(cell))
 			}
 		}
 	}
@@ -103,9 +95,15 @@ func fitColumns(headers []string, rows [][]string, limit int) [][]string {
 		total += width
 	}
 
+	// Nothing to cut, or nothing to gain: a last column wider than the limit
+	// never shrinks, so the columns before it give up their values for nothing.
+	if total <= limit || widths[len(widths)-1] >= limit {
+		return rows
+	}
+
 	for total > limit {
 		widest := -1
-		for i := range widths[:len(widths)-1] {
+		for i := range floors {
 			if widths[i] > floors[i] && (widest == -1 || widths[i] > widths[widest]) {
 				widest = i
 			}
@@ -121,10 +119,8 @@ func fitColumns(headers []string, rows [][]string, limit int) [][]string {
 	for i, row := range rows {
 		cells := make([]string, len(row))
 		copy(cells, row)
-		for j := range cells {
-			if j < len(widths)-1 {
-				cells[j] = truncate(cells[j], widths[j])
-			}
+		for j := 0; j < len(floors) && j < len(cells); j++ {
+			cells[j] = truncate(cells[j], widths[j])
 		}
 		fitted[i] = cells
 	}
@@ -133,16 +129,12 @@ func fitColumns(headers []string, rows [][]string, limit int) [][]string {
 
 // truncate cuts s to width, giving the last characters to the ellipsis.
 func truncate(s string, width int) string {
+	if len(s) <= width {
+		return s
+	}
 	runes := []rune(s)
 	if len(runes) <= width {
 		return s
 	}
-	if width <= len(ellipsis) {
-		return string(runes[:width])
-	}
 	return string(runes[:width-len(ellipsis)]) + ellipsis
-}
-
-func runeLen(s string) int {
-	return len([]rune(s))
 }
