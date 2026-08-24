@@ -8,7 +8,7 @@
 # Examples:
 #
 #   curl -fsSL https://raw.githubusercontent.com/dnsimple/cli/main/install.sh | sh
-#   curl -fsSL .../install.sh | sh -s -- --base-url https://github.com/dnsimple/homebrew-tap/releases
+#   curl -fsSL .../install.sh | sh -s -- --base-url https://github.com/dnsimple/cli/releases
 
 set -e
 
@@ -19,7 +19,7 @@ YELLOW="$(tput setaf 3 2>/dev/null || printf '')"
 BLUE="$(tput setaf 4 2>/dev/null || printf '')"
 NO_COLOR="$(tput sgr0 2>/dev/null || printf '')"
 
-DEFAULT_BASE_URL="https://github.com/dnsimple/homebrew-tap/releases"
+DEFAULT_BASE_URL="https://github.com/dnsimple/cli/releases"
 BINARY_NAME="dnsimple"
 
 info() {

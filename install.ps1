@@ -40,7 +40,7 @@ param (
 
 $ErrorActionPreference = "Stop"
 
-$Repo   = "dnsimple/homebrew-tap"
+$Repo   = "dnsimple/cli"
 $ExeName = "dnsimple.exe"
 
 function Write-Step {
