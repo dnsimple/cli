@@ -8,6 +8,7 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 - The new release notice now prints the release page URL for every installation method, colors the version numbers, and separates itself from the command output with a blank line above and below. `--no-color` and the `NO_COLOR` environment variable turn the color off. The `DNSIMPLE_NO_UPDATE_CHECK` environment variable, which turns the check off, is now documented in the README.
 - Table output puts the header row in bold, and the pagination hints that go with a multi-page list are faint. `--no-color` and the `NO_COLOR` environment variable turn the color off, and redirected output stays plain.
 - The update check no longer runs when the `BUILD_NUMBER` or the `RUN_ID` environment variable is set, and it now requires both the standard output stream and the standard error stream to be a terminal.
+- Table output is cut to the width of the terminal. A long value, for example a DNSKEY record, no longer pushes the columns after it off the screen. Redirected output, `--json`, `--format`, and the single-resource `get` commands still return the full value.
 
 ## 0.10.0 - 2026-06-15
 

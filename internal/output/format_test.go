@@ -2,6 +2,7 @@ package output
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -86,6 +87,91 @@ func TestPrinterPrintTableEmptyHeaders(t *testing.T) {
 	}
 
 	assert.Zero(t, buf.Len())
+}
+
+func wideTable() *stubFormattable {
+	return &stubFormattable{
+		headers: []string{"ID", "CONTENT", "TTL"},
+		rows:    [][]string{{"1", strings.Repeat("a", 60), "3600"}},
+	}
+}
+
+func TestPrinterPrintTableTruncatesToWidth(t *testing.T) {
+	var buf bytes.Buffer
+	p := &Printer{Writer: &buf, Format: FormatTable, width: 40}
+
+	err := p.Print(wideTable())
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	// The CONTENT column gives up the space the TTL column needs, so every row
+	// still ends with its own TTL.
+	want := "ID  CONTENT" + strings.Repeat(" ", 25) + "TTL\n" +
+		"1   " + strings.Repeat("a", 27) + "...  3600\n"
+	assert.Equal(t, want, buf.String())
+}
+
+func TestPrinterPrintTableKeepsTheLastColumn(t *testing.T) {
+	var buf bytes.Buffer
+	p := &Printer{Writer: &buf, Format: FormatTable, width: 40}
+
+	err := p.Print(&stubFormattable{
+		headers: []string{"FIELD", "VALUE"},
+		rows:    [][]string{{"Content", strings.Repeat("a", 60)}},
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	want := "FIELD    VALUE\nContent  " + strings.Repeat("a", 60) + "\n"
+	assert.Equal(t, want, buf.String())
+}
+
+func TestPrinterPrintTableWithoutWidthKeepsEveryValue(t *testing.T) {
+	var buf bytes.Buffer
+	p := &Printer{Writer: &buf, Format: FormatTable}
+
+	err := p.Print(wideTable())
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	want := "ID  CONTENT" + strings.Repeat(" ", 55) + "TTL\n" +
+		"1   " + strings.Repeat("a", 60) + "  3600\n"
+	assert.Equal(t, want, buf.String())
+}
+
+func TestPrinterPrintTableUnderWidthIsUnchanged(t *testing.T) {
+	var buf bytes.Buffer
+	p := &Printer{Writer: &buf, Format: FormatTable, width: 80}
+
+	err := p.Print(&stubFormattable{
+		headers: []string{"NAME", "VALUE"},
+		rows: [][]string{
+			{"alpha", "1"},
+			{"beta", "22"},
+		},
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Equal(t, "NAME   VALUE\nalpha  1\nbeta   22\n", buf.String())
+}
+
+func TestPrinterPrintTableKeepsHeadersWhenWidthIsTooSmall(t *testing.T) {
+	var buf bytes.Buffer
+	p := &Printer{Writer: &buf, Format: FormatTable, width: 10}
+
+	err := p.Print(wideTable())
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	// The table cannot fit, so it stops at the narrowest columns that still
+	// carry a whole header.
+	assert.Equal(t, "ID  CONTENT   TTL\n1   aaaaa...  3600\n", buf.String())
 }
 
 func listData() *stubFormattable {
