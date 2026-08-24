@@ -15,9 +15,11 @@ import (
 // Opts configures the update check behavior.
 type Opts struct {
 	CurrentVersion string
-	IsTerminal     bool
-	Debug          bool
-	Args           []string
+	// IsTerminal reports whether both the standard output stream and the
+	// standard error stream are terminals.
+	IsTerminal bool
+	Debug      bool
+	Args       []string
 }
 
 // ShouldCheck evaluates whether the update check should run.
@@ -31,7 +33,7 @@ func ShouldCheck(opts Opts) bool {
 	if !opts.IsTerminal {
 		return false
 	}
-	if os.Getenv("CI") != "" {
+	if isCI() {
 		return false
 	}
 	for _, arg := range opts.Args {
@@ -46,6 +48,13 @@ func ShouldCheck(opts Opts) bool {
 		}
 	}
 	return true
+}
+
+// isCI reports whether the CLI runs on a continuous integration service.
+func isCI() bool {
+	return os.Getenv("CI") != "" ||
+		os.Getenv("BUILD_NUMBER") != "" ||
+		os.Getenv("RUN_ID") != ""
 }
 
 // CheckAsync launches a background version check and returns a channel
