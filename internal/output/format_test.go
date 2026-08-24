@@ -2,7 +2,6 @@ package output
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -72,41 +71,9 @@ func TestPrinterPrintTable(t *testing.T) {
 		return
 	}
 
-	out := buf.String()
-	for _, part := range []string{"NAME", "VALUE", "alpha", "beta", "22"} {
-		assert.True(t, strings.Contains(out, part), "table output %q does not contain %q", out, part)
-	}
-}
-
-func TestPrinterPrintListHintsStayPlainWithoutATerminal(t *testing.T) {
-	var out, errOut bytes.Buffer
-	p := &Printer{Writer: &out, ErrWriter: &errOut, Format: FormatTable}
-
-	err := p.PrintList(listData(), &PageInfo{
-		Noun: "records", Shown: 2, CurrentPage: 1, TotalPages: 3, TotalEntries: 6, CanFetchAll: true,
-	})
-	if !assert.NoError(t, err) {
-		return
-	}
-
-	assert.NotContains(t, errOut.String(), "\x1b[")
-	assert.Contains(t, errOut.String(), "Showing 2 of 6 records (page 1 of 3).")
-	assert.Contains(t, errOut.String(), "Pass --all to fetch every page")
-}
-
-func TestPrinterPrintTableStaysPlainWithoutATerminal(t *testing.T) {
-	var buf bytes.Buffer
-	p := &Printer{Writer: &buf, Format: FormatTable}
-
-	err := p.Print(&stubFormattable{
-		headers: []string{"ID", "NAME"},
-		rows:    [][]string{{"1", "example.com"}},
-	})
-	if !assert.NoError(t, err) {
-		return
-	}
-
-	assert.Equal(t, "ID  NAME\n1   example.com\n", buf.String())
+	// A writer that is not a terminal gets no escape sequence, and the header
+	// labels line up with the columns underneath them.
+	assert.Equal(t, "NAME   VALUE\nalpha  1\nbeta   22\n", buf.String())
 }
 
 func TestPrinterPrintTableEmptyHeaders(t *testing.T) {
@@ -140,6 +107,7 @@ func TestPrinterPrintListShowsHintOnTable(t *testing.T) {
 		return
 	}
 
+	assert.NotContains(t, errOut.String(), "\x1b[")
 	assert.Contains(t, errOut.String(), "Showing 30 of 142 records (page 1 of 5)")
 	assert.Contains(t, errOut.String(), "--all")
 	assert.Contains(t, out.String(), "alpha")

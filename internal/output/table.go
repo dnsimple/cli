@@ -33,19 +33,14 @@ func (p *Printer) printTable(data Formattable) error {
 		return err
 	}
 
-	if !ColorEnabled(p.Writer, p.NoColor) {
-		_, err := p.Writer.Write(buf.Bytes())
-		return err
+	out := buf.String()
+	if ColorEnabled(p.Writer, p.NoColor) {
+		// tabwriter sizes a column by the byte count of its cells, so the escape
+		// sequences go around the laid out header line instead of each header cell.
+		header, body, _ := strings.Cut(out, "\n")
+		out = NewColor(true, color.Bold).Sprint(header) + "\n" + body
 	}
 
-	// tabwriter sizes a column by the byte count of its cells, so the escape
-	// sequences go around the laid out header line instead of each header cell.
-	header, body, _ := strings.Cut(buf.String(), "\n")
-	bold := color.New(color.Bold)
-	bold.EnableColor()
-	if _, err := fmt.Fprintln(p.Writer, bold.Sprint(header)); err != nil {
-		return err
-	}
-	_, err := io.WriteString(p.Writer, body)
+	_, err := io.WriteString(p.Writer, out)
 	return err
 }

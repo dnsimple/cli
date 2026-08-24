@@ -10,7 +10,6 @@ import (
 	"github.com/dnsimple/cli/internal/output"
 	"github.com/dnsimple/cli/internal/update"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 // buildRootCmd creates the root command with all subcommands and global flags.
@@ -72,7 +71,7 @@ func Execute(version string, args []string) int {
 	var updateCh <-chan *update.CheckResult
 	if update.ShouldCheck(update.Opts{
 		CurrentVersion: version,
-		IsTerminal:     term.IsTerminal(int(os.Stdout.Fd())) && term.IsTerminal(int(os.Stderr.Fd())),
+		IsTerminal:     output.IsTerminal(os.Stdout) && output.IsTerminal(os.Stderr),
 		Debug:          debug,
 		Args:           args,
 	}) {

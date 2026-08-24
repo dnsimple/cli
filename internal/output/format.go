@@ -76,27 +76,24 @@ func (p *Printer) Print(data Formattable) error {
 // template output are left untouched: JSON already embeds the pagination object.
 func (p *Printer) PrintList(data Formattable, info *PageInfo) error {
 	hint := p.Format == FormatTable && info != nil && info.TotalPages > 1 && p.ErrWriter != nil
+	if !hint {
+		return p.Print(data)
+	}
 
 	// The hints are advice about the table, so they are faint and the table is not.
-	faint := color.New(color.Faint)
-	faint.DisableColor()
-	if hint && ColorEnabled(p.ErrWriter, p.NoColor) {
-		faint.EnableColor()
-	}
+	faint := NewColor(ColorEnabled(p.ErrWriter, p.NoColor), color.Faint)
 
-	if hint {
-		// Summary above the table so it stays visible before a long list scrolls past.
-		fmt.Fprintf(p.ErrWriter, "%s\n\n", faint.Sprintf("Showing %d of %d %s (page %d of %d).",
-			info.Shown, info.TotalEntries, info.Noun, info.CurrentPage, info.TotalPages))
-	}
+	// Summary above the table so it stays visible before a long list scrolls past.
+	fmt.Fprintf(p.ErrWriter, "%s\n\n", faint.Sprintf("Showing %d of %d %s (page %d of %d).",
+		info.Shown, info.TotalEntries, info.Noun, info.CurrentPage, info.TotalPages))
+
 	if err := p.Print(data); err != nil {
 		return err
 	}
-	if hint {
-		// Navigation advice below the table, where it lands next to the prompt.
-		if nav := info.navHint(); nav != "" {
-			fmt.Fprintf(p.ErrWriter, "\n%s\n", faint.Sprint(nav))
-		}
+
+	// Navigation advice below the table, where it lands next to the prompt.
+	if nav := info.navHint(); nav != "" {
+		fmt.Fprintf(p.ErrWriter, "\n%s\n", faint.Sprint(nav))
 	}
 	return nil
 }

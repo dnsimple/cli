@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dnsimple/cli/internal/output"
 	"github.com/fatih/color"
 )
 
@@ -158,15 +159,8 @@ func PrintNotice(w io.Writer, result *CheckResult, useColor bool) {
 		return
 	}
 
-	yellow := color.New(color.FgYellow)
-	cyan := color.New(color.FgCyan)
-	if useColor {
-		yellow.EnableColor()
-		cyan.EnableColor()
-	} else {
-		yellow.DisableColor()
-		cyan.DisableColor()
-	}
+	yellow := output.NewColor(useColor, color.FgYellow)
+	cyan := output.NewColor(useColor, color.FgCyan)
 
 	fmt.Fprintf(w, "\n\n%s %s → %s\n",
 		yellow.Sprint("A new release of dnsimple is available:"),
