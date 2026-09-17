@@ -15,10 +15,8 @@ brew install dnsimple/tap/dnsimple
 #### Using the install script
 
 ```shell
-curl -fsSL http://cli-beta.dnsimple.com/install.sh | sh
+curl -fsSL https://dnsimple.com/install.sh | sh
 ```
-
-The install URL will eventually move to `https://dnsimple.com/install.sh`.
 
 The install script downloads release artifacts from the `dnsimple/cli` releases.
 
@@ -27,7 +25,7 @@ The install script downloads release artifacts from the `dnsimple/cli` releases.
 #### Using the PowerShell install script
 
 ```powershell
-irm "https://cli-beta.dnsimple.com/install.ps1" | iex
+irm "https://dnsimple.com/install.ps1" | iex
 ```
 
 The installer downloads release artifacts from the `dnsimple/cli` releases.
