@@ -4,7 +4,7 @@ This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is
 
 ## Unreleased
 
-- The install scripts are published at `https://dnsimple.com/install.sh` and `https://dnsimple.com/install.ps1`, and the upgrade command in the new release notice uses these URLs. The previous install URLs redirect to the new ones.
+- The install scripts move to `https://dnsimple.com/install.sh` and `https://dnsimple.com/install.ps1`, and this repository no longer holds them. The upgrade command in the new release notice uses these URLs. The previous install URLs redirect to the new ones.
 
 ## 0.11.0 - 2026-08-24
 
