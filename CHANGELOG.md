@@ -2,9 +2,9 @@
 
 This project uses [Semantic Versioning 2.0.0](http://semver.org/), the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## Unreleased
+## 0.11.1 - 2026-09-17
 
-- The install scripts move to `https://dnsimple.com/install.sh` and `https://dnsimple.com/install.ps1`, and this repository no longer holds them. The upgrade command in the new release notice uses these URLs. The previous install URLs redirect to the new ones.
+- The install scripts move to `https://dnsimple.com/install.sh` and `https://dnsimple.com/install.ps1`, and this repository no longer holds them. The upgrade command in the new release notice uses these URLs. The previous install URLs redirect to the new ones. (dnsimple/cli#77)
 
 ## 0.11.0 - 2026-08-24
 
