@@ -55,9 +55,9 @@ func UpgradeCommand(method InstallMethod) string {
 	case InstallMethodHomebrew:
 		return "brew upgrade dnsimple"
 	case InstallMethodScript:
-		return "curl -fsSL https://dnsimple-cli.netlify.app/install.sh | sh"
+		return "curl -fsSL https://dnsimple.com/install.sh | sh"
 	case InstallMethodPowerShell:
-		return "powershell -ExecutionPolicy Bypass -Command \"irm https://dnsimple-cli.netlify.app/install.ps1 | iex\""
+		return "powershell -ExecutionPolicy Bypass -Command \"irm https://dnsimple.com/install.ps1 | iex\""
 	case InstallMethodGo:
 		return "go install github.com/dnsimple/cli/cmd/dnsimple@latest"
 	default:

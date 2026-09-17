@@ -25,10 +25,10 @@
     .\install.ps1 -InstallDir "C:\Tools\dnsimple"
 
 .EXAMPLE
-    irm "https://your-host.com/install.ps1" | iex
+    irm "https://dnsimple.com/install.ps1" | iex
 
 .EXAMPLE
-    $s = irm "https://your-host.com/install.ps1"
+    $s = irm "https://dnsimple.com/install.ps1"
     Invoke-Expression "& { $s } -Version '0.5.2' -InstallDir 'C:\Tools\dnsimple'"
 #>
 

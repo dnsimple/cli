@@ -7,7 +7,7 @@
 #
 # Examples:
 #
-#   curl -fsSL https://raw.githubusercontent.com/dnsimple/cli/main/install.sh | sh
+#   curl -fsSL https://dnsimple.com/install.sh | sh
 #   curl -fsSL .../install.sh | sh -s -- --base-url https://github.com/dnsimple/cli/releases
 
 set -e
